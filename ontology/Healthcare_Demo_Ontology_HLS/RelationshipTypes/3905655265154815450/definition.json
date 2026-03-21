@@ -1,0 +1,13 @@
+{
+  "$schema": "https://developer.microsoft.com/json-schemas/fabric/item/ontology/relationshipType/1.0.0/schema.json",
+  "namespace": "usertypes",
+  "id": "3905655265154815450",
+  "name": "billsFor",
+  "namespaceType": "Custom",
+  "source": {
+    "entityTypeId": "19206829552298"
+  },
+  "target": {
+    "entityTypeId": "164135924096088"
+  }
+}

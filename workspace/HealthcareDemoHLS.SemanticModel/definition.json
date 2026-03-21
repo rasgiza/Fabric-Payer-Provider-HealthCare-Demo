@@ -1,0 +1,81 @@
+{
+  "modelName": "HealthcareDemoHLS",
+  "exportedParts": [
+    {
+      "path": "definition.pbism",
+      "payloadType": "InlineBase64"
+    },
+    {
+      "path": "definition/tables/dim_sdoh.tmdl",
+      "payloadType": "InlineBase64"
+    },
+    {
+      "path": "definition/tables/fact_claim.tmdl",
+      "payloadType": "InlineBase64"
+    },
+    {
+      "path": "definition/tables/fact_diagnosis.tmdl",
+      "payloadType": "InlineBase64"
+    },
+    {
+      "path": "definition/tables/dim_patient.tmdl",
+      "payloadType": "InlineBase64"
+    },
+    {
+      "path": "definition/tables/agg_medication_adherence.tmdl",
+      "payloadType": "InlineBase64"
+    },
+    {
+      "path": "definition/tables/dim_date.tmdl",
+      "payloadType": "InlineBase64"
+    },
+    {
+      "path": "definition/tables/dim_provider.tmdl",
+      "payloadType": "InlineBase64"
+    },
+    {
+      "path": "definition/tables/fact_prescription.tmdl",
+      "payloadType": "InlineBase64"
+    },
+    {
+      "path": "definition/tables/dim_medication.tmdl",
+      "payloadType": "InlineBase64"
+    },
+    {
+      "path": "definition/tables/dim_payer.tmdl",
+      "payloadType": "InlineBase64"
+    },
+    {
+      "path": "definition/tables/fact_encounter.tmdl",
+      "payloadType": "InlineBase64"
+    },
+    {
+      "path": "definition/tables/dim_diagnosis.tmdl",
+      "payloadType": "InlineBase64"
+    },
+    {
+      "path": "definition/tables/agg_readmission_by_date.tmdl",
+      "payloadType": "InlineBase64"
+    },
+    {
+      "path": "definition/relationships.tmdl",
+      "payloadType": "InlineBase64"
+    },
+    {
+      "path": "definition/expressions.tmdl",
+      "payloadType": "InlineBase64"
+    },
+    {
+      "path": "definition/model.tmdl",
+      "payloadType": "InlineBase64"
+    },
+    {
+      "path": "definition/database.tmdl",
+      "payloadType": "InlineBase64"
+    },
+    {
+      "path": ".platform",
+      "payloadType": "InlineBase64"
+    }
+  ]
+}

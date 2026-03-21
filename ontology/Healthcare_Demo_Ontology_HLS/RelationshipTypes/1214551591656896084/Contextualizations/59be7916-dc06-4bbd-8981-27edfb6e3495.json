@@ -1,0 +1,23 @@
+﻿{
+  "$schema": "https://developer.microsoft.com/json-schemas/fabric/item/ontology/contextualization/1.0.0/schema.json",
+  "id": "59be7916-dc06-4bbd-8981-27edfb6e3495",
+  "dataBindingTable": {
+    "workspaceId": "00000000-0000-0000-0000-000000000000",
+    "itemId": "00000000-0000-0000-0000-000000000000",
+    "sourceTableName": "dim_patient",
+    "sourceSchema": null,
+    "sourceType": "LakehouseTable"
+  },
+  "sourceKeyRefBindings": [
+    {
+      "sourceColumnName": "zip_code",
+      "targetPropertyId": "1214895915114148771"
+    }
+  ],
+  "targetKeyRefBindings": [
+    {
+      "sourceColumnName": "zip_code",
+      "targetPropertyId": "1214898032530576240"
+    }
+  ]
+}

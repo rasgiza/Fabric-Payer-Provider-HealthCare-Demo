@@ -1,0 +1,87 @@
+relationship d4e54163-a6a9-1dbf-68bd-516d394dcc5f
+	fromColumn: fact_encounter.patient_key
+	toColumn: dim_patient.patient_key
+
+relationship 6e91f5d9-558f-9416-24e7-ca473ff79da8
+	fromColumn: fact_encounter.provider_key
+	toColumn: dim_provider.provider_key
+
+relationship 8ba923c3-e0dd-12e5-1ebe-bc88fb00163c
+	fromColumn: fact_encounter.discharge_date_key
+	toColumn: dim_date.date_key
+
+relationship a2c7fcb9-2178-27ae-9fa7-8438f7925e34
+	fromColumn: fact_claim.patient_key
+	toColumn: dim_patient.patient_key
+
+relationship c96e7b64-3428-8f66-03c4-d2d421188b2b
+	fromColumn: fact_claim.provider_key
+	toColumn: dim_provider.provider_key
+
+relationship 41ec0604-7219-6ecf-53df-d771a34d4c21
+	fromColumn: fact_claim.payer_key
+	toColumn: dim_payer.payer_key
+
+relationship 89d62ab5-43b4-178b-244b-ce1bcedfaad2
+	fromColumn: fact_claim.claim_date_key
+	toColumn: dim_date.date_key
+
+relationship 2050fbd2-86b6-fd7a-27bc-d91ab9b03c0a
+	fromColumn: fact_prescription.patient_key
+	toColumn: dim_patient.patient_key
+
+relationship b0da7438-503b-039a-7e25-acec6946d8e5
+	fromColumn: fact_prescription.provider_key
+	toColumn: dim_provider.provider_key
+
+relationship c18c587a-f9ae-0165-91ea-d063e0ce6783
+	fromColumn: fact_prescription.payer_key
+	toColumn: dim_payer.payer_key
+
+relationship c5e65d72-7fda-aacf-f20a-378b012e1312
+	fromColumn: fact_prescription.medication_key
+	toColumn: dim_medication.medication_key
+
+relationship fb195b3a-f2c3-7842-628b-03ee0e0fb010
+	fromColumn: fact_prescription.fill_date_key
+	toColumn: dim_date.date_key
+
+relationship e8e20f50-e422-171d-80c0-0ced291ebfa9
+	fromColumn: fact_diagnosis.patient_key
+	toColumn: dim_patient.patient_key
+
+relationship 03abd031-05c6-6a51-8a84-23bdd46a51e0
+	fromColumn: fact_diagnosis.diagnosis_key
+	toColumn: dim_diagnosis.diagnosis_key
+
+relationship 0289c0ec-47a1-7c14-766e-e5699d3473a7
+	fromColumn: agg_medication_adherence.patient_key
+	toColumn: dim_patient.patient_key
+
+relationship 91536dd5-2899-6655-c238-eb8c39578883
+	fromColumn: agg_medication_adherence.medication_key
+	toColumn: dim_medication.medication_key
+
+relationship c5bcc812-3af5-1e32-2ebb-503c027b6089
+	fromColumn: dim_patient.zip_code
+	toColumn: dim_sdoh.zip_code
+
+relationship 23f1c5cf-880c-6dcf-1f04-d25f9ef803e4
+	isActive: false
+	fromColumn: fact_encounter.encounter_date_key
+	toColumn: dim_date.date_key
+
+relationship 6fb63666-0d5a-e032-5656-22eb4741bc82
+	isActive: false
+	fromColumn: fact_claim.payment_date_key
+	toColumn: dim_date.date_key
+
+relationship df79a31b-bef6-f3a6-c35f-4f878f4688aa
+	isActive: false
+	fromColumn: fact_diagnosis.diagnosis_date_key
+	toColumn: dim_date.date_key
+
+relationship 7d36b984-c4a8-0dc1-8723-a8eedac4223f
+	fromColumn: dim_date.date_key
+	toColumn: agg_readmission_by_date.encounter_date_key
+

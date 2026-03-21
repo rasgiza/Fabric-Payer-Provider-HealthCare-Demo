@@ -1,0 +1,23 @@
+﻿{
+  "$schema": "https://developer.microsoft.com/json-schemas/fabric/item/ontology/contextualization/1.0.0/schema.json",
+  "id": "41f945a4-f923-44c3-ac3b-84da9d8e2237",
+  "dataBindingTable": {
+    "workspaceId": "00000000-0000-0000-0000-000000000000",
+    "itemId": "00000000-0000-0000-0000-000000000000",
+    "sourceTableName": "fact_prescription",
+    "sourceSchema": null,
+    "sourceType": "LakehouseTable"
+  },
+  "sourceKeyRefBindings": [
+    {
+      "sourceColumnName": "medication_key",
+      "targetPropertyId": "1214894028149169513"
+    }
+  ],
+  "targetKeyRefBindings": [
+    {
+      "sourceColumnName": "medication_key",
+      "targetPropertyId": "1214893889203566267"
+    }
+  ]
+}

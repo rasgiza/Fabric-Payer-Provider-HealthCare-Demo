@@ -1,0 +1,28 @@
+model Model
+	culture: en-US
+	defaultPowerBIDataSourceVersion: powerBI_V3
+	sourceQueryCulture: en-US
+	dataAccessOptions
+		legacyRedirects
+		returnErrorValuesAsNull
+
+annotation PBI_QueryOrder = ["DirectLake - lh_gold_curated"]
+
+annotation __PBI_TimeIntelligenceEnabled = 1
+
+annotation PBI_ProTooling = ["DirectLakeOnOneLakeInWeb","WebModelingEdit"]
+
+ref table dim_sdoh
+ref table fact_claim
+ref table fact_diagnosis
+ref table dim_patient
+ref table agg_medication_adherence
+ref table dim_date
+ref table dim_provider
+ref table fact_prescription
+ref table dim_medication
+ref table dim_payer
+ref table fact_encounter
+ref table dim_diagnosis
+ref table agg_readmission_by_date
+

@@ -1,0 +1,216 @@
+table agg_medication_adherence
+	lineageTag: 919f3a81-780d-43f4-808c-ceb52a04fd34
+	sourceLineageTag: [dbo].[agg_medication_adherence]
+
+	measure 'High Risk Denials' = CALCULATE(COUNTROWS(fact_claim), fact_claim[denial_risk_category] = "High")
+		formatString: 0
+		lineageTag: a13b0ac4-6091-49f9-a093-83dfef6c7f0f
+
+		changedProperty = Name
+
+	measure 'Adherent Rate' =
+			
+			VAR _num = CALCULATE(COUNTROWS(agg_medication_adherence), agg_medication_adherence[adherence_category] = "Adherent")
+			VAR _den = COUNTROWS(agg_medication_adherence)
+			RETURN
+			DIVIDE(_num, _den)
+		lineageTag: dd5956b5-efa3-4979-b611-3dff26a65e89
+
+		changedProperty = Name
+
+		annotation PBI_FormatHint = {"isGeneralNumber":true}
+
+	measure 'Avg PDC Score' = AVERAGE(agg_medication_adherence[pdc_score])
+		lineageTag: be7bf71e-d69d-4e9e-92bb-9df398e33a67
+
+		changedProperty = Name
+
+		annotation PBI_FormatHint = {"isGeneralNumber":true}
+
+	column patient_key
+		dataType: int64
+		formatString: 0
+		lineageTag: c2958951-90dc-4bd0-ba91-1f887ab08ccd
+		sourceLineageTag: patient_key
+		summarizeBy: none
+		sourceColumn: patient_key
+
+		annotation SummarizationSetBy = Automatic
+
+	column medication_key
+		dataType: int64
+		formatString: 0
+		lineageTag: fa9b1388-25f7-4978-ac77-ed4ea8b01cfd
+		sourceLineageTag: medication_key
+		summarizeBy: none
+		sourceColumn: medication_key
+
+		annotation SummarizationSetBy = Automatic
+
+	column drug_class
+		dataType: string
+		lineageTag: e7ef8562-4b18-41e1-8e6f-7f0f4c6dd0f5
+		sourceLineageTag: drug_class
+		summarizeBy: none
+		sourceColumn: drug_class
+
+		annotation SummarizationSetBy = Automatic
+
+	column therapeutic_area
+		dataType: string
+		lineageTag: 8e07519c-0e17-48d0-979e-137263c9d6a3
+		sourceLineageTag: therapeutic_area
+		summarizeBy: none
+		sourceColumn: therapeutic_area
+
+		annotation SummarizationSetBy = Automatic
+
+	column measurement_period_start
+		dataType: int64
+		formatString: 0
+		lineageTag: dba1be80-8a30-4f9c-8aa0-24737b8195ea
+		sourceLineageTag: measurement_period_start
+		summarizeBy: sum
+		sourceColumn: measurement_period_start
+
+		annotation SummarizationSetBy = Automatic
+
+	column measurement_period_end
+		dataType: int64
+		formatString: 0
+		lineageTag: 1079080b-27e9-46ba-abc8-0a881d6500f7
+		sourceLineageTag: measurement_period_end
+		summarizeBy: sum
+		sourceColumn: measurement_period_end
+
+		annotation SummarizationSetBy = Automatic
+
+	column total_fills
+		dataType: int64
+		formatString: 0
+		lineageTag: 6697b14e-9022-43bf-b54a-766abecd6744
+		sourceLineageTag: total_fills
+		summarizeBy: sum
+		sourceColumn: total_fills
+
+		annotation SummarizationSetBy = Automatic
+
+	column total_days_supply
+		dataType: int64
+		formatString: 0
+		lineageTag: 888e6c02-9947-4670-ba65-d6e87f801425
+		sourceLineageTag: total_days_supply
+		summarizeBy: sum
+		sourceColumn: total_days_supply
+
+		annotation SummarizationSetBy = Automatic
+
+	column days_in_period
+		dataType: int64
+		formatString: 0
+		lineageTag: 2f2770e4-59b8-4c13-8bf0-e254c172d825
+		sourceLineageTag: days_in_period
+		summarizeBy: sum
+		sourceColumn: days_in_period
+
+		annotation SummarizationSetBy = Automatic
+
+	column covered_days
+		dataType: int64
+		formatString: 0
+		lineageTag: 8c707e4d-f505-4ae6-b0d4-97e53d4eb34d
+		sourceLineageTag: covered_days
+		summarizeBy: sum
+		sourceColumn: covered_days
+
+		annotation SummarizationSetBy = Automatic
+
+	column pdc_score
+		dataType: double
+		lineageTag: 62a51315-2d48-44b0-a6a3-845e4429f712
+		sourceLineageTag: pdc_score
+		summarizeBy: sum
+		sourceColumn: pdc_score
+
+		annotation SummarizationSetBy = Automatic
+
+		annotation PBI_FormatHint = {"isGeneralNumber":true}
+
+	column adherence_category
+		dataType: string
+		lineageTag: 097356c5-5ee6-461c-b3d9-9b7d67a2d343
+		sourceLineageTag: adherence_category
+		summarizeBy: none
+		sourceColumn: adherence_category
+
+		annotation SummarizationSetBy = Automatic
+
+	column total_medication_cost
+		dataType: double
+		lineageTag: 994bef12-c519-4d54-aceb-5fd830a3efcd
+		sourceLineageTag: total_medication_cost
+		summarizeBy: sum
+		sourceColumn: total_medication_cost
+
+		annotation SummarizationSetBy = Automatic
+
+		annotation PBI_FormatHint = {"isGeneralNumber":true}
+
+	column total_payer_cost
+		dataType: double
+		lineageTag: 1c108c63-a173-496f-8ca5-30259e32f8e4
+		sourceLineageTag: total_payer_cost
+		summarizeBy: sum
+		sourceColumn: total_payer_cost
+
+		annotation SummarizationSetBy = Automatic
+
+		annotation PBI_FormatHint = {"isGeneralNumber":true}
+
+	column total_patient_cost
+		dataType: double
+		lineageTag: 8944f704-16ac-452c-b5b2-99af99581d40
+		sourceLineageTag: total_patient_cost
+		summarizeBy: sum
+		sourceColumn: total_patient_cost
+
+		annotation SummarizationSetBy = Automatic
+
+		annotation PBI_FormatHint = {"isGeneralNumber":true}
+
+	column gap_days
+		dataType: int64
+		formatString: 0
+		lineageTag: 192f9e4d-5214-48b3-b991-f59ef9a6a1e1
+		sourceLineageTag: gap_days
+		summarizeBy: sum
+		sourceColumn: gap_days
+
+		annotation SummarizationSetBy = Automatic
+
+	column is_chronic
+		dataType: int64
+		formatString: 0
+		lineageTag: 3e48c762-1781-461b-af56-e524ca2ed3bd
+		sourceLineageTag: is_chronic
+		summarizeBy: sum
+		sourceColumn: is_chronic
+
+		annotation SummarizationSetBy = Automatic
+
+	column _load_timestamp
+		dataType: dateTime
+		formatString: General Date
+		lineageTag: 5e056f6a-fee7-4fdc-a879-f2be7b21c606
+		sourceLineageTag: _load_timestamp
+		summarizeBy: none
+		sourceColumn: _load_timestamp
+
+		annotation SummarizationSetBy = Automatic
+
+	partition agg_medication_adherence = entity
+		mode: directLake
+		source
+			entityName: agg_medication_adherence
+			expressionSource: 'DirectLake - lh_gold_curated'
+

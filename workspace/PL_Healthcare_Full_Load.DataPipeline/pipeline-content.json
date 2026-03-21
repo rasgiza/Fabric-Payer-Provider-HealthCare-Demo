@@ -1,0 +1,116 @@
+{
+    "properties": {
+        "description": "Parameterised ETL pipeline. Accepts load_mode (full|incremental). No ML notebooks — risk scores come from source data. Chain: Bronze → Silver Clean → Silver Enrich → Gold Star Schema. Direct Lake semantic model picks up changes automatically.",
+        "activities": [
+            {
+                "name": "Bronze_Ingest",
+                "description": "Ingest CSV data into Bronze Delta tables (full=overwrite, incremental=append+archive)",
+                "type": "TridentNotebook",
+                "dependsOn": [],
+                "policy": {
+                    "timeout": "0.12:00:00",
+                    "retry": 0,
+                    "retryIntervalInSeconds": 30,
+                    "secureOutput": false,
+                    "secureInput": false
+                },
+                "typeProperties": {
+                    "notebookId": "b2000002-0002-0002-0002-000000000001",
+                    "parameters": {
+                        "load_mode": {
+                            "value": {
+                                "value": "@pipeline().parameters.load_mode",
+                                "type": "Expression"
+                            },
+                            "type": "string"
+                        }
+                    }
+                }
+            },
+            {
+                "name": "Silver_Stage_Clean",
+                "description": "Clean, validate, and deduplicate Bronze data into Silver Stage tables",
+                "type": "TridentNotebook",
+                "dependsOn": [
+                    {
+                        "activity": "Bronze_Ingest",
+                        "dependencyConditions": [
+                            "Succeeded"
+                        ]
+                    }
+                ],
+                "policy": {
+                    "timeout": "0.12:00:00",
+                    "retry": 0,
+                    "retryIntervalInSeconds": 30,
+                    "secureOutput": false,
+                    "secureInput": false
+                },
+                "typeProperties": {
+                    "notebookId": "b2000002-0002-0002-0002-000000000002"
+                }
+            },
+            {
+                "name": "Silver_ODS_Enrich",
+                "description": "Enrich Silver data with reference joins and derived business columns",
+                "type": "TridentNotebook",
+                "dependsOn": [
+                    {
+                        "activity": "Silver_Stage_Clean",
+                        "dependencyConditions": [
+                            "Succeeded"
+                        ]
+                    }
+                ],
+                "policy": {
+                    "timeout": "0.12:00:00",
+                    "retry": 0,
+                    "retryIntervalInSeconds": 30,
+                    "secureOutput": false,
+                    "secureInput": false
+                },
+                "typeProperties": {
+                    "notebookId": "b2000002-0002-0002-0002-000000000003"
+                }
+            },
+            {
+                "name": "Gold_Star_Schema",
+                "description": "Build Gold star schema — SCD2 dimensions + MERGE facts (full=drop+rebuild, incremental=merge)",
+                "type": "TridentNotebook",
+                "dependsOn": [
+                    {
+                        "activity": "Silver_ODS_Enrich",
+                        "dependencyConditions": [
+                            "Succeeded"
+                        ]
+                    }
+                ],
+                "policy": {
+                    "timeout": "0.12:00:00",
+                    "retry": 0,
+                    "retryIntervalInSeconds": 30,
+                    "secureOutput": false,
+                    "secureInput": false
+                },
+                "typeProperties": {
+                    "notebookId": "b2000002-0002-0002-0002-000000000005",
+                    "parameters": {
+                        "load_mode": {
+                            "value": {
+                                "value": "@pipeline().parameters.load_mode",
+                                "type": "Expression"
+                            },
+                            "type": "string"
+                        }
+                    }
+                }
+            }
+        ],
+        "parameters": {
+            "load_mode": {
+                "type": "string",
+                "defaultValue": "full"
+            }
+        }
+    }
+}

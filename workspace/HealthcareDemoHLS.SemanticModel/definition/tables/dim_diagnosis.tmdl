@@ -1,0 +1,77 @@
+table dim_diagnosis
+	lineageTag: 16a4efcb-bb20-41aa-9bfb-fc39feaa04ab
+	sourceLineageTag: [dbo].[dim_diagnosis]
+
+	column diagnosis_key
+		dataType: int64
+		formatString: 0
+		lineageTag: d7a4508d-1951-49fb-b378-2b5a134e7017
+		sourceLineageTag: diagnosis_key
+		summarizeBy: none
+		sourceColumn: diagnosis_key
+
+		annotation SummarizationSetBy = Automatic
+
+	column icd_code
+		dataType: string
+		lineageTag: c29780ba-fe46-49eb-abe1-872f0447a457
+		sourceLineageTag: icd_code
+		summarizeBy: none
+		sourceColumn: icd_code
+
+		annotation SummarizationSetBy = Automatic
+
+	column icd_description
+		dataType: string
+		lineageTag: 69e13459-d27c-4fe4-92c6-c41eb357f5d9
+		sourceLineageTag: icd_description
+		summarizeBy: none
+		sourceColumn: icd_description
+
+		annotation SummarizationSetBy = Automatic
+
+	column icd_category
+		dataType: string
+		lineageTag: d3eb5484-5f3a-4b9d-af69-178a548993c3
+		sourceLineageTag: icd_category
+		summarizeBy: none
+		sourceColumn: icd_category
+
+		annotation SummarizationSetBy = Automatic
+
+	column is_chronic
+		dataType: int64
+		formatString: 0
+		lineageTag: ce974f76-c84f-4e45-a7ff-b3a8d9ee1194
+		sourceLineageTag: is_chronic
+		summarizeBy: none
+		sourceColumn: is_chronic
+
+		annotation SummarizationSetBy = Automatic
+
+	column is_active
+		dataType: int64
+		formatString: 0
+		lineageTag: f21057f0-ff04-41a1-8c09-cb66db94239a
+		sourceLineageTag: is_active
+		summarizeBy: none
+		sourceColumn: is_active
+
+		annotation SummarizationSetBy = Automatic
+
+	column _load_timestamp
+		dataType: dateTime
+		formatString: General Date
+		lineageTag: 2f279519-74fc-4e4c-b018-2cf8b03bdbee
+		sourceLineageTag: _load_timestamp
+		summarizeBy: none
+		sourceColumn: _load_timestamp
+
+		annotation SummarizationSetBy = Automatic
+
+	partition dim_diagnosis = entity
+		mode: directLake
+		source
+			entityName: dim_diagnosis
+			expressionSource: 'DirectLake - lh_gold_curated'
+

@@ -1,0 +1,278 @@
+table fact_claim
+	lineageTag: 26a77226-bd60-4e98-9e8f-48c929da6dfb
+	sourceLineageTag: [dbo].[fact_claim]
+
+	measure 'Total Claims' = COUNTROWS(fact_claim)
+		formatString: 0
+		lineageTag: 89a6cb2c-f415-4436-b823-cb0efd741728
+
+		changedProperty = Name
+
+	measure 'Denial Rate' =
+			
+			VAR _num = CALCULATE(COUNTROWS(fact_claim), fact_claim[denial_flag] = TRUE())
+			VAR _den = COUNTROWS(fact_claim)
+			RETURN
+			DIVIDE(_num, _den)
+		formatString: 0
+		lineageTag: e223f179-922c-42c3-a4d4-1ea588c1af49
+
+		changedProperty = Name
+
+	measure 'Total Billed' = SUM(fact_claim[billed_amount])
+		lineageTag: b538499e-70f9-4ff3-941e-2a0a8026d96d
+
+		changedProperty = Name
+
+		annotation PBI_FormatHint = {"isGeneralNumber":true}
+
+	measure 'Total Paid' = SUM(fact_claim[paid_amount])
+		lineageTag: 9b5a2d0e-4bc3-42d8-b829-a3ceebb2d0fa
+
+		changedProperty = Name
+
+		annotation PBI_FormatHint = {"isGeneralNumber":true}
+
+	measure 'Collection Rate' =
+			
+			VAR _num = SUM(fact_claim[paid_amount])
+			VAR _den = SUM(fact_claim[billed_amount])
+			RETURN
+			DIVIDE(_num, _den)
+		lineageTag: e96894ae-5311-49ac-bdd4-234bd8c73eb3
+
+		changedProperty = Name
+
+		annotation PBI_FormatHint = {"isGeneralNumber":true}
+
+	measure 'At Risk Revenue' = CALCULATE(SUM(fact_claim[billed_amount]), fact_claim[denial_risk_category] IN {"High", "Medium"})
+		lineageTag: a6a466d3-36d3-4a12-9a2a-1fddc232bd31
+
+		changedProperty = Name
+
+		annotation PBI_FormatHint = {"isGeneralNumber":true}
+
+	measure 'Avg Denial Risk' = AVERAGE(fact_claim[denial_risk_score])
+		lineageTag: a0fad342-4029-4ff1-9508-28465d83c535
+
+		changedProperty = Name
+
+		annotation PBI_FormatHint = {"isGeneralNumber":true}
+
+	measure 'MTD Claims' = TOTALMTD(COUNTROWS(fact_claim), dim_date[full_date])
+		formatString: 0
+		lineageTag: bb0f05a6-ca09-4b3c-9ab2-9c715ced2db9
+
+		changedProperty = Name
+
+	measure 'Paid by Payment Date' = CALCULATE(SUM(fact_claim[paid_amount]), USERELATIONSHIP(fact_claim[payment_date_key], dim_date[date_key]))
+		lineageTag: a192af50-285a-49ec-af64-b8f446eb13d9
+
+		changedProperty = Name
+
+		annotation PBI_FormatHint = {"isGeneralNumber":true}
+
+	column claim_id
+		dataType: string
+		lineageTag: 8dec248e-b0a3-4303-9f5d-3bd0bb092b05
+		sourceLineageTag: claim_id
+		summarizeBy: none
+		sourceColumn: claim_id
+
+		annotation SummarizationSetBy = Automatic
+
+	column claim_date_key
+		dataType: int64
+		formatString: 0
+		lineageTag: 0eadcbf0-4d3c-4441-be41-0a2d9bd5ae64
+		sourceLineageTag: claim_date_key
+		summarizeBy: none
+		sourceColumn: claim_date_key
+
+		annotation SummarizationSetBy = Automatic
+
+	column payment_date_key
+		dataType: int64
+		formatString: 0
+		lineageTag: 300d3029-7a8e-4149-8864-58e7b95b2e62
+		sourceLineageTag: payment_date_key
+		summarizeBy: sum
+		sourceColumn: payment_date_key
+
+		annotation SummarizationSetBy = Automatic
+
+	column patient_key
+		dataType: int64
+		formatString: 0
+		lineageTag: 8fd7e4f8-b8c2-46af-9693-9e98902e90da
+		sourceLineageTag: patient_key
+		summarizeBy: none
+		sourceColumn: patient_key
+
+		annotation SummarizationSetBy = Automatic
+
+	column provider_key
+		dataType: int64
+		formatString: 0
+		lineageTag: c8e570b8-f064-46c5-a696-f5287c6d129c
+		sourceLineageTag: provider_key
+		summarizeBy: none
+		sourceColumn: provider_key
+
+		annotation SummarizationSetBy = Automatic
+
+	column payer_key
+		dataType: int64
+		formatString: 0
+		lineageTag: 82ad188e-57e5-4d74-8bc6-bcbadc739ce6
+		sourceLineageTag: payer_key
+		summarizeBy: none
+		sourceColumn: payer_key
+
+		annotation SummarizationSetBy = Automatic
+
+	column encounter_key
+		dataType: int64
+		formatString: 0
+		lineageTag: 5862a10d-f028-49c6-bdf1-2dbda0736119
+		sourceLineageTag: encounter_key
+		summarizeBy: sum
+		sourceColumn: encounter_key
+
+		annotation SummarizationSetBy = Automatic
+
+	column facility_key
+		dataType: int64
+		formatString: 0
+		lineageTag: 35ae1b45-4b10-4240-90ad-d92c715cbbd1
+		sourceLineageTag: facility_key
+		summarizeBy: sum
+		sourceColumn: facility_key
+
+		annotation SummarizationSetBy = Automatic
+
+	column claim_type
+		dataType: string
+		lineageTag: c7d5afc6-2cb0-411b-b808-7e08f0092a84
+		sourceLineageTag: claim_type
+		summarizeBy: none
+		sourceColumn: claim_type
+
+		annotation SummarizationSetBy = Automatic
+
+	column claim_status
+		dataType: string
+		lineageTag: 3e6ddf66-16fe-4627-8182-e9f11a0400f6
+		sourceLineageTag: claim_status
+		summarizeBy: none
+		sourceColumn: claim_status
+
+		annotation SummarizationSetBy = Automatic
+
+	column billed_amount
+		dataType: double
+		lineageTag: b33cb0be-4d2d-4d02-9345-369173d8a5ad
+		sourceLineageTag: billed_amount
+		summarizeBy: sum
+		sourceColumn: billed_amount
+
+		annotation SummarizationSetBy = Automatic
+
+		annotation PBI_FormatHint = {"isGeneralNumber":true}
+
+	column allowed_amount
+		dataType: double
+		lineageTag: 049e2994-d9eb-475d-b528-ba8ff0c9d56c
+		sourceLineageTag: allowed_amount
+		summarizeBy: sum
+		sourceColumn: allowed_amount
+
+		annotation SummarizationSetBy = Automatic
+
+		annotation PBI_FormatHint = {"isGeneralNumber":true}
+
+	column paid_amount
+		dataType: double
+		lineageTag: 37c6498f-0247-444f-8e88-6b9b18d504f9
+		sourceLineageTag: paid_amount
+		summarizeBy: sum
+		sourceColumn: paid_amount
+
+		annotation SummarizationSetBy = Automatic
+
+		annotation PBI_FormatHint = {"isGeneralNumber":true}
+
+	column denial_flag
+		dataType: int64
+		formatString: 0
+		lineageTag: b58cdc41-484d-453e-b6d7-7d619f148751
+		sourceLineageTag: denial_flag
+		summarizeBy: sum
+		sourceColumn: denial_flag
+
+		annotation SummarizationSetBy = Automatic
+
+	column denial_risk_score
+		dataType: double
+		lineageTag: 4e917c56-f4cd-4883-8230-4cca33ef4323
+		sourceLineageTag: denial_risk_score
+		summarizeBy: sum
+		sourceColumn: denial_risk_score
+
+		annotation SummarizationSetBy = Automatic
+
+		annotation PBI_FormatHint = {"isGeneralNumber":true}
+
+	column denial_risk_category
+		dataType: string
+		lineageTag: 4f7a9755-2821-4ff5-a53d-13b4d70dfb77
+		sourceLineageTag: denial_risk_category
+		summarizeBy: none
+		sourceColumn: denial_risk_category
+
+		annotation SummarizationSetBy = Automatic
+
+	column primary_denial_reason
+		dataType: string
+		lineageTag: da3863f1-26f8-49f6-8b6f-ee7cbcd7ba86
+		sourceLineageTag: primary_denial_reason
+		summarizeBy: none
+		sourceColumn: primary_denial_reason
+
+		annotation SummarizationSetBy = Automatic
+
+	column recommended_action
+		dataType: string
+		lineageTag: 71a48055-71d2-4373-a040-429af27ff05f
+		sourceLineageTag: recommended_action
+		summarizeBy: none
+		sourceColumn: recommended_action
+
+		annotation SummarizationSetBy = Automatic
+
+	column _load_timestamp
+		dataType: dateTime
+		formatString: General Date
+		lineageTag: 8f1c6747-4fca-4415-a442-1d8b523b3dc9
+		sourceLineageTag: _load_timestamp
+		summarizeBy: none
+		sourceColumn: _load_timestamp
+
+		annotation SummarizationSetBy = Automatic
+
+	column claim_key
+		dataType: int64
+		formatString: 0
+		lineageTag: 185f0bdb-b2aa-4a70-9ca9-b04f831fef1d
+		sourceLineageTag: claim_key
+		summarizeBy: sum
+		sourceColumn: claim_key
+
+		annotation SummarizationSetBy = Automatic
+
+	partition fact_claim = entity
+		mode: directLake
+		source
+			entityName: fact_claim
+			expressionSource: 'DirectLake - lh_gold_curated'
+

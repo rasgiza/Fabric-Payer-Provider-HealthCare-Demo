@@ -1,0 +1,64 @@
+﻿{
+  "$schema": "https://developer.microsoft.com/json-schemas/fabric/item/ontology/dataBinding/1.0.0/schema.json",
+  "id": "92421e65-845c-4b90-920c-3e602c4f1d18",
+  "dataBindingConfiguration": {
+    "dataBindingType": "NonTimeSeries",
+    "propertyBindings": [
+      {
+        "sourceColumnName": "fact_diagnosis_key",
+        "targetPropertyId": "1214896561325709920"
+      },
+      {
+        "sourceColumnName": "diagnosis_id",
+        "targetPropertyId": "1214896542174932736"
+      },
+      {
+        "sourceColumnName": "encounter_key",
+        "targetPropertyId": "1214896516963690737"
+      },
+      {
+        "sourceColumnName": "diagnosis_date_key",
+        "targetPropertyId": "1214896493714382111"
+      },
+      {
+        "sourceColumnName": "patient_key",
+        "targetPropertyId": "1214896471409288729"
+      },
+      {
+        "sourceColumnName": "diagnosis_key",
+        "targetPropertyId": "1214896449817433741"
+      },
+      {
+        "sourceColumnName": "facility_key",
+        "targetPropertyId": "1214896429929541671"
+      },
+      {
+        "sourceColumnName": "icd_code",
+        "targetPropertyId": "1214896408914925369"
+      },
+      {
+        "sourceColumnName": "diagnosis_sequence",
+        "targetPropertyId": "1214896384726243973"
+      },
+      {
+        "sourceColumnName": "diagnosis_type",
+        "targetPropertyId": "1214896359283801235"
+      },
+      {
+        "sourceColumnName": "present_on_admission",
+        "targetPropertyId": "1214896339112569355"
+      },
+      {
+        "sourceColumnName": "_load_timestamp",
+        "targetPropertyId": "1214896317500464796"
+      }
+    ],
+    "sourceTableProperties": {
+      "sourceType": "LakehouseTable",
+      "workspaceId": "00000000-0000-0000-0000-000000000000",
+      "itemId": "00000000-0000-0000-0000-000000000000",
+      "sourceTableName": "fact_diagnosis",
+      "sourceSchema": null
+    }
+  }
+}

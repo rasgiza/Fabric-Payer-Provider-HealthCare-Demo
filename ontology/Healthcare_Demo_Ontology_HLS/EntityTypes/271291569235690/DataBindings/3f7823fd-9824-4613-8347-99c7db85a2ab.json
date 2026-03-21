@@ -1,0 +1,100 @@
+﻿{
+  "$schema": "https://developer.microsoft.com/json-schemas/fabric/item/ontology/dataBinding/1.0.0/schema.json",
+  "id": "3f7823fd-9824-4613-8347-99c7db85a2ab",
+  "dataBindingConfiguration": {
+    "dataBindingType": "NonTimeSeries",
+    "propertyBindings": [
+      {
+        "sourceColumnName": "patient_id",
+        "targetPropertyId": "1214896275986943760"
+      },
+      {
+        "sourceColumnName": "first_name",
+        "targetPropertyId": "1214896252105203082"
+      },
+      {
+        "sourceColumnName": "last_name",
+        "targetPropertyId": "1214896226746364108"
+      },
+      {
+        "sourceColumnName": "date_of_birth",
+        "targetPropertyId": "1214896204829997153"
+      },
+      {
+        "sourceColumnName": "gender",
+        "targetPropertyId": "1214896182710333026"
+      },
+      {
+        "sourceColumnName": "address",
+        "targetPropertyId": "1214896162477889760"
+      },
+      {
+        "sourceColumnName": "city",
+        "targetPropertyId": "1214896140641858096"
+      },
+      {
+        "sourceColumnName": "state",
+        "targetPropertyId": "1214896121291931011"
+      },
+      {
+        "sourceColumnName": "zip_code",
+        "targetPropertyId": "1214896097967515780"
+      },
+      {
+        "sourceColumnName": "phone",
+        "targetPropertyId": "1214896077026761984"
+      },
+      {
+        "sourceColumnName": "email",
+        "targetPropertyId": "1214896056219273269"
+      },
+      {
+        "sourceColumnName": "insurance_type",
+        "targetPropertyId": "1214896025786445691"
+      },
+      {
+        "sourceColumnName": "insurance_provider",
+        "targetPropertyId": "1214896002987084936"
+      },
+      {
+        "sourceColumnName": "insurance_policy_number",
+        "targetPropertyId": "1214895980804015262"
+      },
+      {
+        "sourceColumnName": "age",
+        "targetPropertyId": "1214895959535509165"
+      },
+      {
+        "sourceColumnName": "age_group",
+        "targetPropertyId": "1214895935943228313"
+      },
+      {
+        "sourceColumnName": "patient_key",
+        "targetPropertyId": "1214895915114148771"
+      },
+      {
+        "sourceColumnName": "is_current",
+        "targetPropertyId": "1214895891755680967"
+      },
+      {
+        "sourceColumnName": "effective_start_date",
+        "targetPropertyId": "1214895871105856676"
+      },
+      {
+        "sourceColumnName": "effective_end_date",
+        "targetPropertyId": "1214895848404325611"
+      },
+      {
+        "sourceColumnName": "_load_timestamp",
+        "targetPropertyId": "1214895827804253645"
+      }
+    ],
+    "sourceTableProperties": {
+      "sourceType": "LakehouseTable",
+      "workspaceId": "00000000-0000-0000-0000-000000000000",
+      "itemId": "00000000-0000-0000-0000-000000000000",
+      "sourceTableName": "dim_patient",
+      "sourceSchema": null
+    }
+  }
+}

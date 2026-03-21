@@ -1,0 +1,112 @@
+table agg_readmission_by_date
+	lineageTag: 14a52265-d69d-4d45-b1d9-7928712eb147
+	sourceLineageTag: [dbo].[agg_readmission_by_date]
+
+	column encounter_date_key
+		dataType: int64
+		formatString: 0
+		lineageTag: c2dbc56d-5579-4751-9183-9e77ada7610a
+		sourceLineageTag: encounter_date_key
+		summarizeBy: none
+		sourceColumn: encounter_date_key
+
+		annotation SummarizationSetBy = Automatic
+
+	column encounter_type
+		dataType: string
+		lineageTag: dcbbd3a4-46c4-46eb-9efc-9947761dc072
+		sourceLineageTag: encounter_type
+		summarizeBy: none
+		sourceColumn: encounter_type
+
+		annotation SummarizationSetBy = Automatic
+
+	column total_encounters
+		dataType: int64
+		formatString: 0
+		lineageTag: 2cce8be8-db15-43a0-aaf3-4d84dd7d3a2e
+		sourceLineageTag: total_encounters
+		summarizeBy: none
+		sourceColumn: total_encounters
+
+		annotation SummarizationSetBy = Automatic
+
+	column high_risk_count
+		dataType: int64
+		formatString: 0
+		lineageTag: eb304d53-343a-484c-bafa-92400752775f
+		sourceLineageTag: high_risk_count
+		summarizeBy: none
+		sourceColumn: high_risk_count
+
+		annotation SummarizationSetBy = Automatic
+
+	column medium_risk_count
+		dataType: int64
+		formatString: 0
+		lineageTag: 8dc33c86-7594-4707-b673-8a3c9d782232
+		sourceLineageTag: medium_risk_count
+		summarizeBy: none
+		sourceColumn: medium_risk_count
+
+		annotation SummarizationSetBy = Automatic
+
+	column low_risk_count
+		dataType: int64
+		formatString: 0
+		lineageTag: effc3451-e97d-4822-9b57-14927cb17285
+		sourceLineageTag: low_risk_count
+		summarizeBy: none
+		sourceColumn: low_risk_count
+
+		annotation SummarizationSetBy = Automatic
+
+	column avg_risk_score
+		dataType: double
+		lineageTag: 0fa809d6-b4d6-4b37-981c-7d5fc098d605
+		sourceLineageTag: avg_risk_score
+		summarizeBy: none
+		sourceColumn: avg_risk_score
+
+		annotation SummarizationSetBy = Automatic
+
+		annotation PBI_FormatHint = {"isGeneralNumber":true}
+
+	column actual_readmissions
+		dataType: int64
+		formatString: 0
+		lineageTag: a9a4ad47-8ede-4629-a19e-e6e38bd02153
+		sourceLineageTag: actual_readmissions
+		summarizeBy: none
+		sourceColumn: actual_readmissions
+
+		annotation SummarizationSetBy = Automatic
+
+	column total_charges
+		dataType: double
+		lineageTag: 5321960e-58d6-4099-b2c5-673e04353448
+		sourceLineageTag: total_charges
+		summarizeBy: none
+		sourceColumn: total_charges
+
+		annotation SummarizationSetBy = Automatic
+
+		annotation PBI_FormatHint = {"isGeneralNumber":true}
+
+	column avg_length_of_stay
+		dataType: double
+		lineageTag: 15208b81-58b2-4cb6-996d-e977458ddaa7
+		sourceLineageTag: avg_length_of_stay
+		summarizeBy: none
+		sourceColumn: avg_length_of_stay
+
+		annotation SummarizationSetBy = Automatic
+
+		annotation PBI_FormatHint = {"isGeneralNumber":true}
+
+	partition agg_readmission_by_date = entity
+		mode: directLake
+		source
+			entityName: agg_readmission_by_date
+			expressionSource: 'DirectLake - lh_gold_curated'
+

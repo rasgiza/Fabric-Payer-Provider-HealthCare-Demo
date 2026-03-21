@@ -1,0 +1,40 @@
+﻿{
+  "$schema": "https://developer.microsoft.com/json-schemas/fabric/item/ontology/dataBinding/1.0.0/schema.json",
+  "id": "d830bf8b-13ad-40a0-b2d5-bc77670308a2",
+  "dataBindingConfiguration": {
+    "dataBindingType": "NonTimeSeries",
+    "propertyBindings": [
+      {
+        "sourceColumnName": "payer_id",
+        "targetPropertyId": "1214893604121406563"
+      },
+      {
+        "sourceColumnName": "payer_name",
+        "targetPropertyId": "1214893580105313416"
+      },
+      {
+        "sourceColumnName": "payer_type",
+        "targetPropertyId": "1214893560614537390"
+      },
+      {
+        "sourceColumnName": "payer_key",
+        "targetPropertyId": "1214893538820338648"
+      },
+      {
+        "sourceColumnName": "is_active",
+        "targetPropertyId": "1214893518312189353"
+      },
+      {
+        "sourceColumnName": "_load_timestamp",
+        "targetPropertyId": "1214893493181780757"
+      }
+    ],
+    "sourceTableProperties": {
+      "sourceType": "LakehouseTable",
+      "workspaceId": "00000000-0000-0000-0000-000000000000",
+      "itemId": "00000000-0000-0000-0000-000000000000",
+      "sourceTableName": "dim_payer",
+      "sourceSchema": null
+    }
+  }
+}

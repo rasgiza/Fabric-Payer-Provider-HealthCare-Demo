@@ -1,0 +1,71 @@
+{
+    "properties": {
+        "description": "Master orchestrator pipeline. Set load_mode to 'full' (initial deployment) or 'incremental' (day-2+ CSV batches). Both modes run the same notebook chain. No human intervention required — schedule with a trigger for automated daily incremental loads.",
+        "activities": [
+            {
+                "name": "Check_Load_Mode",
+                "description": "Branch based on the load_mode parameter — full or incremental",
+                "type": "IfCondition",
+                "dependsOn": [],
+                "typeProperties": {
+                    "expression": {
+                        "value": "@equals(pipeline().parameters.load_mode, 'full')",
+                        "type": "Expression"
+                    },
+                    "ifTrueActivities": [
+                        {
+                            "name": "Execute_Full_Load",
+                            "description": "Run the ETL pipeline with load_mode=full (Bronze overwrite → Silver → Gold → SM Refresh)",
+                            "type": "ExecutePipeline",
+                            "dependsOn": [],
+                            "policy": {
+                                "secureOutput": false,
+                                "secureInput": false
+                            },
+                            "typeProperties": {
+                                "pipeline": {
+                                    "referenceName": "c3000003-0003-0003-0003-000000000001",
+                                    "type": "PipelineReference"
+                                },
+                                "waitOnCompletion": true,
+                                "parameters": {
+                                    "load_mode": "full"
+                                }
+                            }
+                        }
+                    ],
+                    "ifFalseActivities": [
+                        {
+                            "name": "Execute_Incremental_Load",
+                            "description": "Run the ETL pipeline with load_mode=incremental (Bronze append → Silver dedup → Gold MERGE → SM Refresh)",
+                            "type": "ExecutePipeline",
+                            "dependsOn": [],
+                            "policy": {
+                                "secureOutput": false,
+                                "secureInput": false
+                            },
+                            "typeProperties": {
+                                "pipeline": {
+                                    "referenceName": "c3000003-0003-0003-0003-000000000001",
+                                    "type": "PipelineReference"
+                                },
+                                "waitOnCompletion": true,
+                                "parameters": {
+                                    "load_mode": "incremental"
+                                }
+                            }
+                        }
+                    ]
+                }
+            }
+        ],
+        "parameters": {
+            "load_mode": {
+                "type": "string",
+                "defaultValue": "full"
+            }
+        },
+        "annotations": [],
+        "lastPublishTime": "2025-01-01T00:00:00Z"
+    }
+}

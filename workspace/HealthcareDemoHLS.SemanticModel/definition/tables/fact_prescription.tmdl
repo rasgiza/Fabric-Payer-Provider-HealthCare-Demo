@@ -1,0 +1,242 @@
+table fact_prescription
+	lineageTag: 56498df3-6961-4866-a2ad-81f3205a2bba
+	sourceLineageTag: [dbo].[fact_prescription]
+
+	measure 'Total Fills' = COUNTROWS(fact_prescription)
+		formatString: 0
+		lineageTag: 13eaef8a-7cdf-4fe9-8b9b-8fd2b4791473
+
+		changedProperty = Name
+
+	measure 'Total Rx Cost' = SUM(fact_prescription[total_cost])
+		lineageTag: fb436e57-c420-4d5e-b7b9-9d4ac6f10ad8
+
+		changedProperty = Name
+
+		annotation PBI_FormatHint = {"isGeneralNumber":true}
+
+	column prescription_id
+		dataType: string
+		lineageTag: 4c3cd68f-b058-448b-ad30-a68f63411a2b
+		sourceLineageTag: prescription_id
+		summarizeBy: none
+		sourceColumn: prescription_id
+
+		annotation SummarizationSetBy = Automatic
+
+	column prescription_group_id
+		dataType: string
+		lineageTag: c638a74a-df7c-47a7-8082-3d35279446ee
+		sourceLineageTag: prescription_group_id
+		summarizeBy: none
+		sourceColumn: prescription_group_id
+
+		annotation SummarizationSetBy = Automatic
+
+	column fill_date_key
+		dataType: int64
+		formatString: 0
+		lineageTag: 5ffe7785-3f20-4443-9a6c-7c28a255e450
+		sourceLineageTag: fill_date_key
+		summarizeBy: none
+		sourceColumn: fill_date_key
+
+		annotation SummarizationSetBy = Automatic
+
+	column patient_key
+		dataType: int64
+		formatString: 0
+		lineageTag: 1efe0155-2f33-4ddb-9a0a-3997f5a3d473
+		sourceLineageTag: patient_key
+		summarizeBy: none
+		sourceColumn: patient_key
+
+		annotation SummarizationSetBy = Automatic
+
+	column provider_key
+		dataType: int64
+		formatString: 0
+		lineageTag: 836f9977-df9d-4fa3-97ee-d1eda809e980
+		sourceLineageTag: provider_key
+		summarizeBy: none
+		sourceColumn: provider_key
+
+		annotation SummarizationSetBy = Automatic
+
+	column payer_key
+		dataType: int64
+		formatString: 0
+		lineageTag: 4f8a87ca-c347-4f82-a578-5946c4bc9a42
+		sourceLineageTag: payer_key
+		summarizeBy: none
+		sourceColumn: payer_key
+
+		annotation SummarizationSetBy = Automatic
+
+	column encounter_key
+		dataType: int64
+		formatString: 0
+		lineageTag: bf1af916-5dac-480e-9af6-ed0404522cd4
+		sourceLineageTag: encounter_key
+		summarizeBy: sum
+		sourceColumn: encounter_key
+
+		annotation SummarizationSetBy = Automatic
+
+	column medication_key
+		dataType: int64
+		formatString: 0
+		lineageTag: 7e6b957c-9af1-4ab1-b230-6acbac4153fa
+		sourceLineageTag: medication_key
+		summarizeBy: none
+		sourceColumn: medication_key
+
+		annotation SummarizationSetBy = Automatic
+
+	column facility_key
+		dataType: int64
+		formatString: 0
+		lineageTag: aea5ab7b-97a6-4d2e-bfbc-9d6ae0af2c24
+		sourceLineageTag: facility_key
+		summarizeBy: sum
+		sourceColumn: facility_key
+
+		annotation SummarizationSetBy = Automatic
+
+	column fill_number
+		dataType: int64
+		formatString: 0
+		lineageTag: 18cd36d4-e96d-4267-a6c9-0bc082637548
+		sourceLineageTag: fill_number
+		summarizeBy: sum
+		sourceColumn: fill_number
+
+		annotation SummarizationSetBy = Automatic
+
+	column days_supply
+		dataType: int64
+		formatString: 0
+		lineageTag: 14672a0a-c607-4a71-ab6d-0f50468e75be
+		sourceLineageTag: days_supply
+		summarizeBy: sum
+		sourceColumn: days_supply
+
+		annotation SummarizationSetBy = Automatic
+
+	column quantity_dispensed
+		dataType: int64
+		formatString: 0
+		lineageTag: 97133fb5-574a-419f-b9f7-d485e2f6caf7
+		sourceLineageTag: quantity_dispensed
+		summarizeBy: sum
+		sourceColumn: quantity_dispensed
+
+		annotation SummarizationSetBy = Automatic
+
+	column refills_authorized
+		dataType: int64
+		formatString: 0
+		lineageTag: 341c08a0-c746-4e3c-8024-f513f556ce77
+		sourceLineageTag: refills_authorized
+		summarizeBy: sum
+		sourceColumn: refills_authorized
+
+		annotation SummarizationSetBy = Automatic
+
+	column is_generic
+		dataType: int64
+		formatString: 0
+		lineageTag: 234ae3ce-0c09-414a-9ecf-92311e29e790
+		sourceLineageTag: is_generic
+		summarizeBy: sum
+		sourceColumn: is_generic
+
+		annotation SummarizationSetBy = Automatic
+
+	column is_chronic_medication
+		dataType: int64
+		formatString: 0
+		lineageTag: 55561f9c-55b1-41c5-b4f0-ce26a16e1534
+		sourceLineageTag: is_chronic_medication
+		summarizeBy: sum
+		sourceColumn: is_chronic_medication
+
+		annotation SummarizationSetBy = Automatic
+
+	column pharmacy_type
+		dataType: string
+		lineageTag: b4f3d00b-8c9e-42e2-b837-2cf2ca4b81f8
+		sourceLineageTag: pharmacy_type
+		summarizeBy: none
+		sourceColumn: pharmacy_type
+
+		annotation SummarizationSetBy = Automatic
+
+	column total_cost
+		dataType: double
+		lineageTag: d1d5108d-c63c-4011-93bc-c5aeab257d78
+		sourceLineageTag: total_cost
+		summarizeBy: sum
+		sourceColumn: total_cost
+
+		annotation SummarizationSetBy = Automatic
+
+		annotation PBI_FormatHint = {"isGeneralNumber":true}
+
+	column payer_paid
+		dataType: double
+		lineageTag: 9ac0b65a-de3f-4034-8a30-a92431e439fc
+		sourceLineageTag: payer_paid
+		summarizeBy: sum
+		sourceColumn: payer_paid
+
+		annotation SummarizationSetBy = Automatic
+
+		annotation PBI_FormatHint = {"isGeneralNumber":true}
+
+	column patient_copay
+		dataType: double
+		lineageTag: 4ceb8bba-4c0a-4f09-a599-e90f6da7fda4
+		sourceLineageTag: patient_copay
+		summarizeBy: sum
+		sourceColumn: patient_copay
+
+		annotation SummarizationSetBy = Automatic
+
+		annotation PBI_FormatHint = {"isGeneralNumber":true}
+
+	column prescribing_reason_code
+		dataType: string
+		lineageTag: 3faa54b2-ac81-4cf2-a90f-5368367b862e
+		sourceLineageTag: prescribing_reason_code
+		summarizeBy: none
+		sourceColumn: prescribing_reason_code
+
+		annotation SummarizationSetBy = Automatic
+
+	column _load_timestamp
+		dataType: dateTime
+		formatString: General Date
+		lineageTag: cf9936ce-363b-4181-a1ea-0fa9d08c751b
+		sourceLineageTag: _load_timestamp
+		summarizeBy: none
+		sourceColumn: _load_timestamp
+
+		annotation SummarizationSetBy = Automatic
+
+	column prescription_key
+		dataType: int64
+		formatString: 0
+		lineageTag: e3bf3e42-7cdb-4994-af16-5a2e77e52d10
+		sourceLineageTag: prescription_key
+		summarizeBy: sum
+		sourceColumn: prescription_key
+
+		annotation SummarizationSetBy = Automatic
+
+	partition fact_prescription = entity
+		mode: directLake
+		source
+			entityName: fact_prescription
+			expressionSource: 'DirectLake - lh_gold_curated'
+

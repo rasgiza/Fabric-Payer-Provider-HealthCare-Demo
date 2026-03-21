@@ -1,0 +1,122 @@
+table dim_medication
+	lineageTag: 8659a04a-aa76-4609-a855-f6df2402e3fc
+	sourceLineageTag: [dbo].[dim_medication]
+
+	column medication_key
+		dataType: int64
+		formatString: 0
+		lineageTag: 94ece7f3-1c32-45b7-bde7-2f5c7d470b72
+		sourceLineageTag: medication_key
+		summarizeBy: none
+		sourceColumn: medication_key
+
+		annotation SummarizationSetBy = Automatic
+
+	column rxnorm_code
+		dataType: string
+		lineageTag: 60785542-9c1c-4cde-af73-9b49f25d2340
+		sourceLineageTag: rxnorm_code
+		summarizeBy: none
+		sourceColumn: rxnorm_code
+
+		annotation SummarizationSetBy = Automatic
+
+	column medication_name
+		dataType: string
+		lineageTag: cdaf2657-c808-4645-89f7-ee1332213885
+		sourceLineageTag: medication_name
+		summarizeBy: none
+		sourceColumn: medication_name
+
+		annotation SummarizationSetBy = Automatic
+
+	column generic_name
+		dataType: string
+		lineageTag: 6efc3fb6-843f-4ba0-b2bf-61d51e0e1df7
+		sourceLineageTag: generic_name
+		summarizeBy: none
+		sourceColumn: generic_name
+
+		annotation SummarizationSetBy = Automatic
+
+	column drug_class
+		dataType: string
+		lineageTag: d8e2fe99-3142-4523-b06b-a4c42b90371c
+		sourceLineageTag: drug_class
+		summarizeBy: none
+		sourceColumn: drug_class
+
+		annotation SummarizationSetBy = Automatic
+
+	column therapeutic_area
+		dataType: string
+		lineageTag: 177ad398-c97d-4023-b85d-8c180e4d0093
+		sourceLineageTag: therapeutic_area
+		summarizeBy: none
+		sourceColumn: therapeutic_area
+
+		annotation SummarizationSetBy = Automatic
+
+	column route
+		dataType: string
+		lineageTag: 95bd73dd-636e-4801-8a36-a25718bf1fee
+		sourceLineageTag: route
+		summarizeBy: none
+		sourceColumn: route
+
+		annotation SummarizationSetBy = Automatic
+
+	column form
+		dataType: string
+		lineageTag: 7bc0fa62-af1b-4e37-90a1-a60a897aa0a1
+		sourceLineageTag: form
+		summarizeBy: none
+		sourceColumn: form
+
+		annotation SummarizationSetBy = Automatic
+
+	column strength
+		dataType: string
+		lineageTag: 733d9a7b-e61e-429f-9c4d-7cec46c73923
+		sourceLineageTag: strength
+		summarizeBy: none
+		sourceColumn: strength
+
+		annotation SummarizationSetBy = Automatic
+
+	column is_chronic
+		dataType: int64
+		formatString: 0
+		lineageTag: 9d4d8e6e-bbbf-4898-976c-1b60e79c14da
+		sourceLineageTag: is_chronic
+		summarizeBy: sum
+		sourceColumn: is_chronic
+
+		annotation SummarizationSetBy = Automatic
+
+	column is_active
+		dataType: int64
+		formatString: 0
+		lineageTag: 975237dc-222d-486f-8f85-aab943d7e9c8
+		sourceLineageTag: is_active
+		summarizeBy: sum
+		sourceColumn: is_active
+
+		annotation SummarizationSetBy = Automatic
+
+	column _load_timestamp
+		dataType: dateTime
+		formatString: General Date
+		lineageTag: e35c22aa-6954-49c9-b6f6-320c262584a4
+		sourceLineageTag: _load_timestamp
+		summarizeBy: none
+		sourceColumn: _load_timestamp
+
+		annotation SummarizationSetBy = Automatic
+
+	partition dim_medication = entity
+		mode: directLake
+		source
+			entityName: dim_medication
+			expressionSource: 'DirectLake - lh_gold_curated'
+

@@ -1,0 +1,96 @@
+﻿{
+  "$schema": "https://developer.microsoft.com/json-schemas/fabric/item/ontology/dataBinding/1.0.0/schema.json",
+  "id": "32b3721d-f210-4e6b-9a9e-72ccfa94c850",
+  "dataBindingConfiguration": {
+    "dataBindingType": "NonTimeSeries",
+    "propertyBindings": [
+      {
+        "sourceColumnName": "claim_id",
+        "targetPropertyId": "1214897550351629445"
+      },
+      {
+        "sourceColumnName": "claim_date_key",
+        "targetPropertyId": "1214897525342370683"
+      },
+      {
+        "sourceColumnName": "payment_date_key",
+        "targetPropertyId": "1214897504092283957"
+      },
+      {
+        "sourceColumnName": "patient_key",
+        "targetPropertyId": "1214897478840356910"
+      },
+      {
+        "sourceColumnName": "provider_key",
+        "targetPropertyId": "1214897453062494275"
+      },
+      {
+        "sourceColumnName": "payer_key",
+        "targetPropertyId": "1214897430374278186"
+      },
+      {
+        "sourceColumnName": "encounter_key",
+        "targetPropertyId": "1214897403319147181"
+      },
+      {
+        "sourceColumnName": "facility_key",
+        "targetPropertyId": "1214897382574688633"
+      },
+      {
+        "sourceColumnName": "claim_type",
+        "targetPropertyId": "1214897356191857754"
+      },
+      {
+        "sourceColumnName": "claim_status",
+        "targetPropertyId": "1214897326568615046"
+      },
+      {
+        "sourceColumnName": "billed_amount",
+        "targetPropertyId": "1214897288448299708"
+      },
+      {
+        "sourceColumnName": "allowed_amount",
+        "targetPropertyId": "1214897259193033624"
+      },
+      {
+        "sourceColumnName": "paid_amount",
+        "targetPropertyId": "1214897232699967282"
+      },
+      {
+        "sourceColumnName": "denial_flag",
+        "targetPropertyId": "1214897210655291824"
+      },
+      {
+        "sourceColumnName": "denial_risk_score",
+        "targetPropertyId": "1214897185563081162"
+      },
+      {
+        "sourceColumnName": "denial_risk_category",
+        "targetPropertyId": "1214897163159919131"
+      },
+      {
+        "sourceColumnName": "primary_denial_reason",
+        "targetPropertyId": "1214897137378570661"
+      },
+      {
+        "sourceColumnName": "recommended_action",
+        "targetPropertyId": "1214897117310737825"
+      },
+      {
+        "sourceColumnName": "_load_timestamp",
+        "targetPropertyId": "1214897091317824382"
+      },
+      {
+        "sourceColumnName": "claim_key",
+        "targetPropertyId": "1214897069318601377"
+      }
+    ],
+    "sourceTableProperties": {
+      "sourceType": "LakehouseTable",
+      "workspaceId": "00000000-0000-0000-0000-000000000000",
+      "itemId": "00000000-0000-0000-0000-000000000000",
+      "sourceTableName": "fact_claim",
+      "sourceSchema": null
+    }
+  }
+}

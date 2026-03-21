@@ -1,0 +1,67 @@
+table dim_payer
+	lineageTag: 693330f3-3dff-448d-bff7-eceaabbb3b3d
+	sourceLineageTag: [dbo].[dim_payer]
+
+	column payer_id
+		dataType: string
+		lineageTag: fc3db461-9962-4ded-bf33-db610d22bc46
+		sourceLineageTag: payer_id
+		summarizeBy: none
+		sourceColumn: payer_id
+
+		annotation SummarizationSetBy = Automatic
+
+	column payer_name
+		dataType: string
+		lineageTag: 843ad23c-e9be-45b1-8215-42d7e87e15b8
+		sourceLineageTag: payer_name
+		summarizeBy: none
+		sourceColumn: payer_name
+
+		annotation SummarizationSetBy = Automatic
+
+	column payer_type
+		dataType: string
+		lineageTag: a3ab3ed0-a318-48a3-a6b5-a85f1432cecf
+		sourceLineageTag: payer_type
+		summarizeBy: none
+		sourceColumn: payer_type
+
+		annotation SummarizationSetBy = Automatic
+
+	column payer_key
+		dataType: int64
+		formatString: 0
+		lineageTag: 9a325e33-c46f-46a7-9312-81ed893914cb
+		sourceLineageTag: payer_key
+		summarizeBy: none
+		sourceColumn: payer_key
+
+		annotation SummarizationSetBy = Automatic
+
+	column is_active
+		dataType: int64
+		formatString: 0
+		lineageTag: 4a1da902-def0-4587-a675-6b685d798a0b
+		sourceLineageTag: is_active
+		summarizeBy: sum
+		sourceColumn: is_active
+
+		annotation SummarizationSetBy = Automatic
+
+	column _load_timestamp
+		dataType: dateTime
+		formatString: General Date
+		lineageTag: c1513f70-bbc0-4ae0-b570-41aef0a5be1f
+		sourceLineageTag: _load_timestamp
+		summarizeBy: none
+		sourceColumn: _load_timestamp
+
+		annotation SummarizationSetBy = Automatic
+
+	partition dim_payer = entity
+		mode: directLake
+		source
+			entityName: dim_payer
+			expressionSource: 'DirectLake - lh_gold_curated'
+

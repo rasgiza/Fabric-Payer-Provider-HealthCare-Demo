@@ -1,0 +1,21 @@
+{
+  "dependencies": {
+    "lakehouse": {
+      "default_lakehouse": "a1000001-0001-0001-0001-000000000002",
+      "default_lakehouse_name": "lh_silver_stage",
+      "default_lakehouse_workspace_id": "00000000-0000-0000-0000-000000000000",
+      "known_lakehouses": [
+        {
+          "id": "a1000001-0001-0001-0001-000000000002",
+          "displayName": "lh_silver_stage",
+          "isDefault": true
+        },
+        {
+          "id": "a1000001-0001-0001-0001-000000000001",
+          "displayName": "lh_bronze_raw",
+          "isDefault": false
+        }
+      ]
+    }
+  }
+}

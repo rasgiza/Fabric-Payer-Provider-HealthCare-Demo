@@ -1,0 +1,64 @@
+﻿{
+  "$schema": "https://developer.microsoft.com/json-schemas/fabric/item/ontology/dataBinding/1.0.0/schema.json",
+  "id": "43edb06d-efb8-4c76-81c2-01dc7baf7d08",
+  "dataBindingConfiguration": {
+    "dataBindingType": "NonTimeSeries",
+    "propertyBindings": [
+      {
+        "sourceColumnName": "medication_key",
+        "targetPropertyId": "1214893889203566267"
+      },
+      {
+        "sourceColumnName": "rxnorm_code",
+        "targetPropertyId": "1214893870588624730"
+      },
+      {
+        "sourceColumnName": "medication_name",
+        "targetPropertyId": "1214893846052053549"
+      },
+      {
+        "sourceColumnName": "generic_name",
+        "targetPropertyId": "1214893826656148395"
+      },
+      {
+        "sourceColumnName": "drug_class",
+        "targetPropertyId": "1214893798203852082"
+      },
+      {
+        "sourceColumnName": "therapeutic_area",
+        "targetPropertyId": "1214893779585425848"
+      },
+      {
+        "sourceColumnName": "route",
+        "targetPropertyId": "1214893756496913366"
+      },
+      {
+        "sourceColumnName": "form",
+        "targetPropertyId": "1214893737438417351"
+      },
+      {
+        "sourceColumnName": "strength",
+        "targetPropertyId": "1214893713146021725"
+      },
+      {
+        "sourceColumnName": "is_chronic",
+        "targetPropertyId": "1214893692617277411"
+      },
+      {
+        "sourceColumnName": "is_active",
+        "targetPropertyId": "1214893670892912580"
+      },
+      {
+        "sourceColumnName": "_load_timestamp",
+        "targetPropertyId": "1214893647865456481"
+      }
+    ],
+    "sourceTableProperties": {
+      "sourceType": "LakehouseTable",
+      "workspaceId": "00000000-0000-0000-0000-000000000000",
+      "itemId": "00000000-0000-0000-0000-000000000000",
+      "sourceTableName": "dim_medication",
+      "sourceSchema": null
+    }
+  }
+}

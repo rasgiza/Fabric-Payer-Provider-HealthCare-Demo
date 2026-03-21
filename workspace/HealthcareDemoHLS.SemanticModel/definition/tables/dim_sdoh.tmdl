@@ -1,0 +1,163 @@
+table dim_sdoh
+	lineageTag: 10893ca7-0e87-4ada-90b3-ec7ee684691e
+	sourceLineageTag: [dbo].[dim_sdoh]
+
+	column sdoh_key
+		dataType: int64
+		formatString: 0
+		lineageTag: 7698bd2c-67c7-435c-8df9-0f51fd225f0d
+		sourceLineageTag: sdoh_key
+		summarizeBy: none
+		sourceColumn: sdoh_key
+
+		annotation SummarizationSetBy = Automatic
+
+	column zip_code
+		dataType: string
+		lineageTag: 2bf54733-1666-40d9-ad12-c5e1de32f53f
+		sourceLineageTag: zip_code
+		summarizeBy: none
+		sourceColumn: zip_code
+
+		annotation SummarizationSetBy = Automatic
+
+	column state
+		dataType: string
+		lineageTag: 1ab18c30-f9df-428f-a010-94b6c0222db0
+		sourceLineageTag: state
+		summarizeBy: none
+		sourceColumn: state
+
+		annotation SummarizationSetBy = Automatic
+
+	column poverty_rate
+		dataType: double
+		lineageTag: 9a4c96f5-3f6e-40d2-86ec-03eb1dd5d4bd
+		sourceLineageTag: poverty_rate
+		summarizeBy: none
+		sourceColumn: poverty_rate
+
+		annotation SummarizationSetBy = Automatic
+
+		annotation PBI_FormatHint = {"isGeneralNumber":true}
+
+	column food_desert_flag
+		dataType: int64
+		formatString: 0
+		lineageTag: 553b2c76-9cc6-4ec2-b51e-4d0deac9d9e6
+		sourceLineageTag: food_desert_flag
+		summarizeBy: none
+		sourceColumn: food_desert_flag
+
+		annotation SummarizationSetBy = Automatic
+
+	column transportation_score
+		dataType: double
+		lineageTag: 08f83e99-4eb4-48a8-b74c-f7d9b9f20291
+		sourceLineageTag: transportation_score
+		summarizeBy: none
+		sourceColumn: transportation_score
+
+		annotation SummarizationSetBy = Automatic
+
+		annotation PBI_FormatHint = {"isGeneralNumber":true}
+
+	column housing_instability_rate
+		dataType: double
+		lineageTag: d346ea58-1e3a-4478-a9a9-084bebed6d07
+		sourceLineageTag: housing_instability_rate
+		summarizeBy: none
+		sourceColumn: housing_instability_rate
+
+		annotation SummarizationSetBy = Automatic
+
+		annotation PBI_FormatHint = {"isGeneralNumber":true}
+
+	column uninsured_rate
+		dataType: double
+		lineageTag: 6f56055f-081b-4aae-898c-ab6f40db6679
+		sourceLineageTag: uninsured_rate
+		summarizeBy: none
+		sourceColumn: uninsured_rate
+
+		annotation SummarizationSetBy = Automatic
+
+		annotation PBI_FormatHint = {"isGeneralNumber":true}
+
+	column broadband_access_pct
+		dataType: double
+		lineageTag: de5e9bd1-a89e-43e5-9b98-7948c73686ef
+		sourceLineageTag: broadband_access_pct
+		summarizeBy: none
+		sourceColumn: broadband_access_pct
+
+		annotation SummarizationSetBy = Automatic
+
+		annotation PBI_FormatHint = {"isGeneralNumber":true}
+
+	column median_household_income
+		dataType: int64
+		formatString: 0
+		lineageTag: 7deac582-024f-49dc-aa5a-bc40263166d6
+		sourceLineageTag: median_household_income
+		summarizeBy: none
+		sourceColumn: median_household_income
+
+		annotation SummarizationSetBy = Automatic
+
+	column population
+		dataType: int64
+		formatString: 0
+		lineageTag: 6ca6a473-ec46-4a69-bdd7-fb1a4a9aae7c
+		sourceLineageTag: population
+		summarizeBy: none
+		sourceColumn: population
+
+		annotation SummarizationSetBy = Automatic
+
+	column social_vulnerability_index
+		dataType: double
+		lineageTag: e2a34105-77c4-4fb8-993d-56ae5f0a5b50
+		sourceLineageTag: social_vulnerability_index
+		summarizeBy: none
+		sourceColumn: social_vulnerability_index
+
+		annotation SummarizationSetBy = Automatic
+
+		annotation PBI_FormatHint = {"isGeneralNumber":true}
+
+	column risk_tier
+		dataType: string
+		lineageTag: bf5752a0-72d2-4540-a6fc-e1ac30305197
+		sourceLineageTag: risk_tier
+		summarizeBy: none
+		sourceColumn: risk_tier
+
+		annotation SummarizationSetBy = Automatic
+
+	column is_active
+		dataType: int64
+		formatString: 0
+		lineageTag: 29b55dfb-2922-4d4f-a555-51651876289f
+		sourceLineageTag: is_active
+		summarizeBy: none
+		sourceColumn: is_active
+
+		annotation SummarizationSetBy = Automatic
+
+	column _load_timestamp
+		dataType: dateTime
+		formatString: General Date
+		lineageTag: 1c0bf1be-1870-4d3b-974d-b21f076918b6
+		sourceLineageTag: _load_timestamp
+		summarizeBy: none
+		sourceColumn: _load_timestamp
+
+		annotation SummarizationSetBy = Automatic
+
+	partition dim_sdoh = entity
+		mode: directLake
+		source
+			entityName: dim_sdoh
+			expressionSource: 'DirectLake - lh_gold_curated'
+

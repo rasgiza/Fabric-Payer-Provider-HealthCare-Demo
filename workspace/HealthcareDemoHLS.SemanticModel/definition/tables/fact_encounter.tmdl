@@ -1,0 +1,260 @@
+table fact_encounter
+	lineageTag: 303e9d71-a1fa-4663-a8f3-e659324de32e
+	sourceLineageTag: [dbo].[fact_encounter]
+
+	measure 'Total Encounters' = COUNTROWS(fact_encounter)
+		formatString: 0
+		lineageTag: 210b4fd1-0990-43b8-a7c7-84527d5167fe
+
+		changedProperty = Name
+
+	measure 'Readmission Rate' =
+			
+			VAR _num = CALCULATE(COUNTROWS(fact_encounter), fact_encounter[readmission_flag] = TRUE())
+			VAR _den = COUNTROWS(fact_encounter)
+			RETURN
+			DIVIDE(_num, _den)
+		formatString: 0
+		lineageTag: c0c1fbeb-970c-460f-8ac7-f928b3e8508b
+
+		changedProperty = Name
+
+	measure 'High Risk Readmissions' = CALCULATE(COUNTROWS(fact_encounter), fact_encounter[readmission_risk_category] = "High")
+		formatString: 0
+		lineageTag: abdbcfcc-ddbd-4e52-9ba7-c7bc8033fc36
+
+		changedProperty = Name
+
+	measure 'Medium Risk Readmissions' = CALCULATE(COUNTROWS(fact_encounter), fact_encounter[readmission_risk_category] = "Medium")
+		formatString: 0
+		lineageTag: 5d20e8e3-46b0-486f-9a33-e2a5eae52aed
+
+		changedProperty = Name
+
+	measure 'Low Risk Readmissions' = CALCULATE(COUNTROWS(fact_encounter), fact_encounter[readmission_risk_category] = "Low")
+		formatString: 0
+		lineageTag: 7648b0e9-1965-4fd7-bf73-ae8b88fafe45
+
+		changedProperty = Name
+
+	measure 'Avg Length of Stay' = AVERAGE(fact_encounter[length_of_stay])
+		lineageTag: 2d10938b-eacd-48d1-bdc6-ea77289c960d
+
+		changedProperty = Name
+
+		annotation PBI_FormatHint = {"isGeneralNumber":true}
+
+	measure 'Avg Readmission Risk' = AVERAGE(fact_encounter[readmission_risk_score])
+		lineageTag: 39acffe2-fcb5-4bbb-99e5-f6430aaf7d6e
+
+		changedProperty = Name
+
+		annotation PBI_FormatHint = {"isGeneralNumber":true}
+
+	measure 'Total Charges' = SUM(fact_encounter[total_charges])
+		lineageTag: 360e14e2-8054-44b7-b18e-d55aeb0645d7
+
+		changedProperty = Name
+
+		annotation PBI_FormatHint = {"isGeneralNumber":true}
+
+	measure 'PY Charges' = CALCULATE(SUM(fact_encounter[total_charges]), SAMEPERIODLASTYEAR(dim_date[full_date]))
+		lineageTag: 357957c2-34c8-4f51-8d09-5ea5f4af92fd
+
+		changedProperty = Name
+
+		annotation PBI_FormatHint = {"isGeneralNumber":true}
+
+	measure 'YoY Charge Growth' =
+			
+			VAR _cy = [Total Charges]
+			VAR _py = [PY Charges]
+			RETURN
+			DIVIDE(_cy - _py, _py)
+		lineageTag: 4f1da77a-1795-4ebb-8963-84253873fcaa
+
+		changedProperty = Name
+
+		annotation PBI_FormatHint = {"isGeneralNumber":true}
+
+	measure 'YTD Charges' = TOTALYTD(SUM(fact_encounter[total_charges]), dim_date[full_date])
+		lineageTag: 64699830-c28a-460b-a524-23513a31762c
+
+		changedProperty = Name
+
+		annotation PBI_FormatHint = {"isGeneralNumber":true}
+
+	column encounter_id
+		dataType: string
+		lineageTag: 7d0226fb-ddad-4b65-aad5-15e7ac726c4a
+		sourceLineageTag: encounter_id
+		summarizeBy: none
+		sourceColumn: encounter_id
+
+		annotation SummarizationSetBy = Automatic
+
+	column encounter_date_key
+		dataType: int64
+		formatString: 0
+		lineageTag: 46c8b230-58f7-4d53-a3a1-36f0f50310f0
+		sourceLineageTag: encounter_date_key
+		summarizeBy: sum
+		sourceColumn: encounter_date_key
+
+		annotation SummarizationSetBy = Automatic
+
+	column discharge_date_key
+		dataType: int64
+		formatString: 0
+		lineageTag: 07cd2376-eebf-4b76-819d-70ba940dd2ef
+		sourceLineageTag: discharge_date_key
+		summarizeBy: none
+		sourceColumn: discharge_date_key
+
+		annotation SummarizationSetBy = Automatic
+
+	column patient_key
+		dataType: int64
+		formatString: 0
+		lineageTag: 3de32271-e7bc-4ce2-88a0-0239ee372d68
+		sourceLineageTag: patient_key
+		summarizeBy: none
+		sourceColumn: patient_key
+
+		annotation SummarizationSetBy = Automatic
+
+	column provider_key
+		dataType: int64
+		formatString: 0
+		lineageTag: 13b9938c-1fea-4632-acd8-b12ece21c885
+		sourceLineageTag: provider_key
+		summarizeBy: none
+		sourceColumn: provider_key
+
+		annotation SummarizationSetBy = Automatic
+
+	column facility_key
+		dataType: int64
+		formatString: 0
+		lineageTag: 9661852f-2fb5-4e4c-93a9-8caa28fd55e6
+		sourceLineageTag: facility_key
+		summarizeBy: sum
+		sourceColumn: facility_key
+
+		annotation SummarizationSetBy = Automatic
+
+	column encounter_type
+		dataType: string
+		lineageTag: d99a88a8-901e-4a6f-9537-0ece65022748
+		sourceLineageTag: encounter_type
+		summarizeBy: none
+		sourceColumn: encounter_type
+
+		annotation SummarizationSetBy = Automatic
+
+	column admission_type
+		dataType: string
+		lineageTag: af03f074-2201-490b-9cfb-3dbb3a7a5bb5
+		sourceLineageTag: admission_type
+		summarizeBy: none
+		sourceColumn: admission_type
+
+		annotation SummarizationSetBy = Automatic
+
+	column discharge_disposition
+		dataType: string
+		lineageTag: 46725df0-54dd-4613-859b-ea271a633fb1
+		sourceLineageTag: discharge_disposition
+		summarizeBy: none
+		sourceColumn: discharge_disposition
+
+		annotation SummarizationSetBy = Automatic
+
+	column length_of_stay
+		dataType: int64
+		formatString: 0
+		lineageTag: a8056ab4-f694-4d86-a51f-50e1f2035fb9
+		sourceLineageTag: length_of_stay
+		summarizeBy: sum
+		sourceColumn: length_of_stay
+
+		annotation SummarizationSetBy = Automatic
+
+	column total_charges
+		dataType: double
+		lineageTag: cdb607cd-c25f-4c05-bc29-920a340ac245
+		sourceLineageTag: total_charges
+		summarizeBy: sum
+		sourceColumn: total_charges
+
+		annotation SummarizationSetBy = Automatic
+
+		annotation PBI_FormatHint = {"isGeneralNumber":true}
+
+	column total_cost
+		dataType: double
+		lineageTag: bcd78958-1167-4a1c-b39a-8cda0e056450
+		sourceLineageTag: total_cost
+		summarizeBy: sum
+		sourceColumn: total_cost
+
+		annotation SummarizationSetBy = Automatic
+
+		annotation PBI_FormatHint = {"isGeneralNumber":true}
+
+	column readmission_flag
+		dataType: int64
+		formatString: 0
+		lineageTag: 87d25a06-6299-4e02-a89c-223e505dee10
+		sourceLineageTag: readmission_flag
+		summarizeBy: sum
+		sourceColumn: readmission_flag
+
+		annotation SummarizationSetBy = Automatic
+
+	column readmission_risk_score
+		dataType: double
+		lineageTag: 5ac69eba-98fd-4fe0-b0b3-d43c8ff6a1fe
+		sourceLineageTag: readmission_risk_score
+		summarizeBy: sum
+		sourceColumn: readmission_risk_score
+
+		annotation SummarizationSetBy = Automatic
+
+		annotation PBI_FormatHint = {"isGeneralNumber":true}
+
+	column readmission_risk_category
+		dataType: string
+		lineageTag: 2af07876-2816-44f5-9131-7f5f77b31022
+		sourceLineageTag: readmission_risk_category
+		summarizeBy: none
+		sourceColumn: readmission_risk_category
+
+		annotation SummarizationSetBy = Automatic
+
+	column _load_timestamp
+		dataType: dateTime
+		formatString: General Date
+		lineageTag: 033a2ddf-edb7-46f0-a2c5-e04c2c52c77f
+		sourceLineageTag: _load_timestamp
+		summarizeBy: none
+		sourceColumn: _load_timestamp
+
+		annotation SummarizationSetBy = Automatic
+
+	column encounter_key
+		dataType: int64
+		formatString: 0
+		lineageTag: 9a79075d-f362-4adf-9b51-0f561a0b4747
+		sourceLineageTag: encounter_key
+		summarizeBy: sum
+		sourceColumn: encounter_key
+
+		annotation SummarizationSetBy = Automatic
+
+	partition fact_encounter = entity
+		mode: directLake
+		source
+			entityName: fact_encounter
+			expressionSource: 'DirectLake - lh_gold_curated'
+

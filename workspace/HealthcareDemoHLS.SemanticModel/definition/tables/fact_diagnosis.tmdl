@@ -1,0 +1,126 @@
+table fact_diagnosis
+	lineageTag: 58737eb4-8811-404d-a0f5-da20fea8ca83
+	sourceLineageTag: [dbo].[fact_diagnosis]
+
+	column fact_diagnosis_key
+		dataType: int64
+		formatString: 0
+		lineageTag: 69b3794f-bab1-4372-8150-0f128b2c6b3d
+		sourceLineageTag: fact_diagnosis_key
+		summarizeBy: sum
+		sourceColumn: fact_diagnosis_key
+
+		annotation SummarizationSetBy = Automatic
+
+	column diagnosis_id
+		dataType: string
+		lineageTag: eec8385b-81f1-4413-be3f-f77a0093b1e6
+		sourceLineageTag: diagnosis_id
+		summarizeBy: none
+		sourceColumn: diagnosis_id
+
+		annotation SummarizationSetBy = Automatic
+
+	column encounter_key
+		dataType: int64
+		formatString: 0
+		lineageTag: 5cf1240c-0d85-427f-b4d9-f40bfb89637d
+		sourceLineageTag: encounter_key
+		summarizeBy: sum
+		sourceColumn: encounter_key
+
+		annotation SummarizationSetBy = Automatic
+
+	column diagnosis_date_key
+		dataType: int64
+		formatString: 0
+		lineageTag: 6e0b5f3a-199f-44c5-b21d-8329cdfd802b
+		sourceLineageTag: diagnosis_date_key
+		summarizeBy: sum
+		sourceColumn: diagnosis_date_key
+
+		annotation SummarizationSetBy = Automatic
+
+	column patient_key
+		dataType: int64
+		formatString: 0
+		lineageTag: a10a12ad-4fa4-427b-a4fb-8acedb760521
+		sourceLineageTag: patient_key
+		summarizeBy: none
+		sourceColumn: patient_key
+
+		annotation SummarizationSetBy = Automatic
+
+	column diagnosis_key
+		dataType: int64
+		formatString: 0
+		lineageTag: 8122ac4c-fa65-4a7e-885d-97452465ae31
+		sourceLineageTag: diagnosis_key
+		summarizeBy: none
+		sourceColumn: diagnosis_key
+
+		annotation SummarizationSetBy = Automatic
+
+	column facility_key
+		dataType: int64
+		formatString: 0
+		lineageTag: d876276b-6035-4443-a898-5b147403414d
+		sourceLineageTag: facility_key
+		summarizeBy: sum
+		sourceColumn: facility_key
+
+		annotation SummarizationSetBy = Automatic
+
+	column icd_code
+		dataType: string
+		lineageTag: 8970d3ed-e527-4465-b409-b815836b36bb
+		sourceLineageTag: icd_code
+		summarizeBy: none
+		sourceColumn: icd_code
+
+		annotation SummarizationSetBy = Automatic
+
+	column diagnosis_sequence
+		dataType: int64
+		formatString: 0
+		lineageTag: 7f8e3f8e-a61f-470d-8383-a11592048d5b
+		sourceLineageTag: diagnosis_sequence
+		summarizeBy: sum
+		sourceColumn: diagnosis_sequence
+
+		annotation SummarizationSetBy = Automatic
+
+	column diagnosis_type
+		dataType: string
+		lineageTag: 5ccdd1e1-7982-418d-b46b-82a9dd13d1fa
+		sourceLineageTag: diagnosis_type
+		summarizeBy: none
+		sourceColumn: diagnosis_type
+
+		annotation SummarizationSetBy = Automatic
+
+	column present_on_admission
+		dataType: string
+		lineageTag: 2c18cc3f-b048-4b3c-8f29-6de3435c4c3b
+		sourceLineageTag: present_on_admission
+		summarizeBy: none
+		sourceColumn: present_on_admission
+
+		annotation SummarizationSetBy = Automatic
+
+	column _load_timestamp
+		dataType: dateTime
+		formatString: General Date
+		lineageTag: f476062a-7b95-4a8b-80d5-c6204647822b
+		sourceLineageTag: _load_timestamp
+		summarizeBy: none
+		sourceColumn: _load_timestamp
+
+		annotation SummarizationSetBy = Automatic
+
+	partition fact_diagnosis = entity
+		mode: directLake
+		source
+			entityName: fact_diagnosis
+			expressionSource: 'DirectLake - lh_gold_curated'
+

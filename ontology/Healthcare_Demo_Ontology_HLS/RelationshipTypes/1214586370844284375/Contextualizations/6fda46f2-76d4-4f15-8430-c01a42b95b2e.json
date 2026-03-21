@@ -1,0 +1,23 @@
+﻿{
+  "$schema": "https://developer.microsoft.com/json-schemas/fabric/item/ontology/contextualization/1.0.0/schema.json",
+  "id": "6fda46f2-76d4-4f15-8430-c01a42b95b2e",
+  "dataBindingTable": {
+    "workspaceId": "00000000-0000-0000-0000-000000000000",
+    "itemId": "00000000-0000-0000-0000-000000000000",
+    "sourceTableName": "fact_diagnosis",
+    "sourceSchema": null,
+    "sourceType": "LakehouseTable"
+  },
+  "sourceKeyRefBindings": [
+    {
+      "sourceColumnName": "diagnosis_key",
+      "targetPropertyId": "1214896561325709920"
+    }
+  ],
+  "targetKeyRefBindings": [
+    {
+      "sourceColumnName": "diagnosis_key",
+      "targetPropertyId": "1214892550238269795"
+    }
+  ]
+}

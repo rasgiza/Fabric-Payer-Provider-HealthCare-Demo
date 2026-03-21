@@ -1,0 +1,46 @@
+# ============================================================================
+# deployment.yaml — Fabric Launcher Configuration
+# ============================================================================
+# This file is used by fabric-launcher when loading config from the repo.
+# For most users, the Healthcare_Launcher.ipynb passes parameters directly
+# to download_and_deploy(), so this file is optional / for CI/CD scenarios.
+# ============================================================================
+
+github:
+  repo_owner: kwame-one
+  repo_name: Fabric-Payer-Provider-HealthCare-Demo
+  branch: main
+  workspace_folder: workspace
+  token: ''                              # Leave empty for public repos
+
+deployment:
+  environment: DEV
+  allow_non_empty_workspace: false
+  fix_zero_logical_ids: true
+  deployment_retries: 2
+  item_type_stages:
+    - ["Lakehouse"]
+    - ["Notebook"]
+    - ["DataPipeline"]
+    - ["SemanticModel", "DataAgent"]
+
+data:
+  lakehouse_name: lh_gold_curated
+  folder_mappings:
+    healthcare_knowledge: healthcare_knowledge
+  file_patterns:
+    - '*.md'
+
+post_deployment:
+  notebook_name: NB_Generate_Sample_Data
+  parameters: {}
+  timeout_seconds: 1200
+
+environments:
+  DEV:
+    deployment:
+      environment: DEV
+  PROD:
+    deployment:
+      environment: PROD
+      allow_non_empty_workspace: false

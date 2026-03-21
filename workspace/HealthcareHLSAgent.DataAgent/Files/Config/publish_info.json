@@ -1,0 +1,4 @@
+{
+  "$schema": "https://developer.microsoft.com/json-schemas/fabric/item/dataAgent/definition/publishInfo/1.0.0/schema.json",
+  "description": "Healthcare analytics agent for Healthcare demo. Answers questions about preventable readmissions, claim denials, medication adherence, social determinants of health, provider performance, and prescription costs. Queries 13 curated gold-layer tables covering patients, encounters, claims, diagnoses, medications, payers, providers, and SDOH data. Supports both aggregated KPIs (readmission rate, denial rate, adherence rate) and patient-level detail lookups."
+}

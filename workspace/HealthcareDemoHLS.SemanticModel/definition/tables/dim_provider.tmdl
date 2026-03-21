@@ -1,0 +1,142 @@
+table dim_provider
+	lineageTag: ec130066-7f36-404c-8375-37621c6bdec1
+	sourceLineageTag: [dbo].[dim_provider]
+
+	column provider_id
+		dataType: string
+		lineageTag: 073a1b3a-e1c0-4c35-96bd-59ef27a06017
+		sourceLineageTag: provider_id
+		summarizeBy: none
+		sourceColumn: provider_id
+
+		annotation SummarizationSetBy = Automatic
+
+	column first_name
+		dataType: string
+		lineageTag: 7bd2a88d-db69-4d5e-8856-8736292ba265
+		sourceLineageTag: first_name
+		summarizeBy: none
+		sourceColumn: first_name
+
+		annotation SummarizationSetBy = Automatic
+
+	column last_name
+		dataType: string
+		lineageTag: c884cecd-3fc0-48fd-9ea4-08fb93c27172
+		sourceLineageTag: last_name
+		summarizeBy: none
+		sourceColumn: last_name
+
+		annotation SummarizationSetBy = Automatic
+
+	column display_name
+		dataType: string
+		lineageTag: f2d08235-b4c1-4ae4-8887-e665e963fe6a
+		sourceLineageTag: display_name
+		summarizeBy: none
+		sourceColumn: display_name
+
+		annotation SummarizationSetBy = Automatic
+
+	column npi_number
+		dataType: string
+		lineageTag: b7ed60d0-c1c7-40b9-a58f-f7d65b6a85bd
+		sourceLineageTag: npi_number
+		summarizeBy: none
+		sourceColumn: npi_number
+
+		annotation SummarizationSetBy = Automatic
+
+	column specialty
+		dataType: string
+		lineageTag: 6fd9f220-4447-46ff-8869-3234a258ae85
+		sourceLineageTag: specialty
+		summarizeBy: none
+		sourceColumn: specialty
+
+		annotation SummarizationSetBy = Automatic
+
+	column department
+		dataType: string
+		lineageTag: 20f1a5d2-d440-4ee8-9531-3ed8e1012d37
+		sourceLineageTag: department
+		summarizeBy: none
+		sourceColumn: department
+
+		annotation SummarizationSetBy = Automatic
+
+	column facility_id
+		dataType: string
+		lineageTag: e0f6aa00-d8b0-40df-b1a7-f19f2a74bd3e
+		sourceLineageTag: facility_id
+		summarizeBy: none
+		sourceColumn: facility_id
+
+		annotation SummarizationSetBy = Automatic
+
+	column is_active
+		dataType: int64
+		formatString: 0
+		lineageTag: e3ca03fa-6494-48b4-90e2-090f45c6f532
+		sourceLineageTag: is_active
+		summarizeBy: sum
+		sourceColumn: is_active
+
+		annotation SummarizationSetBy = Automatic
+
+	column provider_key
+		dataType: int64
+		formatString: 0
+		lineageTag: 9c5c10ba-9f02-4fc9-a2b9-0526e0548376
+		sourceLineageTag: provider_key
+		summarizeBy: none
+		sourceColumn: provider_key
+
+		annotation SummarizationSetBy = Automatic
+
+	column is_current
+		dataType: int64
+		formatString: 0
+		lineageTag: 8e3a5ba2-4ebb-4095-93c0-f4f13e72ba96
+		sourceLineageTag: is_current
+		summarizeBy: sum
+		sourceColumn: is_current
+
+		annotation SummarizationSetBy = Automatic
+
+	column effective_start_date
+		dataType: dateTime
+		formatString: General Date
+		lineageTag: fad9f6c1-9ca3-4330-932c-092a87fe5d70
+		sourceLineageTag: effective_start_date
+		summarizeBy: none
+		sourceColumn: effective_start_date
+
+		annotation SummarizationSetBy = Automatic
+
+	column effective_end_date
+		dataType: dateTime
+		formatString: General Date
+		lineageTag: df62e2c6-aa56-4bd9-944d-e5738a53196c
+		sourceLineageTag: effective_end_date
+		summarizeBy: none
+		sourceColumn: effective_end_date
+
+		annotation SummarizationSetBy = Automatic
+
+	column _load_timestamp
+		dataType: dateTime
+		formatString: General Date
+		lineageTag: 6d3fa2c4-a1cf-4621-bb54-431c596587a4
+		sourceLineageTag: _load_timestamp
+		summarizeBy: none
+		sourceColumn: _load_timestamp
+
+		annotation SummarizationSetBy = Automatic
+
+	partition dim_provider = entity
+		mode: directLake
+		source
+			entityName: dim_provider
+			expressionSource: 'DirectLake - lh_gold_curated'
+

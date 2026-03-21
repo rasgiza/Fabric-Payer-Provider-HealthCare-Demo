@@ -1,0 +1,104 @@
+﻿{
+  "$schema": "https://developer.microsoft.com/json-schemas/fabric/item/ontology/dataBinding/1.0.0/schema.json",
+  "id": "b61b4b61-cc45-4f8a-9fd9-ea90fbab1350",
+  "dataBindingConfiguration": {
+    "dataBindingType": "NonTimeSeries",
+    "propertyBindings": [
+      {
+        "sourceColumnName": "prescription_id",
+        "targetPropertyId": "1214894482031795937"
+      },
+      {
+        "sourceColumnName": "prescription_group_id",
+        "targetPropertyId": "1214894460628258901"
+      },
+      {
+        "sourceColumnName": "fill_date_key",
+        "targetPropertyId": "1214894440111724300"
+      },
+      {
+        "sourceColumnName": "patient_key",
+        "targetPropertyId": "1214894420535015844"
+      },
+      {
+        "sourceColumnName": "provider_key",
+        "targetPropertyId": "1214894396886615404"
+      },
+      {
+        "sourceColumnName": "payer_key",
+        "targetPropertyId": "1214894377687280042"
+      },
+      {
+        "sourceColumnName": "encounter_key",
+        "targetPropertyId": "1214894354303429617"
+      },
+      {
+        "sourceColumnName": "medication_key",
+        "targetPropertyId": "1214894332819570019"
+      },
+      {
+        "sourceColumnName": "facility_key",
+        "targetPropertyId": "1214894311977696350"
+      },
+      {
+        "sourceColumnName": "fill_number",
+        "targetPropertyId": "1214894291647085570"
+      },
+      {
+        "sourceColumnName": "days_supply",
+        "targetPropertyId": "1214894269393815262"
+      },
+      {
+        "sourceColumnName": "quantity_dispensed",
+        "targetPropertyId": "1214894245803629114"
+      },
+      {
+        "sourceColumnName": "refills_authorized",
+        "targetPropertyId": "1214894226814522345"
+      },
+      {
+        "sourceColumnName": "is_generic",
+        "targetPropertyId": "1214894203965715057"
+      },
+      {
+        "sourceColumnName": "is_chronic_medication",
+        "targetPropertyId": "1214894179325443633"
+      },
+      {
+        "sourceColumnName": "pharmacy_type",
+        "targetPropertyId": "1214894156432387370"
+      },
+      {
+        "sourceColumnName": "total_cost",
+        "targetPropertyId": "1214894135144835948"
+      },
+      {
+        "sourceColumnName": "payer_paid",
+        "targetPropertyId": "1214894113717002727"
+      },
+      {
+        "sourceColumnName": "patient_copay",
+        "targetPropertyId": "1214894091305599616"
+      },
+      {
+        "sourceColumnName": "prescribing_reason_code",
+        "targetPropertyId": "1214894068826272508"
+      },
+      {
+        "sourceColumnName": "_load_timestamp",
+        "targetPropertyId": "1214894049674117421"
+      },
+      {
+        "sourceColumnName": "prescription_key",
+        "targetPropertyId": "1214894028149169513"
+      }
+    ],
+    "sourceTableProperties": {
+      "sourceType": "LakehouseTable",
+      "workspaceId": "00000000-0000-0000-0000-000000000000",
+      "itemId": "00000000-0000-0000-0000-000000000000",
+      "sourceTableName": "fact_prescription",
+      "sourceSchema": null
+    }
+  }
+}

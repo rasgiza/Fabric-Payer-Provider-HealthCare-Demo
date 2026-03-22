@@ -22,7 +22,7 @@ That's it. The launcher deploys everything automatically.
 | **Pipelines (2)** | `PL_Healthcare_Full_Load`, `PL_Healthcare_Master` | Orchestration with full/incremental modes |
 | **Semantic Model** | `HealthcareDemoHLS` | Star schema for Power BI (facts + dimensions) |
 | **Data Agent** | `HealthcareHLSAgent` | Copilot AI agent with healthcare knowledge |
-| **Ontology** | `Healthcare_Demo_Ontology_HLS` | GraphQL entity model (preview) |
+| **Ontology** | `Healthcare_Demo_Ontology_HLS` | GraphQL entity model — **manual UI setup** (see guide below) |
 
 ### Data Volumes (Default)
 
@@ -74,7 +74,7 @@ The launcher executes these stages in order:
 7. **Upload** healthcare knowledge docs to `lh_gold_curated`
 8. **Run** `NB_Generate_Sample_Data` — generates fresh synthetic data with today's dates
 9. **Trigger** `PL_Healthcare_Master` with `load_mode=full` — runs Bronze → Silver → Gold ETL
-10. **Deploy** Ontology via REST API (preview feature)
+10. **Print** ontology setup instructions — user follows the guide manually (~10 min)
 
 ## After Deployment
 
@@ -88,6 +88,22 @@ Open **HealthcareHLSAgent** and try:
 - *"Show me readmission risk by facility"*
 - *"Which providers have the highest average charges?"*
 - *"Compare claim denial rates across payers"*
+
+### Create the Ontology & Graph Model (Manual — ~10 min)
+
+The ontology **cannot** be fully deployed via API — the Fabric Preview API creates unlinked ontology and graph items, which breaks Fabric IQ graph traversal and Copilot integration. You must create it from the semantic model in the UI.
+
+Follow the step-by-step guide: **[ONTOLOGY_GRAPH_SETUP_GUIDE.md](ONTOLOGY_GRAPH_SETUP_GUIDE.md)**
+
+Quick summary:
+1. **New item** → Ontology → from semantic model `HealthcareDemoHLS`
+2. **Delete** 3 unwanted entities (dim_date, agg_medication_adherence, agg_readmission_by_date)
+3. **Rename** 10 entities (e.g., dim_patient → Patient) using the guide's master table
+4. **Set** source keys and display names per the guide
+5. **Replace** auto-generated relationships with 15 curated ones from the guide
+6. **Build the graph** (Graph tab → Build a graph → select all)
+
+The guide includes master configuration tables for all entities, relationships, and full property references.
 
 ### Run Incremental Loads
 To simulate daily operational data arriving:
@@ -110,7 +126,6 @@ Edit the top cell of `Healthcare_Launcher.ipynb`:
 | `GITHUB_TOKEN` | `""` | GitHub PAT for private repos |
 | `GENERATE_DATA` | `True` | Generate fresh synthetic data |
 | `RUN_PIPELINE` | `True` | Run the full-load pipeline |
-| `DEPLOY_ONTOLOGY` | `True` | Deploy the GraphQL ontology |
 | `UPLOAD_KNOWLEDGE_DOCS` | `True` | Upload knowledge docs for AI agent |
 
 ## Prerequisites
@@ -124,6 +139,7 @@ Edit the top cell of `Healthcare_Launcher.ipynb`:
 
 ```
 ├── Healthcare_Launcher.ipynb          # ← Import this into Fabric
+├── ONTOLOGY_GRAPH_SETUP_GUIDE.md      # Manual ontology setup (10 entities, 15 relationships)
 ├── deployment.yaml                    # Optional: CI/CD config
 ├── README.md
 ├── workspace/                         # Fabric Git Integration format
@@ -142,7 +158,7 @@ Edit the top cell of `Healthcare_Launcher.ipynb`:
 │   ├── PL_Healthcare_Master.DataPipeline/
 │   ├── HealthcareDemoHLS.SemanticModel/
 │   └── HealthcareHLSAgent.DataAgent/
-├── ontology/                          # Deployed via REST API
+├── ontology/                          # Reference definition (used by guide, not auto-deployed)
 │   └── Healthcare_Demo_Ontology_HLS/
 ├── healthcare_knowledge/              # AI agent knowledge base
 │   ├── clinical_guidelines/
@@ -163,7 +179,7 @@ Edit the top cell of `Healthcare_Launcher.ipynb`:
 | Pipeline fails | Open PL_Healthcare_Master → check activity run details. Common cause: lakehouse tables not yet created |
 | Semantic model shows no data | Run the pipeline first — it populates Gold lakehouse tables that the model reads |
 | Data Agent returns generic answers | Ensure `healthcare_knowledge/` docs were uploaded to `lh_gold_curated/Files/` |
-| Ontology deployment fails | This is a preview feature. Create it manually in the Fabric UI if needed |
+| Ontology not auto-deployed | By design — must be created in the UI from the semantic model. Follow [ONTOLOGY_GRAPH_SETUP_GUIDE.md](ONTOLOGY_GRAPH_SETUP_GUIDE.md) |
 | `fabric-launcher` install fails | Ensure your Fabric capacity supports Python package installation |
 
 ## Credits

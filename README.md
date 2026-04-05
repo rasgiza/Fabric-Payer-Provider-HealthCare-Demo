@@ -63,11 +63,13 @@ All from a single workspace deployed in minutes.
 1. **Create an empty Fabric workspace** (F64+ capacity recommended)
 2. **Import** `Healthcare_Launcher.ipynb` into the workspace  
    *(Workspace → Import → Notebook → upload the .ipynb file)*
-3. **Edit Cell 1** — set `GITHUB_OWNER` to your GitHub org/user  
-   *(or leave defaults if using the public repo)*
+3. **Edit the Configuration cell** — set your GitHub details:
+   - `GITHUB_OWNER` — your GitHub org or user (default: `kwamesefah_microsoft`)
+   - `GITHUB_TOKEN` — required for private repos; paste a GitHub PAT with `repo` scope
+   - `DEPLOY_RTI` — set `True` to include Real-Time Intelligence (default: `True`)
 4. **Run All** — wait ~15-20 minutes
 
-That's it. The launcher deploys everything automatically.
+That's it. The launcher creates a deploy lakehouse, downloads the repo, deploys all artifacts in the correct stage order, generates sample data, runs the ETL pipeline, and sets up RTI — fully automated.
 
 ## What Gets Deployed
 
@@ -126,39 +128,72 @@ Dual-path design: **Batch ETL** (authoritative, historical) + **Real-Time Intell
       │  ── BATCH PATH (above) ──  │  ── STREAMING PATH (below) ──
       │
       ▼  Gold dims enrich streaming
-┌──────────────────────────────────────────────────────────────────┐
-│  Real-Time Intelligence (RTI)                                    │
-│                                                                  │
-│  ┌──────────────┐    ┌──────────────┐    ┌───────────────────┐  │
-│  │  Eventstream  │───▶│  Eventhouse  │    │  RTI Notebooks    │  │
-│  │  (Custom      │    │  (KQL DB +   │───▶│  Fraud Detection  │  │
-│  │   Endpoint)   │    │   6 tables)  │    │  Care Gap Alerts  │  │
-│  └───────┬───────┘    └──────────────┘    │  HighCost Traj.   │  │
-│          │                                └───────────────────┘  │
-│    ┌─────┴─────┐                                                 │
-│    │  Event    │  Claims, ADT, Rx events                         │
-│    │  Simulator│  (batch seed + live stream)                     │
-│    └───────────┘                                                 │
-└──────────────────────────────────────────────────────────────────┘
+┌──────────────────────────────────────────────────────────────────────┐
+│  Real-Time Intelligence (RTI)                                       │
+│                                                                      │
+│  ┌──────────────┐    ┌──────────────┐    ┌────────────────────────┐ │
+│  │  Eventstream  │───▶│  Eventhouse  │    │  RTI Scoring Notebooks │ │
+│  │  (Custom      │    │  (KQL DB +   │───▶│  Fraud Detection       │ │
+│  │   Endpoint)   │    │   6 tables)  │    │  Care Gap Alerts       │ │
+│  └───────┬───────┘    └──────┬───────┘    │  HighCost Trajectory   │ │
+│          │                   │            └────────────────────────┘ │
+│    ┌─────┴─────┐             │                       │              │
+│    │  Event    │             │                       ▼              │
+│    │  Simulator│             │     ┌─────────────────────────────┐  │
+│    └───────────┘             │     │  Operations Agent (Future)  │  │
+│                              │     │  ┌─────────┐ ┌───────────┐ │  │
+│                              └────▶│  │ Triage  │ │ SLA       │ │  │
+│                                    │  │ Worklist│ │ Monitor   │ │  │
+│                                    │  └────┬────┘ └─────┬─────┘ │  │
+│                                    │       └──────┬─────┘       │  │
+│                                    │              ▼             │  │
+│                                    │  ┌───────────────────────┐ │  │
+│                                    │  │ Action Router         │ │  │
+│                                    │  │ SIU │ EHR │ CM │Teams │ │  │
+│                                    │  └───────────────────────┘ │  │
+│                                    │  + Foundry Agent (NL Ops)  │  │
+│                                    └─────────────────────────────┘  │
+└──────────────────────────────────────────────────────────────────────┘
 ```
 
 ## Deployment Flow
 
-The launcher executes these stages in order:
+The launcher notebook (`Healthcare_Launcher.ipynb`) automates the entire deployment. Under the hood, `fabric-launcher` performs these steps:
 
-1. **Install** `fabric-launcher` library
-2. **Download** this GitHub repo as ZIP
-3. **Deploy Stage 1** — Lakehouses (must exist before notebooks reference them)
-4. **Deploy Stage 2** — Eventhouse + KQL Database (Git-tracked RTI infrastructure)
-5. **Deploy Stage 3** — Notebooks (must exist before pipelines reference them)
-6. **Deploy Stage 4** — Data Pipelines
-7. **Deploy Stage 5** — Semantic Model + Data Agent
-8. **Upload** healthcare knowledge docs to `lh_gold_curated`
-9. **Run** `NB_Generate_Sample_Data` — generates fresh synthetic data with today's dates
-10. **Trigger** `PL_Healthcare_Master` with `load_mode=full` — runs Bronze → Silver → Gold ETL
-11. **Run** `NB_RTI_Setup_Eventhouse` — discovers deployed Eventhouse, creates tables, wires Eventstream
-12. **Run** RTI scoring notebooks — Fraud Detection, Care Gap Alerts, High-Cost Trajectory
-13. **Print** ontology setup instructions — user follows the guide manually (~10 min)
+### What happens when you click "Run All"
+
+1. **Install** `fabric-launcher` library (`%pip install fabric-launcher`)
+2. **Initialize** the launcher — auto-detects workspace ID, validates workspace is empty
+3. **Download** this GitHub repo as a ZIP archive from the configured branch
+4. **Extract** to the notebook's default lakehouse at `Files/src/<repo-name>/`
+   — the `workspace/` folder contains all Fabric item definitions (`.platform`, notebook content, TMDL, pipeline JSON, Eventhouse/KQL artifacts)
+5. **Deploy Stage 1 — Lakehouses** — `lh_bronze_raw`, `lh_silver_stage`, `lh_silver_ods`, `lh_gold_curated`
+   (must exist before notebooks that reference them as default lakehouses)
+6. **Deploy Stage 2 — Eventhouse + KQL Database** — Git-tracked RTI infrastructure
+   (`Healthcare_RTI_Eventhouse` + `Healthcare_RTI_DB` with `DatabaseSchema.kql`)
+7. **Deploy Stage 3 — Notebooks** — 12 notebooks (5 ETL + 2 data gen + 5 RTI + 1 ops agent stub)
+   (must exist before pipelines reference them as activities)
+8. **Deploy Stage 4 — Data Pipelines** — `PL_Healthcare_Full_Load`, `PL_Healthcare_Master`
+9. **Deploy Stage 5 — Semantic Model + Data Agent** — `HealthcareDemoHLS` (TMDL star schema) + `HealthcareHLSAgent` (Copilot AI)
+10. **Validate** all deployed items — checks each item exists and has correct type
+11. **Upload** healthcare knowledge docs from `healthcare_knowledge/` to `lh_gold_curated/Files/healthcare_knowledge/`
+12. **Run** `NB_Generate_Sample_Data` — generates ~10K patients, 100K encounters, HEDIS measures, care gaps
+13. **Trigger** `PL_Healthcare_Master` with `load_mode=full` — runs Bronze → Silver → Gold ETL (~8-15 min)
+14. **Run** `NB_RTI_Setup_Eventhouse` — discovers deployed Eventhouse by name, creates 6 KQL tables + streaming policies, creates Eventstream with Custom Endpoint, outputs connection string
+15. **Run** RTI scoring notebooks — Event Simulator (batch), Fraud Detection, Care Gap Alerts, High-Cost Trajectory
+16. **Print** ontology setup instructions — user follows `ONTOLOGY_GRAPH_SETUP_GUIDE.md` manually (~10 min)
+
+> **No manual lakehouse creation required.** Unlike manual deployment approaches that require creating a `deploy_staging` lakehouse and uploading folders, `fabric-launcher` handles repo download, extraction, and artifact reading automatically using the notebook's built-in default lakehouse.
+
+### Deployment Stages Detail
+
+| Stage | Item Types | Count | Why This Order |
+|-------|-----------|-------|----------------|
+| 1 | Lakehouse | 4 | Notebooks reference lakehouses via `logicalId` in `.metadata` — lakehouses must exist first |
+| 2 | Eventhouse, KQLDatabase | 2 | RTI infra must be provisioned before `NB_RTI_Setup_Eventhouse` discovers them |
+| 3 | Notebook | 12 | Pipelines reference notebooks as activities — notebooks must exist first |
+| 4 | DataPipeline | 2 | Pipelines orchestrate notebook execution |
+| 5 | SemanticModel, DataAgent | 2 | Semantic model needs Gold tables populated; Data Agent needs semantic model |
 
 ## After Deployment
 

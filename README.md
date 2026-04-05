@@ -184,8 +184,8 @@ Dual-path design: **Batch ETL** (authoritative, historical) + **Real-Time Intell
     └────────────────────┘      │  • SLA & freshness monitor   │
                                 │  • Action routing (SIU/EHR)  │
                                 │                              │
-                                │ Activator (future)           │
-                                │  • Teams/Email alerts        │
+                                │ Activator (Reflex)           │
+                                │  • Teams/Email/Power Automate│
                                 └──────────────────────────────┘
 ```
 
@@ -463,6 +463,64 @@ Quick summary:
 6. **Build the graph** (Graph tab → Build a graph → select all)
 
 The guide includes master configuration tables for all entities, relationships, and full property references.
+
+### Set Up Data Activator Alerts (Manual — ~15 min)
+
+Data Activator (Reflex) monitors RTI KQL tables and fires **proactive alerts** via Email, Teams, or Power Automate when scoring thresholds are breached. No code required — configuration only.
+
+#### Step 1: Create a Reflex Item
+
+1. In your Fabric workspace → **+ New item** → **Reflex**
+2. Name it `Healthcare_RTI_Alerts`
+
+#### Step 2: Connect to the KQL Database
+
+1. In the Reflex item → **Get data** → **KQL Database**
+2. Select `Healthcare_RTI_DB` (in the `Healthcare_RTI_Eventhouse`)
+3. You'll add triggers for each of the 3 scoring tables below
+
+#### Step 3: Configure Alert Rules
+
+**Rule 1 — Fraud Detection (Critical Claims)**
+
+| Setting | Value |
+|---------|-------|
+| **Table** | `fraud_scores` |
+| **Monitor** | `fraud_score` |
+| **Condition** | `fraud_score > 0.8 AND risk_tier == 'CRITICAL'` |
+| **Action 1** | **Teams** → post to `#fraud-investigations` channel |
+| **Action 2** | **Power Automate** → create SIU investigation case (optional) |
+| **Card fields** | claim_id, patient_id, provider_id, fraud_score, fraud_flags |
+
+**Rule 2 — Care Gap Closure (High Priority)**
+
+| Setting | Value |
+|---------|-------|
+| **Table** | `care_gap_alerts` |
+| **Monitor** | `alert_priority` |
+| **Condition** | `alert_priority == 'HIGH' AND gap_days_overdue > 30` |
+| **Action 1** | **Teams** → post to `#care-coordination` channel |
+| **Action 2** | **Email** → notify assigned care manager (optional) |
+| **Card fields** | patient_id, measure_name, gap_days_overdue, alert_text |
+
+**Rule 3 — High-Cost Member Trajectory (Critical)**
+
+| Setting | Value |
+|---------|-------|
+| **Table** | `highcost_alerts` |
+| **Monitor** | `rolling_spend_90d` |
+| **Condition** | `rolling_spend_90d > 50000 AND risk_tier == 'CRITICAL'` |
+| **Action 1** | **Power Automate** → trigger care management workflow |
+| **Action 2** | **Email** → notify case manager |
+| **Card fields** | patient_id, rolling_spend_90d, ed_visits_30d, cost_trend |
+
+#### Step 4: Verify Alerts Fire
+
+1. Run **NB_RTI_Event_Simulator** in batch mode to generate test events
+2. Run the 3 scoring notebooks (Fraud, Care Gap, HighCost)
+3. Check your Teams channel / email for alert cards within ~60 seconds
+
+> **Power Automate integration**: For complex routing (create ServiceNow tickets, update EHR systems, page on-call staff), select **Power Automate** as the action and build a flow that reads the alert payload. The Reflex trigger passes all card fields as dynamic content to the flow.
 
 ### Run Incremental Loads
 To simulate daily operational data arriving:

@@ -1,6 +1,6 @@
-{
+﻿{
     "properties": {
-        "description": "Parameterised ETL pipeline. Accepts load_mode (full|incremental). No ML notebooks — risk scores come from source data. Chain: Bronze → Silver Clean → Silver Enrich → Gold Star Schema. Direct Lake semantic model picks up changes automatically.",
+        "description": "Parameterised ETL pipeline. Accepts load_mode (full|incremental). No ML notebooks â€” risk scores come from source data. Chain: Bronze â†’ Silver Clean â†’ Silver Enrich â†’ Gold Star Schema. Direct Lake semantic model picks up changes automatically.",
         "activities": [
             {
                 "name": "Bronze_Ingest",
@@ -16,7 +16,7 @@
                 },
                 "typeProperties": {
                     "notebookId": "b2000002-0002-0002-0002-000000000001",
-                    "workspaceId": "__WORKSPACE_ID__",
+                    "workspaceId": "00000000-0000-0000-0000-000000000000",
                     "parameters": {
                         "load_mode": {
                             "value": {
@@ -49,7 +49,7 @@
                 },
                 "typeProperties": {
                     "notebookId": "b2000002-0002-0002-0002-000000000002",
-                    "workspaceId": "__WORKSPACE_ID__"
+                    "workspaceId": "00000000-0000-0000-0000-000000000000"
                 }
             },
             {
@@ -73,12 +73,12 @@
                 },
                 "typeProperties": {
                     "notebookId": "b2000002-0002-0002-0002-000000000003",
-                    "workspaceId": "__WORKSPACE_ID__"
+                    "workspaceId": "00000000-0000-0000-0000-000000000000"
                 }
             },
             {
                 "name": "Gold_Star_Schema",
-                "description": "Build Gold star schema — SCD2 dimensions + MERGE facts (full=drop+rebuild, incremental=merge)",
+                "description": "Build Gold star schema â€” SCD2 dimensions + MERGE facts (full=drop+rebuild, incremental=merge)",
                 "type": "TridentNotebook",
                 "dependsOn": [
                     {
@@ -97,7 +97,7 @@
                 },
                 "typeProperties": {
                     "notebookId": "b2000002-0002-0002-0002-000000000005",
-                    "workspaceId": "__WORKSPACE_ID__",
+                    "workspaceId": "00000000-0000-0000-0000-000000000000",
                     "parameters": {
                         "load_mode": {
                             "value": {

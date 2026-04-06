@@ -144,12 +144,12 @@ encounters_raw = spark.sql(f"SELECT * FROM {BRONZE_SCHEMA}.encounters_raw")
 print(f"Bronze encounters count: {encounters_raw.count():,}")
 print("Columns:", encounters_raw.columns)
 
-# Clean and transform (using encounter_date, not admission_date)
+# Clean and transform (admit_date from Bronze → encounter_date alias for downstream)
 encounters_clean = encounters_raw \
     .withColumn("encounter_type", initcap(trim(col("encounter_type")))) \
     .withColumn("admission_type", initcap(trim(col("admission_type")))) \
     .withColumn("discharge_disposition", initcap(trim(col("discharge_disposition")))) \
-    .withColumn("encounter_date", to_date(col("encounter_date"))) \
+    .withColumn("encounter_date", to_date(col("admit_date"))) \
     .withColumn("discharge_date", to_date(col("discharge_date"))) \
     .withColumn("length_of_stay", 
         when(col("discharge_date").isNotNull() & col("encounter_date").isNotNull(),
@@ -157,6 +157,7 @@ encounters_clean = encounters_raw \
         .otherwise(col("length_of_stay"))
     ) \
     .withColumn("total_charges", col("total_charges").cast("decimal(18,2)")) \
+    .withColumn("readmission_risk", col("readmission_risk").cast("double")) \
     .withColumn("_silver_load_timestamp", current_timestamp()) \
     .dropDuplicates(["encounter_id"])
 
@@ -184,13 +185,13 @@ claims_raw = spark.sql(f"SELECT * FROM {BRONZE_SCHEMA}.claims_raw")
 print(f"Bronze claims count: {claims_raw.count():,}")
 print("Columns:", claims_raw.columns)
 
-# Clean and transform (using payment_date, not paid_date)
+# Clean and transform (submit_date → claim_date, process_date → payment_date for downstream)
 claims_clean = claims_raw \
     .withColumn("claim_type", initcap(trim(col("claim_type")))) \
     .withColumn("claim_status", initcap(trim(col("claim_status")))) \
     .withColumn("service_date", to_date(col("service_date"))) \
-    .withColumn("claim_date", to_date(col("claim_date"))) \
-    .withColumn("payment_date", to_date(col("payment_date"))) \
+    .withColumn("claim_date", to_date(col("submit_date"))) \
+    .withColumn("payment_date", to_date(col("process_date"))) \
     .withColumn("billed_amount", col("billed_amount").cast("decimal(18,2)")) \
     .withColumn("allowed_amount", col("allowed_amount").cast("decimal(18,2)")) \
     .withColumn("paid_amount", col("paid_amount").cast("decimal(18,2)")) \
@@ -221,26 +222,16 @@ prescriptions_raw = spark.sql(f"SELECT * FROM {BRONZE_SCHEMA}.prescriptions_raw"
 print(f"Bronze prescriptions count: {prescriptions_raw.count():,}")
 print("Columns:", prescriptions_raw.columns)
 
-# Clean and transform
+# Clean and transform (only columns that exist in Bronze)
 prescriptions_clean = prescriptions_raw \
     .withColumn("medication_name", initcap(trim(col("medication_name")))) \
-    .withColumn("generic_name", initcap(trim(col("generic_name")))) \
-    .withColumn("drug_class", initcap(trim(col("drug_class")))) \
-    .withColumn("therapeutic_area", initcap(trim(col("therapeutic_area")))) \
-    .withColumn("route", upper(trim(col("route")))) \
-    .withColumn("pharmacy_type", initcap(trim(col("pharmacy_type")))) \
     .withColumn("fill_date", to_date(col("fill_date"))) \
-    .withColumn("created_date", to_date(col("created_date"))) \
-    .withColumn("modified_date", to_date(col("modified_date"))) \
     .withColumn("days_supply", col("days_supply").cast("int")) \
-    .withColumn("quantity_dispensed", col("quantity_dispensed").cast("int")) \
-    .withColumn("refills_authorized", col("refills_authorized").cast("int")) \
-    .withColumn("fill_number", col("fill_number").cast("int")) \
+    .withColumn("quantity", col("quantity").cast("int")) \
+    .withColumn("refill_number", col("refill_number").cast("int")) \
     .withColumn("is_generic", col("is_generic").cast("int")) \
-    .withColumn("is_chronic_medication", col("is_chronic_medication").cast("int")) \
     .withColumn("total_cost", col("total_cost").cast("decimal(18,2)")) \
-    .withColumn("payer_paid", col("payer_paid").cast("decimal(18,2)")) \
-    .withColumn("patient_copay", col("patient_copay").cast("decimal(18,2)")) \
+    .withColumn("copay_amount", col("copay_amount").cast("decimal(18,2)")) \
     .withColumn("_silver_load_timestamp", current_timestamp()) \
     .dropDuplicates(["prescription_id"])
 
@@ -268,15 +259,13 @@ diagnoses_raw = spark.sql(f"SELECT * FROM {BRONZE_SCHEMA}.diagnoses_raw")
 print(f"Bronze diagnoses count: {diagnoses_raw.count():,}")
 print("Columns:", diagnoses_raw.columns)
 
-# Clean and transform
+# Clean and transform (sequence_number from Bronze, no created_date/modified_date)
 diagnoses_clean = diagnoses_raw \
     .withColumn("icd_code", upper(trim(col("icd_code")))) \
     .withColumn("diagnosis_type", initcap(trim(col("diagnosis_type")))) \
     .withColumn("present_on_admission", upper(trim(col("present_on_admission")))) \
-    .withColumn("diagnosis_sequence", col("diagnosis_sequence").cast("int")) \
+    .withColumn("sequence_number", col("sequence_number").cast("int")) \
     .withColumn("diagnosis_date", to_date(col("diagnosis_date"))) \
-    .withColumn("created_date", to_date(col("created_date"))) \
-    .withColumn("modified_date", to_date(col("modified_date"))) \
     .withColumn("_silver_load_timestamp", current_timestamp()) \
     .dropDuplicates(["diagnosis_id"])
 

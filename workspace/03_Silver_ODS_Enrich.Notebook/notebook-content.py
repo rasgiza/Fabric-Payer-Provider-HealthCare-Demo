@@ -354,8 +354,8 @@ prescriptions_enriched = prescriptions_enriched \
         .otherwise(lit(0))
     ) \
     .withColumn("payer_coverage_pct",
-        when(col("total_cost") > 0,
-             round(col("payer_paid") / col("total_cost"), 4))
+        when((col("total_cost") > 0) & col("copay_amount").isNotNull(),
+             round((col("total_cost") - col("copay_amount")) / col("total_cost"), 4))
         .otherwise(lit(0))
     ) \
     .withColumn("_ods_load_timestamp", current_timestamp())

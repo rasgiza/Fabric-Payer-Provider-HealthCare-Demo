@@ -261,7 +261,7 @@ df_patient_source = df_patients.select(
     coalesce(col("email"), lit(None).cast("string")).alias("email"),
     coalesce(col("insurance_type"), lit(None).cast("string")).alias("insurance_type"),
     coalesce(col("insurance_provider"), lit(None).cast("string")).alias("insurance_provider"),
-    coalesce(col("insurance_policy_number"), lit(None).cast("string")).alias("insurance_policy_number"),
+    lit(None).cast("string").alias("insurance_policy_number"),
     coalesce(
         col("age").cast("int"),
         floor(datediff(current_date(), col("date_of_birth")) / 365.25).cast("int")
@@ -987,9 +987,9 @@ df_facility_lkp = spark.table(f"{GOLD}.dim_facility") \
     .select(col("facility_key"), col("facility_id"))
 
 # Check if encounter-level risk scores exist (from data generator)
-has_encounter_risk = "readmission_risk_score" in df_encounters.columns
+has_encounter_risk = "readmission_risk" in df_encounters.columns
 if has_encounter_risk:
-    print("   ✓ Found encounter-level readmission_risk_score — using directly")
+    print("   ✓ Found encounter-level readmission_risk — using directly")
 else:
     print("   ⚠️ No encounter-level risk scores — using defaults (0.25)")
 
@@ -1013,17 +1013,12 @@ df_fact_encounter = df_enc.select(
     coalesce(col("e.discharge_disposition"), lit("Home")).alias("discharge_disposition"),
     coalesce(col("e.length_of_stay").cast("int"), lit(1)).alias("length_of_stay"),
     coalesce(col("e.total_charges").cast("double"), lit(0.0)).alias("total_charges"),
-    coalesce(col("e.total_cost").cast("double"), col("e.total_charges").cast("double") * 0.7, lit(0.0)).alias("total_cost"),
-    coalesce(
-        when(lower(col("e.readmission_flag")).isin("true", "1", "yes"), lit(1)).otherwise(lit(0)),
-        lit(0)
-    ).alias("readmission_flag"),
-    coalesce(col("e.readmission_risk_score").cast("double") if has_encounter_risk else lit(None), lit(0.25)).alias("readmission_risk_score"),
-    coalesce(col("e.readmission_risk_category") if has_encounter_risk else lit(None),
-        when(coalesce(col("e.readmission_risk_score").cast("double") if has_encounter_risk else lit(0.25), lit(0.25)) >= 0.7, "High")
-        .when(coalesce(col("e.readmission_risk_score").cast("double") if has_encounter_risk else lit(0.25), lit(0.25)) >= 0.3, "Medium")
-        .otherwise("Low")
-    ).alias("readmission_risk_category"),
+    (coalesce(col("e.total_charges").cast("double"), lit(0.0)) * 0.7).alias("total_cost"),
+    when(coalesce(col("e.readmission_risk").cast("double") if has_encounter_risk else lit(0.0), lit(0.0)) >= 0.5, lit(1)).otherwise(lit(0)).alias("readmission_flag"),
+    coalesce(col("e.readmission_risk").cast("double") if has_encounter_risk else lit(None), lit(0.25)).alias("readmission_risk_score"),
+    when(coalesce(col("e.readmission_risk").cast("double") if has_encounter_risk else lit(0.25), lit(0.25)) >= 0.7, "High")
+    .when(coalesce(col("e.readmission_risk").cast("double") if has_encounter_risk else lit(0.25), lit(0.25)) >= 0.3, "Medium")
+    .otherwise("Low").alias("readmission_risk_category"),
     current_timestamp().alias("_load_timestamp")
 ).dropDuplicates(["encounter_id"])
 
@@ -1202,8 +1197,6 @@ if df_prescriptions is not None:
         .filter("is_current = 1").select(col("provider_key"), col("provider_id"))
     df_medication_lkp = spark.table(f"{GOLD}.dim_medication") \
         .select(col("medication_key"), col("rxnorm_code"))
-    df_payer_lkp = spark.table(f"{GOLD}.dim_payer") \
-        .select(col("payer_key"), col("payer_id"))
 
     # Try to get encounter and facility keys from fact_encounter
     try:
@@ -1216,8 +1209,7 @@ if df_prescriptions is not None:
     df_rx = df_prescriptions.alias("rx") \
         .join(df_patient_lkp.alias("p"), col("rx.patient_id") == col("p.patient_id"), "inner") \
         .join(df_provider_lkp.alias("pr"), col("rx.provider_id") == col("pr.provider_id"), "left") \
-        .join(df_medication_lkp.alias("m"), col("rx.rxnorm_code") == col("m.rxnorm_code"), "left") \
-        .join(df_payer_lkp.alias("py"), col("rx.payer_id") == col("py.payer_id"), "left")
+        .join(df_medication_lkp.alias("m"), col("rx.rxnorm_code") == col("m.rxnorm_code"), "left")
 
     if df_encounter_lkp is not None:
         df_rx = df_rx.join(df_encounter_lkp.alias("fe"), col("rx.encounter_id") == col("fe.encounter_id"), "left")
@@ -1233,29 +1225,24 @@ if df_prescriptions is not None:
         (year(col("rx.fill_date")) * 10000 + month(col("rx.fill_date")) * 100 + dayofmonth(col("rx.fill_date"))).cast("int")
     )
 
-    # Assign surrogate keys
+    # Assign surrogate keys (no payer join — prescriptions don't have payer_id)
     PRESCRIPTION_TABLE = f"{GOLD}.fact_prescription"
     df_fact_rx = df_rx.select(
         col("rx.prescription_id"),
-        col("rx.prescription_group_id"),
         col("fill_date_key"),
         col("p.patient_key"),
         col("pr.provider_key"),
-        col("py.payer_key"),
         encounter_key_col.alias("encounter_key"),
         col("m.medication_key"),
         facility_key_col.alias("facility_key"),
-        col("rx.fill_number").cast("int"),
+        col("rx.refill_number").cast("int").alias("fill_number"),
         col("rx.days_supply").cast("int"),
-        col("rx.quantity_dispensed").cast("int"),
-        col("rx.refills_authorized").cast("int"),
+        col("rx.quantity").cast("int").alias("quantity_dispensed"),
         col("rx.is_generic").cast("int"),
-        col("rx.is_chronic_medication").cast("int"),
-        col("rx.pharmacy_type"),
+        coalesce(col("rx.pharmacy_id"), lit(None).cast("string")).alias("pharmacy_id"),
         col("rx.total_cost").cast("double"),
-        col("rx.payer_paid").cast("double"),
-        col("rx.patient_copay").cast("double"),
-        col("rx.prescribing_reason_code"),
+        col("rx.copay_amount").cast("double").alias("patient_copay"),
+        (coalesce(col("rx.total_cost").cast("double"), lit(0.0)) - coalesce(col("rx.copay_amount").cast("double"), lit(0.0))).alias("payer_paid"),
         current_timestamp().alias("_load_timestamp")
     )
 
@@ -1266,8 +1253,6 @@ if df_prescriptions is not None:
 
     rx_count = spark.table(PRESCRIPTION_TABLE).count()
     print(f"   ✓ fact_prescription: {rx_count:,} rows")
-    print(f"      Chronic fills: {df_fact_rx.filter('is_chronic_medication = 1').count():,}")
-    print(f"      Acute fills:   {df_fact_rx.filter('is_chronic_medication = 0').count():,}")
     print(f"      Unique patients: {df_fact_rx.select('patient_key').distinct().count():,}")
 else:
     print("   ⏭️ Skipped fact_prescription (no source data)")
@@ -1321,7 +1306,7 @@ if df_dx is not None:
             col("diagnosis_key"),
             col("facility_key"),
             df_dx["icd_code"],
-            df_dx["diagnosis_sequence"].cast("int"),
+            df_dx["sequence_number"].cast("int"),
             df_dx["diagnosis_type"],
             df_dx["present_on_admission"],
         ) \
@@ -1335,7 +1320,7 @@ if df_dx is not None:
     df_fact_dx = df_fact_dx.select(
         "fact_diagnosis_key", "diagnosis_id", "encounter_key", "diagnosis_date_key",
         "patient_key", "diagnosis_key", "facility_key", "icd_code",
-        "diagnosis_sequence", "diagnosis_type", "present_on_admission", "_load_timestamp"
+        "sequence_number", "diagnosis_type", "present_on_admission", "_load_timestamp"
     )
 
     FACT_DX_TABLE = f"{GOLD}.fact_diagnosis"
@@ -1479,7 +1464,7 @@ try:
         sum("fp.total_cost").alias("total_medication_cost"),
         sum("fp.payer_paid").alias("total_payer_cost"),
         sum("fp.patient_copay").alias("total_patient_cost"),
-        max(col("fp.is_chronic_medication").cast("int")).alias("is_chronic")
+        lit(0).alias("is_chronic")
     )
 
     # Calculate days in period and PDC

@@ -1,4 +1,4 @@
-﻿{
+{
     "properties": {
         "description": "Parameterised ETL pipeline. Accepts load_mode (full|incremental). No ML notebooks â€” risk scores come from source data. Chain: Bronze â†’ Silver Clean â†’ Silver Enrich â†’ Gold Star Schema. Direct Lake semantic model picks up changes automatically.",
         "activities": [

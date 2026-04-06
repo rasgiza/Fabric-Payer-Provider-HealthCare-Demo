@@ -113,10 +113,10 @@ providers_clean = providers_raw \
     .withColumn("last_name", initcap(trim(col("last_name")))) \
     .withColumn("specialty", initcap(trim(col("specialty")))) \
     .withColumn("department", initcap(trim(col("department")))) \
-    .withColumn("npi_number", regexp_replace(col("npi_number"), "[^0-9]", "")) \
+    .withColumn("npi", regexp_replace(col("npi").cast("string"), "[^0-9]", "")) \
     .withColumn("email", lower(trim(col("email")))) \
     .withColumn("hire_date", to_date(col("hire_date"))) \
-    .withColumn("is_active", col("is_active").cast("boolean")) \
+    .withColumn("is_active", when(col("status") == "Active", True).otherwise(False)) \
     .withColumn("_silver_load_timestamp", current_timestamp()) \
     .dropDuplicates(["provider_id"])
 

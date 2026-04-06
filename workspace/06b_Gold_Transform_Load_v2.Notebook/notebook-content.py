@@ -384,11 +384,11 @@ df_provider_source = df_providers.select(
     col("first_name"),
     col("last_name"),
     concat(lit("Dr. "), col("first_name"), lit(" "), col("last_name")).alias("display_name"),
-    coalesce(col("npi_number"), lit(None).cast("string")).alias("npi_number"),
+    coalesce(col("npi"), lit(None).cast("string")).alias("npi_number"),
     col("specialty"),
     coalesce(col("department"), lit("General")).alias("department"),
     coalesce(col("facility_id"), lit(None).cast("string")).alias("facility_id"),
-    lit(1).alias("is_active")
+    when(col("is_active") == True, 1).otherwise(0).alias("is_active")
 ).dropDuplicates(["provider_id"])
 
 PROVIDER_TABLE = f"{GOLD}.dim_provider"

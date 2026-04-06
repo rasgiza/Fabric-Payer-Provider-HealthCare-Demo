@@ -24,7 +24,10 @@ print("NB_Generate_Sample_Data: Starting...")
 # CELL **{"language":"python"}**
 
 # Install Faker (not pre-installed in Fabric Spark)
-%pip install faker --quiet
+# Uses subprocess instead of %pip so this notebook can be called via
+# notebookutils.notebook.run() — %pip magic is disabled in child notebooks.
+import subprocess, sys
+subprocess.check_call([sys.executable, "-m", "pip", "install", "faker", "--quiet", "--disable-pip-version-check"])
 
 # METADATA **{"language":"python"}**
 

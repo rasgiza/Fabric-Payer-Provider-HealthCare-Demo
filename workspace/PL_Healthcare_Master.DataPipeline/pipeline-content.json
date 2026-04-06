@@ -9,32 +9,10 @@
                 "dependsOn": [],
                 "typeProperties": {
                     "expression": {
-                        "value": "@equals(pipeline().parameters.load_mode, 'full')",
+                        "value": "@equals(pipeline().parameters.load_mode, 'incremental')",
                         "type": "Expression"
                     },
                     "ifTrueActivities": [
-                        {
-                            "name": "Execute_Full_Load",
-                            "description": "Run the ETL pipeline with load_mode=full (Bronze overwrite → Silver → Gold → SM Refresh)",
-                            "type": "ExecutePipeline",
-                            "dependsOn": [],
-                            "policy": {
-                                "secureOutput": false,
-                                "secureInput": false
-                            },
-                            "typeProperties": {
-                                "pipeline": {
-                                    "referenceName": "c3000003-0003-0003-0003-000000000001",
-                                    "type": "PipelineReference"
-                                },
-                                "waitOnCompletion": true,
-                                "parameters": {
-                                    "load_mode": "full"
-                                }
-                            }
-                        }
-                    ],
-                    "ifFalseActivities": [
                         {
                             "name": "Execute_Incremental_Load",
                             "description": "Run the ETL pipeline with load_mode=incremental (Bronze append → Silver dedup → Gold MERGE → SM Refresh)",
@@ -52,6 +30,28 @@
                                 "waitOnCompletion": true,
                                 "parameters": {
                                     "load_mode": "incremental"
+                                }
+                            }
+                        }
+                    ],
+                    "ifFalseActivities": [
+                        {
+                            "name": "Execute_Full_Load",
+                            "description": "Run the ETL pipeline with load_mode=full (Bronze overwrite → Silver → Gold → SM Refresh)",
+                            "type": "ExecutePipeline",
+                            "dependsOn": [],
+                            "policy": {
+                                "secureOutput": false,
+                                "secureInput": false
+                            },
+                            "typeProperties": {
+                                "pipeline": {
+                                    "referenceName": "c3000003-0003-0003-0003-000000000001",
+                                    "type": "PipelineReference"
+                                },
+                                "waitOnCompletion": true,
+                                "parameters": {
+                                    "load_mode": "full"
                                 }
                             }
                         }

@@ -828,18 +828,33 @@ print(f"  Generated {len(care_gaps_df)} care gap records")
 # ============================================================================
 # WRITE CSV FILES TO ONELAKE (lh_bronze_raw/Files/)
 # ============================================================================
-# Use mssparkutils to write directly to the lakehouse Files area
+# Use absolute OneLake paths so this works both when run directly (with default
+# lakehouse) and when called via notebookutils.notebook.run() from the launcher.
 
-from notebookutils import mssparkutils
+import requests
 
 def write_csv_to_lakehouse(df, path):
-    """Write a pandas DataFrame as CSV to OneLake via mssparkutils."""
+    """Write a pandas DataFrame as CSV to OneLake via notebookutils."""
     csv_content = df.to_csv(index=False)
-    mssparkutils.fs.put(path, csv_content, overwrite=True)
-    print(f"  Written: {path} ({len(df):,} rows)")
+    notebookutils.fs.put(path, csv_content, True)
+    print(f"  Written: {path.split('/')[-1]} ({len(df):,} rows)")
 
-# Base path — relative to default lakehouse (lh_bronze_raw)
-FILES_BASE = "Files"
+# Resolve absolute ABFSS path to lh_bronze_raw
+ws_id = spark.conf.get("trident.artifact.workspace.id")
+token = notebookutils.credentials.getToken("pbi")
+resp = requests.get(
+    f"https://api.fabric.microsoft.com/v1/workspaces/{ws_id}/items?type=Lakehouse",
+    headers={"Authorization": f"Bearer {token}"}
+)
+lakehouses = {lh["displayName"]: lh["id"] for lh in resp.json().get("value", [])}
+lh_id = lakehouses.get("lh_bronze_raw")
+
+if lh_id:
+    FILES_BASE = f"abfss://{ws_id}@onelake.dfs.fabric.microsoft.com/{lh_id}/Files"
+    print(f"Resolved lh_bronze_raw ({lh_id})")
+else:
+    FILES_BASE = "Files"
+    print("WARNING: lh_bronze_raw not found, using relative path")
 
 # Transactional CSVs → root of Files/
 print("\nWriting transactional CSVs...")

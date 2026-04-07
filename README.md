@@ -240,6 +240,14 @@ Open **HealthcareHLSAgent** in your Fabric workspace and try the pre-built quest
 
 See **[SAMPLE_QUESTIONS.md](SAMPLE_QUESTIONS.md)** for 60+ copy-paste questions organized by domain.
 
+### Data Agent Reference
+
+For the complete agent configuration -- AI instructions, concept-to-table routing, SQL rules, few-shot examples, knowledge base, and customization guide -- see **[DATA_AGENT_GUIDE.md](DATA_AGENT_GUIDE.md)**.
+
+### Power BI Dashboard
+
+To build Power BI reports on the `HealthcareDemoHLS` semantic model (26 pre-built DAX measures, 6 recommended report pages, formatting, and Direct Lake tips) -- see **[POWERBI_DASHBOARD_GUIDE.md](POWERBI_DASHBOARD_GUIDE.md)**.
+
 ---
 
 ## Real-Time Intelligence (RTI) — 3 Payer/Provider Use Cases
@@ -442,8 +450,11 @@ Edit the top cell of `Healthcare_Launcher.ipynb`:
 ## Repository Structure
 
 ```
-├── Healthcare_Launcher.ipynb          # ← Import this into Fabric
+├── Healthcare_Launcher.ipynb          # <- Import this into Fabric
 ├── ONTOLOGY_GRAPH_SETUP_GUIDE.md      # Manual ontology setup (10 entities, 15 relationships)
+├── DATA_AGENT_GUIDE.md                # Agent instructions, routing, few-shots, knowledge base
+├── POWERBI_DASHBOARD_GUIDE.md         # Power BI report pages, measures, Direct Lake tips
+├── SAMPLE_QUESTIONS.md                # 60+ copy-paste questions for all agents
 ├── deployment.yaml                    # Optional: CI/CD config
 ├── README.md
 ├── workspace/                         # Fabric Git Integration format

@@ -159,15 +159,21 @@ patients_enriched.groupBy("age_group").count().orderBy("age_group").show()
 
 # Check if providers has facility_id column
 if "facility_id" in providers_clean.columns:
+    # Drop facility_name/facility_type if they already exist in source (from data gen)
+    # to avoid COLUMN_ALREADY_EXISTS when joining with ref_facilities
+    _prov = providers_clean
+    for _col in ["facility_name", "facility_type"]:
+        if _col in _prov.columns:
+            _prov = _prov.drop(_col)
     # Join providers with facilities
-    providers_enriched = providers_clean \
+    providers_enriched = _prov \
         .join(
             ref_facilities.select(
                 col("id").alias("fac_id"),
                 col("name").alias("facility_name"),
                 col("type").alias("facility_type")
             ),
-            providers_clean["facility_id"] == col("fac_id"),
+            _prov["facility_id"] == col("fac_id"),
             "left"
         ) \
         .drop("fac_id") \
@@ -178,9 +184,12 @@ if "facility_id" in providers_clean.columns:
 else:
     # No facility_id, just add calculated columns
     print("Note: providers_clean does not have facility_id column")
-    providers_enriched = providers_clean \
-        .withColumn("facility_name", lit(None).cast("string")) \
-        .withColumn("facility_type", lit(None).cast("string")) \
+    providers_enriched = providers_clean
+    if "facility_name" not in providers_enriched.columns:
+        providers_enriched = providers_enriched.withColumn("facility_name", lit(None).cast("string"))
+    if "facility_type" not in providers_enriched.columns:
+        providers_enriched = providers_enriched.withColumn("facility_type", lit(None).cast("string"))
+    providers_enriched = providers_enriched \
         .withColumn("years_of_service",
             floor(datediff(current_date(), col("hire_date")) / 365.25)
         ) \
@@ -230,6 +239,10 @@ encounters_enriched = encounters_enriched \
 
 # Join with facilities only if facility_id exists
 if "facility_id" in encounters_clean.columns:
+    # Drop facility_name/facility_type if they already exist to avoid duplicates
+    for _col in ["facility_name", "facility_type"]:
+        if _col in encounters_enriched.columns:
+            encounters_enriched = encounters_enriched.drop(_col)
     encounters_enriched = encounters_enriched \
         .join(
             ref_facilities.select(
@@ -237,15 +250,16 @@ if "facility_id" in encounters_clean.columns:
                 col("name").alias("facility_name"),
                 col("type").alias("facility_type")
             ),
-            encounters_clean["facility_id"] == col("fac_id"),
+            encounters_enriched["facility_id"] == col("fac_id"),
             "left"
         ) \
         .drop("fac_id")
 else:
     print("Note: encounters_clean does not have facility_id column")
-    encounters_enriched = encounters_enriched \
-        .withColumn("facility_name", lit(None).cast("string")) \
-        .withColumn("facility_type", lit(None).cast("string"))
+    if "facility_name" not in encounters_enriched.columns:
+        encounters_enriched = encounters_enriched.withColumn("facility_name", lit(None).cast("string"))
+    if "facility_type" not in encounters_enriched.columns:
+        encounters_enriched = encounters_enriched.withColumn("facility_type", lit(None).cast("string"))
 
 # Add timestamp
 encounters_enriched = encounters_enriched \

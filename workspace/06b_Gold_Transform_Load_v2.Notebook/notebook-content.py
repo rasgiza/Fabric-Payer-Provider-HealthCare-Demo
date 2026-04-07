@@ -388,7 +388,7 @@ df_provider_source = df_providers.select(
     col("specialty"),
     coalesce(col("department"), lit("General")).alias("department"),
     coalesce(col("facility_id"), lit(None).cast("string")).alias("facility_id"),
-    when(col("is_active") == True, 1).otherwise(0).alias("is_active")
+    when(col("is_active").cast("boolean") == True, 1).otherwise(0).alias("is_active")
 ).dropDuplicates(["provider_id"])
 
 PROVIDER_TABLE = f"{GOLD}.dim_provider"
@@ -492,14 +492,23 @@ except AnalysisException:
     df_payers = df_claims_src.select("payer_id", "payer_name").distinct()
     print(f"   Source: derived from claims ({df_payers.count()} payers)")
 
-df_payer_source = df_payers.select(
-    col("payer_id"),
-    col("payer_name"),
-    when(lower(col("payer_name")).contains("medicare"), "Medicare")
-    .when(lower(col("payer_name")).contains("medicaid"), "Medicaid")
-    .when(lower(col("payer_name")).contains("self") | lower(col("payer_name")).contains("cash"), "Self-Pay")
-    .otherwise("Commercial").alias("payer_type")
-).dropDuplicates(["payer_id"])
+# Use upstream payer_type if available (from ref_payers join), otherwise derive
+payer_cols = [c.lower() for c in df_payers.columns]
+if "payer_type" in payer_cols:
+    df_payer_source = df_payers.select(
+        col("payer_id"),
+        col("payer_name"),
+        col("payer_type")
+    ).dropDuplicates(["payer_id"])
+else:
+    df_payer_source = df_payers.select(
+        col("payer_id"),
+        col("payer_name"),
+        when(lower(col("payer_name")).contains("medicare"), "Medicare")
+        .when(lower(col("payer_name")).contains("medicaid"), "Medicaid")
+        .when(lower(col("payer_name")).contains("self") | lower(col("payer_name")).contains("cash"), "Self-Pay")
+        .otherwise("Commercial").alias("payer_type")
+    ).dropDuplicates(["payer_id"])
 
 PAYER_TABLE = f"{GOLD}.dim_payer"
 
@@ -1266,20 +1275,25 @@ if df_prescriptions is not None:
     PRESCRIPTION_TABLE = f"{GOLD}.fact_prescription"
     df_fact_rx = df_rx.select(
         col("rx.prescription_id"),
+        lit(None).cast("string").alias("prescription_group_id"),
         col("fill_date_key"),
         col("p.patient_key"),
         col("pr.provider_key"),
+        lit(None).cast("bigint").alias("payer_key"),
         encounter_key_col.alias("encounter_key"),
         col("m.medication_key"),
         facility_key_col.alias("facility_key"),
         col("rx.refill_number").cast("int").alias("fill_number"),
         col("rx.days_supply").cast("int"),
         col("rx.quantity").cast("int").alias("quantity_dispensed"),
+        lit(None).cast("int").alias("refills_authorized"),
         col("rx.is_generic").cast("int"),
-        coalesce(col("rx.pharmacy_id"), lit(None).cast("string")).alias("pharmacy_id"),
+        lit(None).cast("int").alias("is_chronic_medication"),
+        lit(None).cast("string").alias("pharmacy_type"),
         col("rx.total_cost").cast("double"),
-        col("rx.copay_amount").cast("double").alias("patient_copay"),
         (coalesce(col("rx.total_cost").cast("double"), lit(0.0)) - coalesce(col("rx.copay_amount").cast("double"), lit(0.0))).alias("payer_paid"),
+        col("rx.copay_amount").cast("double").alias("patient_copay"),
+        lit(None).cast("string").alias("prescribing_reason_code"),
         current_timestamp().alias("_load_timestamp")
     )
 

@@ -923,20 +923,40 @@ except Exception:
         df_sdoh_src = spark.createDataFrame(sdoh_rows, sdoh_schema)
 
 # Ensure standard columns (state column added for multi-state coverage)
-df_sdoh = df_sdoh_src.select(
-    col("zip_code").cast("string").alias("zip_code"),
-    coalesce(col("state").cast("string"), lit("MI")).alias("state"),
-    col("poverty_rate").cast("double").alias("poverty_rate"),
-    col("food_desert_flag").cast("int").alias("food_desert_flag"),
-    col("transportation_score").cast("double").alias("transportation_score"),
-    col("housing_instability_rate").cast("double").alias("housing_instability_rate"),
-    col("uninsured_rate").cast("double").alias("uninsured_rate"),
-    col("broadband_access_pct").cast("double").alias("broadband_access_pct"),
-    col("median_household_income").cast("int").alias("median_household_income"),
-    col("population").cast("int").alias("population"),
-    col("social_vulnerability_index").cast("double").alias("social_vulnerability_index"),
-    col("risk_tier").cast("string").alias("risk_tier"),
-)
+# Source ref_sdoh_zipcode uses different column names; map to Gold schema
+src_cols = [c.lower() for c in df_sdoh_src.columns]
+if "food_desert_flag" in src_cols:
+    # Inline fallback with exact Gold schema
+    df_sdoh = df_sdoh_src.select(
+        col("zip_code").cast("string").alias("zip_code"),
+        coalesce(col("state").cast("string"), lit("MI")).alias("state"),
+        col("poverty_rate").cast("double").alias("poverty_rate"),
+        col("food_desert_flag").cast("int").alias("food_desert_flag"),
+        col("transportation_score").cast("double").alias("transportation_score"),
+        col("housing_instability_rate").cast("double").alias("housing_instability_rate"),
+        col("uninsured_rate").cast("double").alias("uninsured_rate"),
+        col("broadband_access_pct").cast("double").alias("broadband_access_pct"),
+        col("median_household_income").cast("int").alias("median_household_income"),
+        col("population").cast("int").alias("population"),
+        col("social_vulnerability_index").cast("double").alias("social_vulnerability_index"),
+        col("risk_tier").cast("string").alias("risk_tier"),
+    )
+else:
+    # Generated CSV: food_insecurity_rate, no_vehicle_pct, composite_svi_score, etc.
+    df_sdoh = df_sdoh_src.select(
+        col("zip_code").cast("string").alias("zip_code"),
+        coalesce(col("state").cast("string"), lit("MI")).alias("state"),
+        col("poverty_rate").cast("double").alias("poverty_rate"),
+        when(col("food_insecurity_rate") > 0.15, lit(1)).otherwise(lit(0)).cast("int").alias("food_desert_flag"),
+        (lit(1.0) - coalesce(col("no_vehicle_pct").cast("double"), lit(0.0))).alias("transportation_score"),
+        lit(None).cast("double").alias("housing_instability_rate"),
+        col("uninsured_rate").cast("double").alias("uninsured_rate"),
+        lit(None).cast("double").alias("broadband_access_pct"),
+        col("median_household_income").cast("int").alias("median_household_income"),
+        lit(None).cast("int").alias("population"),
+        col("composite_svi_score").cast("double").alias("social_vulnerability_index"),
+        col("risk_tier").cast("string").alias("risk_tier"),
+    )
 
 # Add surrogate key
 w_sdoh = Window.orderBy("zip_code")

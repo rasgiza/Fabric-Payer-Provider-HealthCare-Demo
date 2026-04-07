@@ -239,10 +239,6 @@ encounters_enriched = encounters_enriched \
 
 # Join with facilities only if facility_id exists
 if "facility_id" in encounters_clean.columns:
-    # Drop facility_name/facility_type if they already exist to avoid duplicates
-    for _col in ["facility_name", "facility_type"]:
-        if _col in encounters_enriched.columns:
-            encounters_enriched = encounters_enriched.drop(_col)
     encounters_enriched = encounters_enriched \
         .join(
             ref_facilities.select(
@@ -250,16 +246,15 @@ if "facility_id" in encounters_clean.columns:
                 col("name").alias("facility_name"),
                 col("type").alias("facility_type")
             ),
-            encounters_enriched["facility_id"] == col("fac_id"),
+            encounters_clean["facility_id"] == col("fac_id"),
             "left"
         ) \
         .drop("fac_id")
 else:
     print("Note: encounters_clean does not have facility_id column")
-    if "facility_name" not in encounters_enriched.columns:
-        encounters_enriched = encounters_enriched.withColumn("facility_name", lit(None).cast("string"))
-    if "facility_type" not in encounters_enriched.columns:
-        encounters_enriched = encounters_enriched.withColumn("facility_type", lit(None).cast("string"))
+    encounters_enriched = encounters_enriched \
+        .withColumn("facility_name", lit(None).cast("string")) \
+        .withColumn("facility_type", lit(None).cast("string"))
 
 # Add timestamp
 encounters_enriched = encounters_enriched \

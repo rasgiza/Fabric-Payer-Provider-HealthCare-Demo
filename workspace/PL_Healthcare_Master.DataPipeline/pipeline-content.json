@@ -14,10 +14,35 @@
                     },
                     "ifTrueActivities": [
                         {
+                            "name": "Generate_Incremental_Data",
+                            "description": "Auto-generate today's incremental CSV batch (encounters, claims, prescriptions, diagnoses, patient updates) before running the ETL pipeline",
+                            "type": "TridentNotebook",
+                            "dependsOn": [],
+                            "policy": {
+                                "timeout": "0.01:00:00",
+                                "retry": 0,
+                                "retryIntervalInSeconds": 30,
+                                "secureOutput": false,
+                                "secureInput": false
+                            },
+                            "typeProperties": {
+                                "notebookId": "b2000002-0002-0002-0002-000000000007",
+                                "workspaceId": "00000000-0000-0000-0000-000000000000",
+                                "parameters": {}
+                            }
+                        },
+                        {
                             "name": "Execute_Incremental_Load",
                             "description": "Run the ETL pipeline with load_mode=incremental (Bronze append → Silver dedup → Gold MERGE → SM Refresh)",
                             "type": "ExecutePipeline",
-                            "dependsOn": [],
+                            "dependsOn": [
+                                {
+                                    "activity": "Generate_Incremental_Data",
+                                    "dependencyConditions": [
+                                        "Succeeded"
+                                    ]
+                                }
+                            ],
                             "policy": {
                                 "secureOutput": false,
                                 "secureInput": false

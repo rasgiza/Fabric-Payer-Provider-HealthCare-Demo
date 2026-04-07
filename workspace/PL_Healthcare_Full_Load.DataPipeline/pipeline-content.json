@@ -1,6 +1,6 @@
 {
     "properties": {
-        "description": "Parameterised ETL pipeline. Accepts load_mode (full|incremental). No ML notebooks â€” risk scores come from source data. Chain: Bronze â†’ Silver Clean â†’ Silver Enrich â†’ Gold Star Schema. Direct Lake semantic model picks up changes automatically.",
+        "description": "Parameterised ETL pipeline. Accepts load_mode (full|incremental). No ML notebooks - risk scores come from source data. Chain: Bronze > Silver Clean > Silver Enrich > Gold Star Schema. Direct Lake semantic model picks up changes automatically.",
         "activities": [
             {
                 "name": "Bronze_Ingest",
@@ -78,7 +78,7 @@
             },
             {
                 "name": "Create_Gold_Tables",
-                "description": "Create empty Gold Delta tables in lh_gold_curated (idempotent — uses CREATE TABLE IF NOT EXISTS)",
+                "description": "Create empty Gold Delta tables in lh_gold_curated (idempotent - uses CREATE TABLE IF NOT EXISTS)",
                 "type": "TridentNotebook",
                 "dependsOn": [
                     {
@@ -102,7 +102,7 @@
             },
             {
                 "name": "Gold_Star_Schema",
-                "description": "Build Gold star schema â€" SCD2 dimensions + MERGE facts (full=drop+rebuild, incremental=merge)",
+                "description": "Build Gold star schema - SCD2 dimensions + MERGE facts (full=drop+rebuild, incremental=merge)",
                 "type": "TridentNotebook",
                 "dependsOn": [
                     {

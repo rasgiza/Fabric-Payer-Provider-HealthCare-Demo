@@ -63,9 +63,8 @@ All from a single workspace deployed in minutes.
 1. **Create an empty Fabric workspace** (F64+ capacity recommended)
 2. **Import** `Healthcare_Launcher.ipynb` into the workspace  
    *(Workspace → Import → Notebook → upload the .ipynb file)*
-3. **Edit the Configuration cell** — set your GitHub details:
-   - `GITHUB_OWNER` — your GitHub org or user (default: `kwamesefah_microsoft`)
-   - `GITHUB_TOKEN` — required for private repos; paste a GitHub PAT with `repo` scope
+3. **Edit the Configuration cell** (optional):
+   - `GITHUB_OWNER` — defaults to `rasgiza` (public repo — no token needed)
    - `DEPLOY_RTI` — set `True` to include Real-Time Intelligence (default: `True`)
 4. **Run All** — wait ~15-20 minutes
 
@@ -431,10 +430,10 @@ Edit the top cell of `Healthcare_Launcher.ipynb`:
 
 | Variable | Default | Description |
 |----------|---------|-------------|
-| `GITHUB_OWNER` | `kwame-one` | GitHub org or username |
+| `GITHUB_OWNER` | `rasgiza` | GitHub org or username (public repo — no token needed) |
 | `GITHUB_REPO` | `Fabric-Payer-Provider-HealthCare-Demo` | Repository name |
 | `GITHUB_BRANCH` | `main` | Branch to deploy from |
-| `GITHUB_TOKEN` | `""` | GitHub PAT for private repos |
+| `GITHUB_TOKEN` | `""` | Only needed if you fork to a private repo |
 | `GENERATE_DATA` | `True` | Generate fresh synthetic data |
 | `RUN_PIPELINE` | `True` | Run the full-load pipeline |
 | `UPLOAD_KNOWLEDGE_DOCS` | `True` | Upload knowledge docs for AI agent |

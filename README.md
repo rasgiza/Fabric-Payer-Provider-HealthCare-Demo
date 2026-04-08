@@ -415,13 +415,71 @@ Data Activator (Reflex) monitors RTI KQL tables and fires **proactive alerts** v
 > **Power Automate integration**: For complex routing (create ServiceNow tickets, update EHR systems, page on-call staff), select **Power Automate** as the action and build a flow that reads the alert payload. The Reflex trigger passes all card fields as dynamic content to the flow.
 
 ### Run Incremental Loads
-To simulate daily operational data arriving:
+
+After the initial full load, you can simulate daily operational data arriving. The pipeline supports a `load_mode` parameter that switches between full rebuild and incremental processing.
+
+#### How It Works
+
+The **PL_Healthcare_Master** pipeline accepts a `load_mode` parameter (default `"full"`). When set to `"incremental"`, the pipeline:
+
+1. **Generates new data** — runs `NB_Generate_Incremental_Data` to create today's records
+2. **Bronze: APPEND** — new CSVs are appended to existing Bronze tables (not overwritten), then archived to `Files/processed/` to prevent duplicate reads
+3. **Silver: Full rebuild** — Silver notebooks always read all Bronze data, clean, deduplicate, and overwrite Silver tables (idempotent)
+4. **Gold: MERGE** — Gold uses Delta Lake merge operations:
+   - **SCD Type 2 dimensions** (`dim_patient`, `dim_provider`): detects attribute changes (city, state, zip, specialty, department), expires old versions (`is_current=0`), and inserts new versions with new surrogate keys
+   - **Type 1 dimensions** (`dim_payer`, `dim_facility`, `dim_diagnosis`, `dim_medication`): overwritten (reference data, no history needed)
+   - **Fact tables** (`fact_encounter`, `fact_claim`, `fact_prescription`): Delta MERGE on business key — updates existing rows, inserts new ones
+
+#### Data Volumes Per Incremental Run
+
+| Entity | New Rows | Notes |
+|--------|----------|-------|
+| Encounters | ~50 | All dated today |
+| Claims | ~50 | One per encounter |
+| Diagnoses | ~100–150 | 1 principal + 0–2 secondary per encounter |
+| Prescriptions | ~75–100 | 1–3 per encounter based on diagnosis |
+| Patients | ~2 new + 2–3 updates | Updates simulate address/insurance changes |
+
+#### Steps
+
+**Option A — Run from the Pipeline UI:**
+
+1. Open **PL_Healthcare_Master** in your Fabric workspace
+2. Click **Run** → set parameter `load_mode` = `incremental`
+3. Wait ~10–12 minutes for the pipeline to complete
+
+**Option B — Run the notebooks manually:**
 
 1. Open **NB_Generate_Incremental_Data** → Run All  
-   *(generates ~50 new encounters, claims, prescriptions, diagnoses for today)*
-2. Open **PL_Healthcare_Master** → Run with parameter `load_mode=incremental`
+   *(writes timestamped CSVs to `Files/incremental/YYYY-MM-DD/`)*
+2. Open **PL_Healthcare_Full_Load** → Run with parameter `load_mode=incremental`  
+   *(or run Bronze → Silver → Gold notebooks individually)*
 
-Repeat daily to build up a realistic data history.
+#### Scheduling
+
+To automate daily incremental loads, add a **Schedule trigger** to `PL_Healthcare_Master`:
+
+1. Open the pipeline → **Schedule** (top toolbar)  
+2. Set recurrence (e.g., daily at 6:00 AM)  
+3. Add parameter: `load_mode` = `incremental`
+
+#### Verifying Incremental Data
+
+After an incremental run, check that new data flowed through:
+
+```sql
+-- Gold layer: count should increase by ~50 per run
+SELECT COUNT(*) FROM lh_gold_curated.fact_encounter
+
+-- SCD2: check for expired patient versions
+SELECT patient_id, city, is_current, effective_end_date
+FROM lh_gold_curated.dim_patient
+WHERE is_current = 0
+ORDER BY effective_end_date DESC
+LIMIT 10
+```
+
+Repeat daily to build up a realistic data history showing trends over time in the Power BI dashboard.
 
 ## Configuration Options
 

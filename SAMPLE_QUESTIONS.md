@@ -93,7 +93,7 @@ These questions are planned for the Operations Agent (Use Case 4 — architectur
 
 ## Azure AI Foundry Agent Questions
 
-If you've set up the optional **Foundry Orchestrator Agent** (see [FOUNDRY_IQ_SETUP_GUIDE.md](https://github.com/kwamesefah_microsoft/Healthcare-Data-Analytics-Repo/blob/main/FabricDemoHLS/FOUNDRY_IQ_SETUP_GUIDE.md)), it combines the Data Agent's live numbers with 21 clinical knowledge documents and web search. It provides richer, cited responses with clinical context.
+If you've set up the optional **Foundry Orchestrator Agent** (see [FOUNDRY_IQ_SETUP_GUIDE.md](FOUNDRY_IQ_SETUP_GUIDE.md)), it combines the Data Agent's live numbers with 21 clinical knowledge documents and web search. It provides richer, cited responses with clinical context.
 
 ### Clinical Decision Support
 | # | Question |

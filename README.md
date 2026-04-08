@@ -279,6 +279,12 @@ For the complete agent configuration -- AI instructions, concept-to-table routin
 
 To build Power BI reports on the `HealthcareDemoHLS` semantic model (26 pre-built DAX measures, 6 recommended report pages, formatting, and Direct Lake tips) -- see **[POWERBI_DASHBOARD_GUIDE.md](POWERBI_DASHBOARD_GUIDE.md)**.
 
+### Azure AI Foundry (Optional)
+
+To set up the **Foundry Orchestrator Agent** that combines the Fabric Data Agent with a Knowledge Base (21 clinical documents indexed via Azure AI Search) and web search for hybrid clinical decision support -- see **[FOUNDRY_IQ_SETUP_GUIDE.md](FOUNDRY_IQ_SETUP_GUIDE.md)**.
+
+For troubleshooting hybrid query failures (compound questions, instruction truncation, fewshot phrasing issues) -- see **[FOUNDRY_ORCHESTRATOR_TROUBLESHOOTING.md](FOUNDRY_ORCHESTRATOR_TROUBLESHOOTING.md)**.
+
 ---
 
 ## Real-Time Intelligence (RTI) — 3 Payer/Provider Use Cases
@@ -543,6 +549,10 @@ Edit the top cell of `Healthcare_Launcher.ipynb`:
 ├── ONTOLOGY_GRAPH_SETUP_GUIDE.md      # Manual ontology setup (10 entities, 15 relationships)
 ├── DATA_AGENT_GUIDE.md                # Agent instructions, routing, few-shots, knowledge base
 ├── POWERBI_DASHBOARD_GUIDE.md         # Power BI report pages, measures, Direct Lake tips
+├── FOUNDRY_IQ_SETUP_GUIDE.md          # Azure AI Foundry orchestrator agent setup (11 steps)
+├── FOUNDRY_ORCHESTRATOR_TROUBLESHOOTING.md  # Hybrid query debugging guide
+├── foundry_agent/
+│   └── orchestrator_instructions.md   # Version-controlled orchestrator instructions (v23)
 ├── SAMPLE_QUESTIONS.md                # 60+ copy-paste questions for all agents
 ├── deployment.yaml                    # Optional: CI/CD config
 ├── README.md

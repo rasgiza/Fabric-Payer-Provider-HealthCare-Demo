@@ -1357,7 +1357,7 @@ if df_dx is not None:
             col("diagnosis_key"),
             col("facility_key"),
             df_dx["icd_code"],
-            df_dx["sequence_number"].cast("int"),
+            df_dx["sequence_number"].cast("int").alias("diagnosis_sequence"),
             df_dx["diagnosis_type"],
             df_dx["present_on_admission"],
         ) \
@@ -1371,7 +1371,7 @@ if df_dx is not None:
     df_fact_dx = df_fact_dx.select(
         "fact_diagnosis_key", "diagnosis_id", "encounter_key", "diagnosis_date_key",
         "patient_key", "diagnosis_key", "facility_key", "icd_code",
-        "sequence_number", "diagnosis_type", "present_on_admission", "_load_timestamp"
+        "diagnosis_sequence", "diagnosis_type", "present_on_admission", "_load_timestamp"
     )
 
     FACT_DX_TABLE = f"{GOLD}.fact_diagnosis"

@@ -4,6 +4,39 @@ One-click deployment of a complete **Healthcare Payer/Provider Analytics** solut
 
 ---
 
+## Table of Contents
+
+1. [Why This Demo? — The Payer & Provider Pain Points](#why-this-demo--the-payer--provider-pain-points)
+2. [Quick Start](#quick-start)
+3. [What Gets Deployed](#what-gets-deployed)
+   - [Data Volumes (Default)](#data-volumes-default)
+4. [Architecture](#architecture)
+5. [Deployment Flow](#deployment-flow)
+   - [What happens when you click "Run All"](#what-happens-when-you-click-run-all)
+   - [Deployment Stages Detail](#deployment-stages-detail)
+6. [After Deployment](#after-deployment)
+   - [Explore the Data](#explore-the-data)
+   - [Sample Questions — Data Agents](#sample-questions--data-agents)
+   - [Data Agent Reference](#data-agent-reference)
+   - [Power BI Dashboard](#power-bi-dashboard)
+7. [Real-Time Intelligence (RTI)](#real-time-intelligence-rti--3-payerprovider-use-cases)
+   - [Claims Fraud Detection](#use-case-1-claims-fraud-detection)
+   - [Care Gap Closure](#use-case-2-care-gap-closure-at-point-of-care)
+   - [High-Cost Member Trajectory](#use-case-3-high-cost-member-trajectory)
+   - [RTI Data Tables](#rti-data-tables)
+   - [Switching to Live Streaming](#switching-to-live-streaming)
+   - [Future: Operations Agent](#future-use-case-4--operations-agent)
+8. [Ontology & Graph Model Setup](#create-the-ontology--graph-model-manual--10-min)
+9. [Data Activator / Reflex Setup](#set-up-data-activator-alerts-manual--15-min)
+10. [Run Incremental Loads](#run-incremental-loads)
+11. [Configuration Options](#configuration-options)
+12. [Prerequisites](#prerequisites)
+13. [Repository Structure](#repository-structure)
+14. [Troubleshooting](#troubleshooting)
+15. [Credits](#credits)
+
+---
+
 ## Why This Demo? — The Payer & Provider Pain Points
 
 Healthcare payers and providers face compounding operational challenges that erode revenue, increase regulatory risk, and compromise patient outcomes. This demo addresses **six critical pain points** that cost the U.S. healthcare system billions annually:

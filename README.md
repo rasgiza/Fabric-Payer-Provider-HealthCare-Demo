@@ -63,12 +63,11 @@ All from a single workspace deployed in minutes.
 1. **Create an empty Fabric workspace** (F64+ capacity recommended)
 2. **Import** `Healthcare_Launcher.ipynb` into the workspace  
    *(Workspace → Import → Notebook → upload the .ipynb file)*
-3. **Edit the Configuration cell** (optional):
-   - `GITHUB_OWNER` — defaults to `rasgiza` (public repo — no token needed)
-   - `DEPLOY_RTI` — set `True` to include Real-Time Intelligence (default: `True`)
-4. **Run All** — wait ~15-20 minutes
+3. **Run All** — wait ~15-20 minutes
 
-That's it. The launcher creates a deploy lakehouse, downloads the repo, deploys all artifacts in the correct stage order, generates sample data, runs the ETL pipeline, and sets up RTI — fully automated.
+> **That's it — no configuration needed.** The notebook pulls from the public repo `rasgiza/Fabric-Payer-Provider-HealthCare-Demo` by default. If you want to change settings, edit Cell 3 (the Configuration cell) before running — for example, set `DEPLOY_RTI = False` to skip Real-Time Intelligence, or point `GITHUB_OWNER` to your own fork.
+
+The launcher creates a deploy lakehouse, downloads the repo, deploys all artifacts in the correct stage order, generates sample data, runs the ETL pipeline, and sets up RTI — fully automated.
 
 ## What Gets Deployed
 

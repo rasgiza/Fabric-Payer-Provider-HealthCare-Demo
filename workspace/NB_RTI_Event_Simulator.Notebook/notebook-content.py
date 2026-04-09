@@ -57,6 +57,7 @@ STREAM_INTERVAL_SEC = 5  # seconds between stream batches
 STREAM_BATCHES = 10      # number of batches in stream mode (0 = infinite)
 
 # Kusto config -- auto-discovered from NB_RTI_Setup_Eventhouse output
+KUSTO_QUERY_URI = ""     # Auto-detected from Eventhouse API if blank
 KUSTO_INGEST_URI = ""    # Auto-detected from Eventhouse API if blank
 KQL_DB_NAME = "Healthcare_RTI_DB"
 
@@ -92,7 +93,7 @@ def get_kusto_token():
 WORKSPACE_ID = notebookutils.runtime.context.get("currentWorkspaceId", "")
 
 if not KUSTO_INGEST_URI:
-    # Discover Eventhouse and get ingestion URI
+    # Discover Eventhouse and get both query + ingestion URIs
     headers = {"Authorization": f"Bearer {get_fabric_token()}", "Content-Type": "application/json"}
     items_url = f"{BASE_URL}/workspaces/{WORKSPACE_ID}/items?type=Eventhouse"
     resp = requests.get(items_url, headers=headers)
@@ -106,43 +107,56 @@ if not KUSTO_INGEST_URI:
                 )
                 if props_resp.status_code == 200:
                     props = props_resp.json().get("properties", props_resp.json())
+                    KUSTO_QUERY_URI = props.get("queryServiceUri", "")
                     KUSTO_INGEST_URI = props.get("ingestionServiceUri", "")
-                    query_uri = props.get("queryServiceUri", "")
-                    if not KUSTO_INGEST_URI and query_uri:
-                        KUSTO_INGEST_URI = query_uri.replace("https://", "https://ingest-")
+                    if not KUSTO_INGEST_URI and KUSTO_QUERY_URI:
+                        KUSTO_INGEST_URI = KUSTO_QUERY_URI.replace("https://", "https://ingest-")
                     print(f"  Eventhouse: {item['displayName']}")
                     break
 
-if KUSTO_INGEST_URI:
+if KUSTO_QUERY_URI and KUSTO_INGEST_URI:
+    print(f"  Query URI:     {KUSTO_QUERY_URI}")
     print(f"  Ingestion URI: {KUSTO_INGEST_URI}")
 else:
-    print("  WARN: Could not discover Kusto URI -- KQL ingestion will be skipped")
+    print("  WARN: Could not discover Kusto URIs -- KQL ingestion will be skipped")
     print("  Delta tables will still be written to lh_gold_curated")
 
 # METADATA **{"language":"python"}**
 
 # CELL **{"language":"python"}**
 
-# ---------- Kusto Ingestion Helper ----------
+# ---------- Kusto Managed Streaming Ingestion ----------
+# Per Microsoft best practice: ManagedStreamingIngestClient tries streaming
+# first (seconds latency), falls back to queued ingestion automatically
+# if the payload exceeds 10 MB or on transient failures (3 retries).
+# Ref: https://learn.microsoft.com/en-us/kusto/api/get-started/app-managed-streaming-ingest
 
-def push_to_kql(df_pandas, table_name, mapping_name):
-    """Push a pandas DataFrame to a KQL table via azure-kusto-ingest."""
-    if not KUSTO_INGEST_URI:
-        return False
-    try:
-        from azure.kusto.ingest import (
-            QueuedIngestClient,
-            IngestionProperties,
-            DataFormat,
-        )
-        from azure.kusto.data import KustoConnectionStringBuilder
-        import io
+from azure.kusto.ingest import ManagedStreamingIngestClient, IngestionProperties, DataFormat
+from azure.kusto.data import KustoConnectionStringBuilder
+import io
 
+_kusto_client = None  # Reuse client across calls
+
+def _get_or_create_kusto_client():
+    """Create (or refresh) the ManagedStreamingIngestClient."""
+    global _kusto_client
+    if _kusto_client is None:
         token = get_kusto_token()
-        kcsb = KustoConnectionStringBuilder.with_aad_user_token_authentication(
+        engine_kcsb = KustoConnectionStringBuilder.with_aad_user_token_authentication(
+            KUSTO_QUERY_URI, token
+        )
+        dm_kcsb = KustoConnectionStringBuilder.with_aad_user_token_authentication(
             KUSTO_INGEST_URI, token
         )
-        client = QueuedIngestClient(kcsb)
+        _kusto_client = ManagedStreamingIngestClient(engine_kcsb, dm_kcsb)
+    return _kusto_client
+
+def push_to_kql(df_pandas, table_name, mapping_name):
+    """Push a pandas DataFrame to a KQL table via managed streaming ingestion."""
+    if not KUSTO_QUERY_URI or not KUSTO_INGEST_URI:
+        return False
+    try:
+        client = _get_or_create_kusto_client()
 
         ingestion_props = IngestionProperties(
             database=KQL_DB_NAME,
@@ -156,7 +170,7 @@ def push_to_kql(df_pandas, table_name, mapping_name):
         stream = io.StringIO(json_data)
 
         client.ingest_from_stream(stream, ingestion_properties=ingestion_props)
-        print(f"  KQL: {len(df_pandas)} rows queued -> {table_name}")
+        print(f"  KQL: {len(df_pandas)} rows streamed -> {table_name}")
         return True
     except Exception as e:
         print(f"  KQL WARN: {table_name} ingestion failed: {e}")
@@ -473,7 +487,8 @@ elif MODE == "stream":
     print("Events streamed to KQL via direct Kusto ingestion")
     print("Delta tables also updated for batch analysis")
 print()
-print("Ingestion method: Direct Kusto (azure-kusto-ingest)")
+print("Ingestion method: Managed Streaming (azure-kusto-ingest)")
+print("  Tries streaming first (seconds latency), falls back to queued")
 print("  No Eventstream or connection strings needed")
 print("=" * 60)
 

@@ -243,7 +243,8 @@ def get_fabric_token():
 def get_kusto_token():
     return notebookutils.credentials.getToken("kusto")
 
-# Auto-discover Kusto ingestion URI
+# Auto-discover Kusto query + ingestion URIs
+KUSTO_QUERY_URI = ""
 KUSTO_INGEST_URI = ""
 headers = {"Authorization": f"Bearer {get_fabric_token()}", "Content-Type": "application/json"}
 resp = requests.get(f"{BASE_URL}/workspaces/{WORKSPACE_ID}/items?type=Eventhouse", headers=headers)
@@ -256,16 +257,15 @@ if resp.status_code == 200:
             )
             if props_resp.status_code == 200:
                 props = props_resp.json().get("properties", props_resp.json())
+                KUSTO_QUERY_URI = props.get("queryServiceUri", "")
                 KUSTO_INGEST_URI = props.get("ingestionServiceUri", "")
-                if not KUSTO_INGEST_URI:
-                    quri = props.get("queryServiceUri", "")
-                    if quri:
-                        KUSTO_INGEST_URI = quri.replace("https://", "https://ingest-")
+                if not KUSTO_INGEST_URI and KUSTO_QUERY_URI:
+                    KUSTO_INGEST_URI = KUSTO_QUERY_URI.replace("https://", "https://ingest-")
             break
 
-if KUSTO_INGEST_URI:
+if KUSTO_QUERY_URI and KUSTO_INGEST_URI:
     try:
-        from azure.kusto.ingest import QueuedIngestClient, IngestionProperties, DataFormat
+        from azure.kusto.ingest import ManagedStreamingIngestClient, IngestionProperties, DataFormat
         from azure.kusto.data import KustoConnectionStringBuilder
         import io
 
@@ -277,15 +277,16 @@ if KUSTO_INGEST_URI:
         ).toPandas()
 
         token = get_kusto_token()
-        kcsb = KustoConnectionStringBuilder.with_aad_user_token_authentication(KUSTO_INGEST_URI, token)
-        client = QueuedIngestClient(kcsb)
+        engine_kcsb = KustoConnectionStringBuilder.with_aad_user_token_authentication(KUSTO_QUERY_URI, token)
+        dm_kcsb = KustoConnectionStringBuilder.with_aad_user_token_authentication(KUSTO_INGEST_URI, token)
+        client = ManagedStreamingIngestClient(engine_kcsb, dm_kcsb)
         ingestion_props = IngestionProperties(
             database=KQL_DB_NAME, table="fraud_scores",
             data_format=DataFormat.JSON, ingestion_mapping_reference="fraud_scores_mapping"
         )
         json_data = df_kql.to_json(orient="records", lines=True, date_format="iso")
         client.ingest_from_stream(io.StringIO(json_data), ingestion_properties=ingestion_props)
-        print(f"  KQL: {len(df_kql)} fraud scores queued -> fraud_scores")
+        print(f"  KQL: {len(df_kql)} fraud scores streamed -> fraud_scores")
     except Exception as e:
         print(f"  KQL WARN: fraud_scores ingestion failed: {e}")
 else:

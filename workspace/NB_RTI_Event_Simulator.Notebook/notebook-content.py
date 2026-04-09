@@ -48,14 +48,7 @@ print("NB_RTI_Event_Simulator: Starting...")
 
 # METADATA **{"language":"python"}**
 
-# METADATA ********************
-
-# META {
-#   "language": "python",
-#   "language_group": "synapse_pyspark"
-# META }
-
-# CELL ********************
+# CELL **{"language":"python"}**
 
 %pip install azure-kusto-data azure-kusto-ingest --quiet
 

@@ -349,8 +349,8 @@ if _resp.status_code == 200:
 
 if _KUSTO_QUERY_URI and _KUSTO_INGEST_URI:
     try:
-        from azure.kusto.ingest import ManagedStreamingIngestClient, IngestionProperties, DataFormat
-        from azure.kusto.data import KustoConnectionStringBuilder
+        from azure.kusto.ingest import ManagedStreamingIngestClient, IngestionProperties
+        from azure.kusto.data import KustoConnectionStringBuilder, DataFormat
         import io
 
         _df_kql = df_output.select(

@@ -48,6 +48,19 @@ print("NB_RTI_Event_Simulator: Starting...")
 
 # METADATA **{"language":"python"}**
 
+# METADATA ********************
+
+# META {
+#   "language": "python",
+#   "language_group": "synapse_pyspark"
+# META }
+
+# CELL ********************
+
+%pip install azure-kusto-data azure-kusto-ingest --quiet
+
+# METADATA **{"language":"python"}**
+
 # CELL **{"language":"python"}**
 
 # ---------- Parameters (override from pipeline or %run) ----------
@@ -123,17 +136,6 @@ else:
 
 # METADATA **{"language":"python"}**
 
-# METADATA ********************
-
-# META {
-#   "language": "python",
-#   "language_group": "synapse_pyspark"
-# META }
-
-# CELL ********************
-
-%pip install azure-kusto-data azure-kusto-ingest --quiet
-
 # CELL **{"language":"python"}**
 
 # ---------- Kusto Managed Streaming Ingestion ----------
@@ -142,8 +144,8 @@ else:
 # if the payload exceeds 10 MB or on transient failures (3 retries).
 # Ref: https://learn.microsoft.com/en-us/kusto/api/get-started/app-managed-streaming-ingest
 
-from azure.kusto.ingest import ManagedStreamingIngestClient, IngestionProperties, DataFormat
-from azure.kusto.data import KustoConnectionStringBuilder
+from azure.kusto.ingest import ManagedStreamingIngestClient, IngestionProperties
+from azure.kusto.data import KustoConnectionStringBuilder, DataFormat
 import io
 
 _kusto_client = None  # Reuse client across calls

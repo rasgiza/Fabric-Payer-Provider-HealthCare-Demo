@@ -276,8 +276,8 @@ if resp.status_code == 200:
 
 if KUSTO_QUERY_URI and KUSTO_INGEST_URI:
     try:
-        from azure.kusto.ingest import ManagedStreamingIngestClient, IngestionProperties, DataFormat
-        from azure.kusto.data import KustoConnectionStringBuilder
+        from azure.kusto.ingest import ManagedStreamingIngestClient, IngestionProperties
+        from azure.kusto.data import KustoConnectionStringBuilder, DataFormat
         import io
 
         # Select columns matching KQL fraud_scores schema

@@ -38,7 +38,16 @@ print("NB_RTI_Fraud_Detection: Starting...")
 
 # CELL **{"language":"python"}**
 
-%pip install azure-kusto-data azure-kusto-ingest azure-core>=1.31.0 --quiet
+# Install Kusto SDK if missing (compatible with child-notebook execution)
+import importlib, subprocess, sys
+for _pkg in ["azure.kusto.data", "azure.kusto.ingest", "azure.core"]:
+    try:
+        importlib.import_module(_pkg)
+    except ImportError:
+        subprocess.check_call(
+            [sys.executable, "-m", "pip", "install",
+             "azure-kusto-data", "azure-kusto-ingest", "azure-core>=1.31.0", "-q"])
+        break
 
 # METADATA **{"language":"python"}**
 

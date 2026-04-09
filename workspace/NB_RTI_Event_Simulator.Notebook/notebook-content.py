@@ -123,6 +123,17 @@ else:
 
 # METADATA **{"language":"python"}**
 
+# METADATA ********************
+
+# META {
+#   "language": "python",
+#   "language_group": "synapse_pyspark"
+# META }
+
+# CELL ********************
+
+%pip install azure-kusto-data azure-kusto-ingest --quiet
+
 # CELL **{"language":"python"}**
 
 # ---------- Kusto Managed Streaming Ingestion ----------

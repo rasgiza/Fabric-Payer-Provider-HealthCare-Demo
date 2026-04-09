@@ -107,7 +107,8 @@ print(f"  Patients: {df_patients.count()}")
 # ============================================================================
 
 # Filter to ADMIT and OBSERVATION events (patient is present for care)
-df_encounters = df_adt.filter(
+# Drop columns that also exist in dim_facility to avoid ambiguous references after join
+df_encounters = df_adt.drop("facility_name", "latitude", "longitude").filter(
     F.col("event_type").isin("ADMIT", "OBSERVATION")
 )
 
@@ -129,8 +130,10 @@ df_alerts = (
     .join(df_facilities, "facility_id", "left")
 )
 
-# Enrich with HEDIS measure details
+# Enrich with HEDIS measure details (authoritative measure_name source)
 if df_hedis is not None:
+    # Rename care_gaps measure_name before join to avoid ambiguity
+    df_alerts = df_alerts.withColumnRenamed("measure_name", "_cg_measure_name")
     df_alerts = df_alerts.join(
         df_hedis.select(
             F.col("measure_id").alias("h_measure_id"),
@@ -141,6 +144,10 @@ if df_hedis is not None:
         df_alerts["measure_id"] == F.col("h_measure_id"),
         "left"
     ).drop("h_measure_id")
+    # Prefer HEDIS measure_name, fall back to care_gaps
+    df_alerts = df_alerts.withColumn(
+        "measure_name", F.coalesce(F.col("measure_name"), F.col("_cg_measure_name"))
+    ).drop("_cg_measure_name")
 
 print(f"  Patient-encounter-gap matches: {df_alerts.count()}")
 
@@ -203,17 +210,17 @@ df_output = df_alerts.select(
     F.col("first_name").alias("patient_first_name"),
     F.col("last_name").alias("patient_last_name"),
     "facility_id",
-    F.coalesce(df_alerts["facility_name"], F.lit("Unknown")).alias("facility_name"),
+    F.coalesce(F.col("facility_name"), F.lit("Unknown")).alias("facility_name"),
     "event_type",
     "admission_type",
     "primary_diagnosis",
     "measure_id",
-    F.coalesce(df_alerts["measure_name"], df_alerts["measure_id"]).alias("measure_name"),
+    F.coalesce(F.col("measure_name"), F.col("measure_id")).alias("measure_name"),
     "gap_days_overdue_int",
     "alert_priority",
     "alert_text",
-    F.coalesce(df_alerts["latitude"], F.lit(42.96)).alias("latitude"),
-    F.coalesce(df_alerts["longitude"], F.lit(-85.67)).alias("longitude"),
+    F.coalesce(F.col("latitude"), F.lit(42.96)).alias("latitude"),
+    F.coalesce(F.col("longitude"), F.lit(-85.67)).alias("longitude"),
 )
 
 df_output.write.format("delta").mode("overwrite").saveAsTable("lh_gold_curated.rti_care_gap_alerts")

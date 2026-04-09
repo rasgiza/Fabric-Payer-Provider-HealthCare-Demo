@@ -548,19 +548,19 @@ print("=" * 60)
 print("LOADING dim_facility")
 print("=" * 60)
 
-# Facility reference data
+# Facility reference data (with lat/lon for RTI geo-scoring)
 facility_data = [
-    ("FAC001", "Lakeside Main Hospital", "General Hospital", "Grand Rapids", "MI", 450),
-    ("FAC002", "Heart Center", "Specialty Center", "Grand Rapids", "MI", 120),
-    ("FAC003", "Urgent Care North", "Urgent Care", "Traverse City", "MI", 30),
-    ("FAC004", "Cancer Institute", "Specialty Center", "Ann Arbor", "MI", 200),
-    ("FAC005", "Community Clinic", "Primary Care", "Lansing", "MI", 50),
-    ("FAC006", "Children's Hospital", "General Hospital", "Detroit", "MI", 300),
-    ("FAC007", "Rehabilitation Center", "Specialty Center", "Kalamazoo", "MI", 100),
-    ("FAC008", "South Campus", "General Hospital", "Toledo", "OH", 250),
+    ("FAC001", "Lakeside Main Hospital", "General Hospital", "Grand Rapids", "MI", 450, 42.9634, -85.6681),
+    ("FAC002", "Heart Center", "Specialty Center", "Grand Rapids", "MI", 120, 42.9634, -85.6681),
+    ("FAC003", "Urgent Care North", "Urgent Care", "Traverse City", "MI", 30, 44.7631, -85.6206),
+    ("FAC004", "Cancer Institute", "Specialty Center", "Ann Arbor", "MI", 200, 42.2808, -83.7430),
+    ("FAC005", "Community Clinic", "Primary Care", "Lansing", "MI", 50, 42.7325, -84.5555),
+    ("FAC006", "Children's Hospital", "General Hospital", "Detroit", "MI", 300, 42.3314, -83.0458),
+    ("FAC007", "Rehabilitation Center", "Specialty Center", "Kalamazoo", "MI", 100, 42.2917, -85.5872),
+    ("FAC008", "South Campus", "General Hospital", "Toledo", "OH", 250, 41.6528, -83.5379),
 ]
 
-facility_schema = ["facility_id", "facility_name", "facility_type", "city", "state", "bed_count"]
+facility_schema = ["facility_id", "facility_name", "facility_type", "city", "state", "bed_count", "latitude", "longitude"]
 df_facility_src = spark.createDataFrame(facility_data, facility_schema)
 df_facility_src = df_facility_src.withColumn("is_active", lit(1))
 
@@ -571,7 +571,7 @@ df_facility = df_facility_src.withColumn("facility_key", row_number().over(w).ca
 # Select final columns
 df_facility = df_facility.select(
     "facility_key", "facility_id", "facility_name", "facility_type",
-    "city", "state", "bed_count", "is_active"
+    "city", "state", "bed_count", "latitude", "longitude", "is_active"
 ).withColumn("_load_timestamp", current_timestamp())
 
 # Write to Gold lakehouse (Type 1 — overwrite, facility master data is small and stable)

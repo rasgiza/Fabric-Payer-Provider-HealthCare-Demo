@@ -52,7 +52,7 @@ print("Loading claims events and reference data...")
 
 df_claims = spark.table("lh_gold_curated.rti_claims_events")
 df_providers = spark.sql("""
-    SELECT provider_id, provider_name, specialty, facility_id
+    SELECT provider_id, display_name AS provider_name, specialty, facility_id
     FROM lh_gold_curated.dim_provider WHERE is_current = true
 """)
 df_facilities = spark.sql("SELECT facility_id, latitude as fac_lat, longitude as fac_lon FROM lh_gold_curated.dim_facility")
@@ -338,7 +338,7 @@ df_summary.show(truncate=False)
 df_top_providers = spark.sql("""
     SELECT
         f.provider_id,
-        p.provider_name,
+        p.display_name AS provider_name,
         p.specialty,
         COUNT(*) as flagged_claims,
         ROUND(AVG(f.fraud_score), 1) as avg_fraud_score,
@@ -346,7 +346,7 @@ df_top_providers = spark.sql("""
     FROM lh_gold_curated.rti_fraud_scores f
     LEFT JOIN lh_gold_curated.dim_provider p ON f.provider_id = p.provider_id AND p.is_current = true
     WHERE f.risk_tier IN ('CRITICAL', 'HIGH')
-    GROUP BY f.provider_id, p.provider_name, p.specialty
+    GROUP BY f.provider_id, p.display_name, p.specialty
     ORDER BY avg_fraud_score DESC
     LIMIT 10
 """)

@@ -195,11 +195,11 @@ def push_to_kql(df_pandas, table_name, mapping_name):
 print("Loading dimension tables from lh_gold_curated...")
 
 df_patients = spark.sql("SELECT patient_id, first_name, last_name, gender, date_of_birth, zip_code FROM lh_gold_curated.dim_patient WHERE is_current = true").toPandas()
-df_providers = spark.sql("SELECT provider_id, provider_name, specialty, facility_id FROM lh_gold_curated.dim_provider WHERE is_current = true").toPandas()
+df_providers = spark.sql("SELECT provider_id, display_name AS provider_name, specialty, facility_id FROM lh_gold_curated.dim_provider WHERE is_current = true").toPandas()
 df_facilities = spark.sql("SELECT facility_id, facility_name, facility_type, latitude, longitude FROM lh_gold_curated.dim_facility").toPandas()
-df_diagnoses = spark.sql("SELECT DISTINCT diagnosis_code, diagnosis_description FROM lh_gold_curated.dim_diagnosis").toPandas()
-df_medications = spark.sql("SELECT DISTINCT medication_code, medication_name, drug_class FROM lh_gold_curated.dim_medication").toPandas()
-df_payers = spark.sql("SELECT payer_id, payer_name, plan_type FROM lh_gold_curated.dim_payer").toPandas()
+df_diagnoses = spark.sql("SELECT DISTINCT icd_code AS diagnosis_code, icd_description AS diagnosis_description FROM lh_gold_curated.dim_diagnosis").toPandas()
+df_medications = spark.sql("SELECT DISTINCT rxnorm_code AS medication_code, medication_name, drug_class FROM lh_gold_curated.dim_medication").toPandas()
+df_payers = spark.sql("SELECT payer_id, payer_name, payer_type AS plan_type FROM lh_gold_curated.dim_payer").toPandas()
 
 try:
     df_care_gaps = spark.sql("SELECT patient_id, measure_id, measure_name, is_gap_open, gap_days_overdue FROM lh_gold_curated.care_gaps WHERE is_gap_open = true").toPandas()

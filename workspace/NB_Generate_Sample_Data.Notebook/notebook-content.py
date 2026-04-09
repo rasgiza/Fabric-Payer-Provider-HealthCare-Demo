@@ -884,6 +884,40 @@ print("\n✅ All data generated and written to lh_bronze_raw/Files/")
 # CELL **{"language":"python"}**
 
 # ============================================================================
+# PROMOTE care_gaps AND hedis_measures TO lh_gold_curated (Delta tables)
+# ============================================================================
+# RTI streaming notebooks read these from lh_gold_curated.care_gaps and
+# lh_gold_curated.hedis_measures. Without this step, the RTI Care Gap Alerts
+# notebook falls back to an empty DataFrame and generates zero alerts.
+print("\nPromoting care_gaps and hedis_measures to lh_gold_curated...")
+
+lh_gold_id = lakehouses.get("lh_gold_curated")
+if lh_gold_id:
+    # care_gaps → lh_gold_curated.care_gaps
+    spark_care_gaps = spark.createDataFrame(care_gaps_df)
+    spark_care_gaps.write.format("delta").mode("overwrite").option(
+        "path",
+        f"abfss://{ws_id}@onelake.dfs.fabric.microsoft.com/{lh_gold_id}/Tables/care_gaps"
+    ).save()
+    print(f"  Written: lh_gold_curated.care_gaps ({len(care_gaps_df):,} rows)")
+
+    # hedis_measures → lh_gold_curated.hedis_measures
+    hedis_df = pd.DataFrame(HEDIS_MEASURES)
+    spark_hedis = spark.createDataFrame(hedis_df)
+    spark_hedis.write.format("delta").mode("overwrite").option(
+        "path",
+        f"abfss://{ws_id}@onelake.dfs.fabric.microsoft.com/{lh_gold_id}/Tables/hedis_measures"
+    ).save()
+    print(f"  Written: lh_gold_curated.hedis_measures ({len(hedis_df):,} rows)")
+else:
+    print("  WARNING: lh_gold_curated not found -- RTI care gap alerts will use empty data.")
+    print("  Run the main pipeline first to create lh_gold_curated, then re-run this notebook.")
+
+# METADATA **{"language":"python"}**
+
+# CELL **{"language":"python"}**
+
+# ============================================================================
 # SUMMARY
 # ============================================================================
 print("=" * 60)

@@ -73,13 +73,15 @@ df_providers = spark.sql("""
 df_facilities = spark.sql("SELECT facility_id, latitude as fac_lat, longitude as fac_lon FROM lh_gold_curated.dim_facility")
 
 # Historical claim stats for baseline comparison
+# fact_claim uses surrogate provider_key; join with dim_provider to get provider_id
 df_historical = spark.sql("""
-    SELECT provider_id,
-           AVG(billed_amount) as hist_avg_amount,
-           STDDEV(billed_amount) as hist_std_amount,
+    SELECT p.provider_id,
+           AVG(c.billed_amount) as hist_avg_amount,
+           STDDEV(c.billed_amount) as hist_std_amount,
            COUNT(*) as hist_claim_count
-    FROM lh_gold_curated.fact_claim
-    GROUP BY provider_id
+    FROM lh_gold_curated.fact_claim c
+    JOIN lh_gold_curated.dim_provider p ON c.provider_key = p.provider_key
+    GROUP BY p.provider_id
 """)
 
 print(f"  Claims events: {df_claims.count()}")

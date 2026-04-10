@@ -67,7 +67,7 @@ print("Loading claims events and reference data...")
 
 df_claims = spark.table("lh_gold_curated.rti_claims_events")
 df_providers = spark.sql("""
-    SELECT provider_id, display_name AS provider_name, specialty, facility_id
+    SELECT provider_id, display_name AS provider_name, specialty
     FROM lh_gold_curated.dim_provider WHERE is_current = true
 """)
 df_facilities = spark.sql("SELECT facility_id, latitude as fac_lat, longitude as fac_lon FROM lh_gold_curated.dim_facility")

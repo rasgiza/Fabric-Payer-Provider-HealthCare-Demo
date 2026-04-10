@@ -226,7 +226,7 @@ class GraphDefinitionBuilder:
                         "sourceColumn": e["bindings"][pid],
                     })
             node_tables.append({
-                "id": f"{e['name']}_{uuid.uuid4().hex[:8]}",
+                "id": str(uuid.uuid4()),
                 "nodeTypeAlias": f"{e['name']}_nodeType",
                 "dataSourceName": f"{e['source_table']}_Source",
                 "propertyMappings": mappings,
@@ -243,11 +243,11 @@ class GraphDefinitionBuilder:
                        if src_ent.get("pk_col")
                        else r["src_key_cols"])
             edge_tables.append({
-                "id": f"{r['name']}_{uuid.uuid4().hex[:8]}",
+                "id": str(uuid.uuid4()),
                 "edgeTypeAlias": f"{r['name']}_edgeType",
                 "dataSourceName": f"{r['ctx_table']}_Source",
                 "sourceNodeKeyColumns": src_key,
-                "destinationNodeKeyColumns": r["tgt_key_cols"],
+                "targetNodeKeyColumns": r["tgt_key_cols"],
                 "propertyMappings": [],
             })
 

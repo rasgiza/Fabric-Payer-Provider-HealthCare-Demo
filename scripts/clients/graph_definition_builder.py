@@ -35,7 +35,7 @@ TYPE_MAP = {
     "String": "STRING",
     "BigInt": "INT",
     "Double": "FLOAT",
-    "DateTime": "DATETIME",
+    "DateTime": "ZONED DATETIME",
     "Boolean": "BOOLEAN",
     "Int": "INT",
 }
@@ -283,7 +283,7 @@ class GraphDefinitionBuilder:
                 "properties": {"path": path},
             })
 
-        return {"dataSources": sources}
+        return {"schemaVersion": "1.0.0", "dataSources": sources}
 
     # ── Build stylingConfiguration.json ───────────────────────
 
@@ -310,6 +310,7 @@ class GraphDefinitionBuilder:
                 "pan": {"x": 0, "y": 0},
                 "zoomLevel": 1,
             },
+            "visualFormat": {},
         }
 
     # ── Build .platform ────────────────────────────────────────

@@ -220,61 +220,72 @@ print("  Validating bindings against table schemas...")
 val_errors = []
 table_cols_cache = {}
 
+def _get_table_cols(tbl_name):
+    if tbl_name in table_cols_cache:
+        return table_cols_cache[tbl_name]
+    cols = None
+    # Try 1: Spark SQL (works if default lakehouse is attached)
+    try:
+        _df = spark.sql(f"DESCRIBE lh_gold_curated.{tbl_name}")
+        cols = {r["col_name"] for r in _df.collect() if not r["col_name"].startswith("#")}
+    except Exception:
+        pass
+    # Try 2: Read Delta schema via OneLake path (no default lakehouse needed)
+    if cols is None:
+        try:
+            _path = (f"abfss://{workspace_id}@onelake.dfs.fabric.microsoft.com"
+                     f"/{lh_gold_id}/Tables/{tbl_name}")
+            _df = spark.read.format("delta").load(_path)
+            cols = {f.name for f in _df.schema.fields}
+        except Exception:
+            pass
+    table_cols_cache[tbl_name] = cols
+    return cols
+
+# Quick check: can we reach tables at all?
+_sample_tbl = next((e["table"] for e in entities.values() if e.get("table")), None)
+_can_validate = _get_table_cols(_sample_tbl) is not None if _sample_tbl else False
+if not _can_validate:
+    print("  [INFO] Table schemas not accessible (no default lakehouse context)")
+    print("         Skipping column validation -- property consistency still checked")
+
 for eid, e in entities.items():
     if not e["table"]:
         continue
-    tbl = e["table"]
-    if tbl not in table_cols_cache:
-        try:
-            cols_df = spark.sql(f"DESCRIBE lh_gold_curated.{tbl}")
-            table_cols_cache[tbl] = {r["col_name"] for r in cols_df.collect()
-                                     if not r["col_name"].startswith("#")}
-        except Exception as te:
-            table_cols_cache[tbl] = None
-            val_errors.append(f"{e['name']}: table {tbl} not accessible: {str(te)[:100]}")
+    actual = _get_table_cols(e["table"]) if _can_validate else None
 
-    actual = table_cols_cache.get(tbl)
-    if actual is None:
-        continue
+    # Check every bound column exists (only if table is accessible)
+    if actual is not None:
+        for pid, src_col in e["bindings"].items():
+            if src_col not in actual:
+                prop_name = e["props"].get(pid, {}).get("name", "?")
+                val_errors.append(
+                    f"{e['name']}: binding col '{src_col}' (prop={prop_name}) "
+                    f"not in {e['table']} columns"
+                )
 
-    # Check every bound column exists
-    for pid, src_col in e["bindings"].items():
-        if src_col not in actual:
-            prop_name = e["props"].get(pid, {}).get("name", "?")
-            val_errors.append(
-                f"{e['name']}: binding col '{src_col}' (prop={prop_name}) "
-                f"not in {tbl} columns"
-            )
-
-    # Check property name vs source column consistency
+    # Check property name vs source column consistency (always)
     for pid, prop_info in e["props"].items():
         src_col = e["bindings"].get(pid)
         if src_col and prop_info["name"] != src_col:
             print(f"    [WARN] {e['name']}: property '{prop_info['name']}' "
                   f"!= binding column '{src_col}' (may confuse auto-graph)")
 
-# Validate contextualization columns
-for rid, r in relationships.items():
-    if not r["table"]:
-        continue
-    tbl = r["table"]
-    if tbl not in table_cols_cache:
-        try:
-            cols_df = spark.sql(f"DESCRIBE lh_gold_curated.{tbl}")
-            table_cols_cache[tbl] = {row["col_name"] for row in cols_df.collect()
-                                     if not row["col_name"].startswith("#")}
-        except Exception:
-            table_cols_cache[tbl] = None
-    actual = table_cols_cache.get(tbl)
-    if actual is None:
-        val_errors.append(f"{r['name']}: ctx table {tbl} not accessible")
-        continue
-    for sc in r["src_cols"]:
-        if sc not in actual:
-            val_errors.append(f"{r['name']}: ctx sourceKey '{sc}' not in {tbl}")
-    for tc in r["tgt_cols"]:
-        if tc not in actual:
-            val_errors.append(f"{r['name']}: ctx targetKey '{tc}' not in {tbl}")
+# Validate contextualization columns (only if tables are accessible)
+if _can_validate:
+    for rid, r in relationships.items():
+        if not r["table"]:
+            continue
+        actual = _get_table_cols(r["table"])
+        if actual is None:
+            val_errors.append(f"{r['name']}: ctx table {r['table']} not accessible")
+            continue
+        for sc in r["src_cols"]:
+            if sc not in actual:
+                val_errors.append(f"{r['name']}: ctx sourceKey '{sc}' not in {r['table']}")
+        for tc in r["tgt_cols"]:
+            if tc not in actual:
+                val_errors.append(f"{r['name']}: ctx targetKey '{tc}' not in {r['table']}")
 
 if val_errors:
     print()

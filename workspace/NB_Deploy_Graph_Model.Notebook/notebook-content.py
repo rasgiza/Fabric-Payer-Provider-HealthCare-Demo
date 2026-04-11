@@ -27,6 +27,8 @@
 # 5. Deploys the graph (excluding any bad nodes)
 # 6. Waits for data load and runs a smoke test
 
+# METADATA **{"language":"python"}**
+
 # CELL **{"language":"python"}**
 
 # ============================================================================

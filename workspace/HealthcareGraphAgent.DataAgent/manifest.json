@@ -1,0 +1,41 @@
+{
+  "agentName": "HealthcareGraphAgent",
+  "exportedParts": [
+    {
+      "path": "Files/Config/data_agent.json",
+      "payloadType": "InlineBase64"
+    },
+    {
+      "path": "Files/Config/draft/stage_config.json",
+      "payloadType": "InlineBase64"
+    },
+    {
+      "path": "Files/Config/draft/graph-Healthcare_Ontology_Demo/datasource.json",
+      "payloadType": "InlineBase64"
+    },
+    {
+      "path": "Files/Config/draft/graph-Healthcare_Ontology_Demo/fewshots.json",
+      "payloadType": "InlineBase64"
+    },
+    {
+      "path": "Files/Config/publish_info.json",
+      "payloadType": "InlineBase64"
+    },
+    {
+      "path": "Files/Config/published/stage_config.json",
+      "payloadType": "InlineBase64"
+    },
+    {
+      "path": "Files/Config/published/graph-Healthcare_Ontology_Demo/datasource.json",
+      "payloadType": "InlineBase64"
+    },
+    {
+      "path": "Files/Config/published/graph-Healthcare_Ontology_Demo/fewshots.json",
+      "payloadType": "InlineBase64"
+    },
+    {
+      "path": ".platform",
+      "payloadType": "InlineBase64"
+    }
+  ]
+}

@@ -288,7 +288,7 @@ def main():
     # Step 7: Deploy
     existing = client.find_by_name(workspace_id, args.ontology)
     description = (
-        f"Healthcare Ontology — 10 entity types, 14 relationships, "
+        f"Healthcare Ontology — 12 entity types, 18 relationships, "
         f"bound to {LAKEHOUSE_NAME}"
     )
 

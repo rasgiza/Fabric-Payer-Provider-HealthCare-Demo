@@ -1,0 +1,4 @@
+{
+  "$schema": "https://developer.microsoft.com/json-schemas/fabric/item/dataAgent/definition/publishInfo/1.0.0/schema.json",
+  "description": "Healthcare graph analytics agent powered by the Healthcare_Ontology_Demo ontology. Navigates patient care pathways through entity lookups and relationship traversals across 12 entity types (Patient, Provider, Encounter, Claim, Prescription, Diagnosis, Medication, Payer, CommunityHealth, MedicationAdherence, Vitals) connected by 19 relationships. Ideal for tracing care journeys, finding connected entities, checking medication adherence, reviewing clinical vitals, and understanding clinical/financial relationships. Compare with HealthcareHLSAgent for SQL-based aggregations."
+}

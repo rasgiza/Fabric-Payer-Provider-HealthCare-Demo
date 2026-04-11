@@ -1,0 +1,44 @@
+{
+  "$schema": "https://developer.microsoft.com/json-schemas/fabric/item/ontology/dataBinding/1.0.0/schema.json",
+  "id": "e1a2b3c4-1111-4aaa-bbbb-000000000001",
+  "dataBindingConfiguration": {
+    "dataBindingType": "NonTimeSeries",
+    "propertyBindings": [
+      {
+        "sourceColumnName": "patient_key",
+        "targetPropertyId": "1318860001000000001"
+      },
+      {
+        "sourceColumnName": "medication_key",
+        "targetPropertyId": "1318860001000000002"
+      },
+      {
+        "sourceColumnName": "adherence_category",
+        "targetPropertyId": "1318860001000000003"
+      },
+      {
+        "sourceColumnName": "pdc_score",
+        "targetPropertyId": "1318860001000000004"
+      },
+      {
+        "sourceColumnName": "gap_days",
+        "targetPropertyId": "1318860001000000005"
+      },
+      {
+        "sourceColumnName": "total_fills",
+        "targetPropertyId": "1318860001000000006"
+      },
+      {
+        "sourceColumnName": "is_chronic",
+        "targetPropertyId": "1318860001000000007"
+      }
+    ],
+    "sourceTableProperties": {
+      "sourceType": "LakehouseTable",
+      "workspaceId": "00000000-0000-0000-0000-000000000000",
+      "itemId": "00000000-0000-0000-0000-000000000000",
+      "sourceTableName": "agg_medication_adherence",
+      "sourceSchema": null
+    }
+  }
+}

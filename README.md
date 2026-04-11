@@ -546,7 +546,7 @@ Edit the top cell of `Healthcare_Launcher.ipynb`:
 
 ```
 ├── Healthcare_Launcher.ipynb          # <- Import this into Fabric
-├── ONTOLOGY_GRAPH_SETUP_GUIDE.md      # Manual ontology setup (10 entities, 15 relationships)
+├── ONTOLOGY_GRAPH_SETUP_GUIDE.md      # Manual ontology setup (12 entities, 18 relationships)
 ├── DATA_AGENT_GUIDE.md                # Agent instructions, routing, few-shots, knowledge base
 ├── POWERBI_DASHBOARD_GUIDE.md         # Power BI report pages, measures, Direct Lake tips
 ├── FOUNDRY_IQ_SETUP_GUIDE.md          # Azure AI Foundry orchestrator agent setup (11 steps)

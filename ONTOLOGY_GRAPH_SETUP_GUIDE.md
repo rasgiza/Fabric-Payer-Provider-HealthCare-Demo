@@ -42,6 +42,8 @@ For each: select the entity -> click **Delete** (or the trash icon).
 
 You should have **10 entity types** remaining.
 
+> **Note:** The 2 additional entity types (MedicationAdherence, Vitals) and their 4 relationships are deployed via the API script (`deploy_ontology.py`), which reads them from the manifest. The UI flow above creates the 10 core entities; the API adds the remaining 2.
+
 ---
 
 ## Step 3 - Rename Entities & Configure Keys
@@ -382,7 +384,7 @@ These properties are auto-imported when you create the ontology from the semanti
 If you prefer automated deployment (CI/CD, repeatable environments), the API scripts deploy ontology and graph as **separate, unlinked items**:
 
 ```bash
-python 05_deploy_ontology.py        # Schema-only ontology (10 entities, 15 relationships)
+python 05_deploy_ontology.py        # Schema-only ontology (12 entities, 18 relationships)
 python 05b_deploy_graph_model.py     # Standalone graph model (loads data independently)
 ```
 
@@ -393,70 +395,77 @@ python 05b_deploy_graph_model.py     # Standalone graph model (loads data indepe
 ## Data Model Reference - Entity Relationship Diagram
 
 ```
-                    +------------------+
-                    |  CommunityHealth  |
-                    |  (dim_sdoh)       |
-                    |  PK: zip_code     |
-                    +--------^---------+
-                             | livesIn
-                    +--------+----------+
-                    |     Patient       |
-                    |  (dim_patient)    |
-                    |  PK: patient_key  |
-                    +--^--^--^--^-------+
-                       |  |  |  |
-          +------------+  |  |  +----------------+
-          | involves      |  | covers             | serves
-          |               |  |                    |
-   +------+------+  +----+--+----+       +------+---------+
-   |  Encounter  |  |   Claim    |       |  Prescription  |
-   |(fact_enc.)  |  |(fact_claim)|       |(fact_presc.)   |
-   |PK:enc_key   |  |PK:claim_key|       |PK:presc_key    |
-   +--+------+---+  +-+---+--+--+       ++--+--+--+------+
-      |      |         |   |  |           |  |  |  |
-      |  treatedBy     |   |  |submittedBy|  |  |  |prescribedBy
-      |      |         |   |  |           |  |  |  |
-      |      +----+    |   |  +------+    |  |  |  +------+
-      |           v    |   |         v    |  |  |         v
-      |    +----------+|   |  +----------+|  |  |  +----------+
-      |    | Provider  ||   |  | Provider ||  |  |  | Provider |
-      |    +----------+|   |  +----------+|  |  |  +----------+
-      |                |   |              |  |  |
-      |  billsFor------+   |ClaimHasPayer |  |  |PrescHasPayer
-      |                    |              |  |  |
-      |              +-----+              |  |  +---+
-      |              v                    |  |      v
-      |       +----------+               |  | +----------+
-      |       |   Payer  |               |  | |   Payer  |
-      |       |(dim_payer)|               |  | |(dim_payer)|
-      |       |PK:payer_k|               |  | |PK:payer_k|
-      |       +----------+               |  | +----------+
-      |                                  |  |
-      |                    dispenses-----+  |originatesFrom
-      |                                     |
-      |       +--------------+              |
-      |       |  Medication   |              |
-      |       |(dim_medication)|             |
-      |       |PK:medication_k|             |
-      |       +--------------+           connects to
-      |                                  Encounter
-      |
-      |  +---------------------+
-      +--|  PatientDiagnosis   |
-      |  |  (fact_diagnosis)   |
-      |  |  PK:fact_diag_key   |
-      |  +--+-----+-----------+
-      |     |     |
-      |     |     | references
-      |     |     v
-      |     |  +----------+
-      |     |  | Diagnosis |
-      |     |  |(dim_diag) |
-      |     |  |PK:diag_key|
-      |     |  +----------+
-      |     |
-      |     | occursIn
-      +-----+ (-> Encounter)
+                         +------------------+
+                         |  CommunityHealth |
+                         |  (dim_sdoh)      |
+                         |  PK: zip_code    |
+                         +--------^---------+
+                                  | livesIn
+                         +--------+----------+
+                         |      Patient      |
+                         |   (dim_patient)   |
+                         |   PK: patient_key |
+                         +--^--^--^--^--^--^-+
+                            |  |  |  |  |  |
+           +----------------+  |  |  |  |  +------------------+
+           | involves          |  |  |  | adherenceFor        | vitalsTakenFor
+           |                   |  |  |  |                     |
+    +------+-------+     +----+--+--+  |  +-------------------+---+
+    |  Encounter   |     |   Claim   |  |  | MedicationAdherence  |
+    |(fact_enc.)   |     |(fact_clm) |  |  | (agg_med_adherence)  |
+    |PK:enc_key    |     |PK:clm_key |  |  | PK:pat_key+med_key  |
+    +--+--+--^-----+     +-+--+--+---+  |  +----------+----------+
+       |  |  |              |  |  |      |             |
+       |  |  |vitalsDuring  |  |  |      |serves   adherenceMedication
+       |  |  |Encounter     |  |  |      |             |
+       |  |  |           +--+  |  |      |             v
+       |  |  |           |     |  |      |    +---------------+
+       |  |  +--------+  |     |  |      |    |  Medication   |
+       |  |           |  |     |  |      |    |(dim_medication)|
+       |  |treatedBy  |  |     |  |sub-  |    |PK:medication_k|
+       |  |           |  |bill |  |mitted|    +------^--------+
+       |  v           |  |sFor |  |By    |           |
+       |  +----------+|  |     |  |      |    dispenses
+       |  | Provider ||  |     |  |      |           |
+       |  +----------+|  |     |  |      |  +--------+--------+
+       |              |  |     |  |      |  |  Prescription   |
+       |              |  |     |  |      |  | (fact_presc.)   |
+       |              |  |     |  |      |  | PK:presc_key    |
+       |              |  |     |  |      +--+--+--+--+--------+
+       |              |  |     |  |            |  |  |
+       |              |  |     |  |prescribedBy|  |  |originatesFrom
+       |              |  |     |  |            |  |  |(-> Encounter)
+       |              |  |     |  |            |  |
+       |              |  |     |  |            |  |PrescHasPayer
+       |              |  |     |  |ClaimHas    |  |
+       |              |  |     |  |Payer       |  v
+       |              |  |     |  v            | +----------+
+       |              |  |     | +----------+  | |  Payer   |
+       |              |  |     | |  Payer   |  | +----------+
+       |              |  |     | +----------+  |
+       |              |  |     |               |
+       | +----------+ |  |     |               |
+       | |  Vitals  | |  |     |               |
+       | |(fact_vit)| |  |     |               |
+       | |PK:pat+enc|-+  |     |               |
+       | +----------+    |     |               |
+       |                 |     |               |
+       |  +--------------+-----+               |
+       +--|  PatientDiagnosis  |               |
+          |  (fact_diagnosis)  |               |
+          |  PK:fact_diag_key  |               |
+          +--+-----+-----------+
+             |     |
+             |     | references
+             |     v
+             |  +----------+
+             |  | Diagnosis |
+             |  |(dim_diag) |
+             |  |PK:diag_key|
+             |  +----------+
+             |
+             | occursIn
+             + (-> Encounter)
 ```
 
 ---
@@ -465,15 +474,17 @@ python 05b_deploy_graph_model.py     # Standalone graph model (loads data indepe
 
 | Lakehouse Table | Entity Type | Relationships (as Source) | Relationships (as Target) |
 |---|---|---|---|
-| `dim_patient` | Patient | livesIn -> CommunityHealth | involves, covers, serves, affects |
+| `dim_patient` | Patient | livesIn -> CommunityHealth | involves, covers, serves, affects, adherenceFor, vitalsTakenFor |
 | `dim_diagnosis` | Diagnosis | - | references |
 | `dim_payer` | Payer | - | ClaimHasPayer, PrescriptionHasPayer |
-| `dim_medication` | Medication | - | dispenses |
+| `dim_medication` | Medication | - | dispenses, adherenceMedication |
 | `dim_provider` | Provider | - | treatedBy, submittedBy, prescribedBy |
 | `dim_sdoh` | CommunityHealth | - | livesIn |
-| `fact_encounter` | Encounter | involves, treatedBy | billsFor, originatesFrom, occursIn |
+| `fact_encounter` | Encounter | involves, treatedBy | billsFor, originatesFrom, occursIn, vitalsDuringEncounter |
 | `fact_claim` | Claim | covers, submittedBy, ClaimHasPayer, billsFor | - |
 | `fact_prescription` | Prescription | serves, prescribedBy, PrescriptionHasPayer, dispenses, originatesFrom | - |
 | `fact_diagnosis` | PatientDiagnosis | affects, references, occursIn | - |
+| `agg_medication_adherence` | MedicationAdherence | adherenceFor, adherenceMedication | - |
+| `fact_vitals` | Vitals | vitalsTakenFor, vitalsDuringEncounter | - |
 
 All tables are in **lh_gold_curated** (Gold layer of the Medallion architecture).

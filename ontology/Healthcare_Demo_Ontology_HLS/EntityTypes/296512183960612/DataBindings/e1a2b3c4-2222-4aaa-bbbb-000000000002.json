@@ -1,0 +1,56 @@
+{
+  "$schema": "https://developer.microsoft.com/json-schemas/fabric/item/ontology/dataBinding/1.0.0/schema.json",
+  "id": "e1a2b3c4-2222-4aaa-bbbb-000000000002",
+  "dataBindingConfiguration": {
+    "dataBindingType": "NonTimeSeries",
+    "propertyBindings": [
+      {
+        "sourceColumnName": "patient_key",
+        "targetPropertyId": "1318860002000000001"
+      },
+      {
+        "sourceColumnName": "encounter_key",
+        "targetPropertyId": "1318860002000000002"
+      },
+      {
+        "sourceColumnName": "vital_date_key",
+        "targetPropertyId": "1318860002000000003"
+      },
+      {
+        "sourceColumnName": "systolic_bp",
+        "targetPropertyId": "1318860002000000004"
+      },
+      {
+        "sourceColumnName": "diastolic_bp",
+        "targetPropertyId": "1318860002000000005"
+      },
+      {
+        "sourceColumnName": "heart_rate",
+        "targetPropertyId": "1318860002000000006"
+      },
+      {
+        "sourceColumnName": "temperature",
+        "targetPropertyId": "1318860002000000007"
+      },
+      {
+        "sourceColumnName": "respiratory_rate",
+        "targetPropertyId": "1318860002000000008"
+      },
+      {
+        "sourceColumnName": "bmi",
+        "targetPropertyId": "1318860002000000009"
+      },
+      {
+        "sourceColumnName": "oxygen_saturation",
+        "targetPropertyId": "1318860002000000010"
+      }
+    ],
+    "sourceTableProperties": {
+      "sourceType": "LakehouseTable",
+      "workspaceId": "00000000-0000-0000-0000-000000000000",
+      "itemId": "00000000-0000-0000-0000-000000000000",
+      "sourceTableName": "fact_vitals",
+      "sourceSchema": null
+    }
+  }
+}

@@ -1,0 +1,125 @@
+{
+  "$schema": "https://developer.microsoft.com/json-schemas/fabric/item/dataAgent/definition/fewShots/1.0.0/schema.json",
+  "fewShots": [
+    {
+      "id": "ga000001-0001-0001-0001-000000000001",
+      "question": "Tell me the full story of patient PAT0000001 — encounters, diagnoses, medications, claims, providers, everything",
+      "query": "Find Patient with patient_id = 'PAT0000001'. Fan out to ALL connected entities: Encounters (via involves — show encounter_type, readmission_risk_category, length_of_stay, total_charges), Claims (via covers — show claim_status, denial_flag, billed_amount), Prescriptions (via serves — then dispenses to Medication for drug names), PatientDiagnoses (via affects — then references to Diagnosis for ICD descriptions), CommunityHealth (via livesIn — show risk_tier, poverty_rate, social_vulnerability_index). For each encounter, also traverse treatedBy to get the Provider name and specialty. Tell the patient's care story."
+    },
+    {
+      "id": "ga000002-0002-0002-0002-000000000002",
+      "question": "Show me patients with high readmission risk and their full clinical context",
+      "query": "Find Encounter entities where readmission_risk_category = 'High'. Traverse involves to Patient (get name, age, insurance_type). For each patient, also traverse: affects (reverse) to PatientDiagnosis then references to Diagnosis (what conditions they have), serves (reverse) to Prescription then dispenses to Medication (what they're prescribed), livesIn to CommunityHealth (their SDOH risk). Present each high-risk patient as a mini care story showing why they may be at risk."
+    },
+    {
+      "id": "ga000003-0003-0003-0003-000000000003",
+      "question": "I have a patient named Elizabeth Brown, age 62. What medications is she on, who prescribed them, and is she adherent?",
+      "query": "Find Patient where first_name = 'Elizabeth' AND last_name = 'Brown' AND age = 62. Traverse serves (reverse) to Prescription (get fill_number, days_supply, total_cost, patient_copay, is_chronic_medication). From each Prescription, traverse dispenses to Medication (get medication_name, drug_class, therapeutic_area, is_chronic) AND prescribedBy to Provider (get display_name, specialty). Also traverse originatesFrom to Encounter (get encounter_type, encounter_id). ALSO traverse adherenceFor (reverse) from Patient to MedicationAdherence, then adherenceMedication to Medication — match each medication to its adherence_category and pdc_score. Present as: each medication with drug class, prescribing doctor, encounter, AND adherence status (Adherent/Partial/Non-Adherent with PDC score). Flag Non-Adherent chronic medications."
+    },
+    {
+      "id": "ga000004-0004-0004-0004-000000000004",
+      "question": "A patient was readmitted within days of discharge. Walk me through what happened — the index admission, discharge, readmission, diagnoses, claims, and who was involved.",
+      "query": "Find Patient by name or ID. Traverse involves (reverse) to get ALL Encounters, identify the index admission (earlier encounter) and the readmission (later encounter with readmission_flag = 1). For EACH encounter: traverse treatedBy to Provider (who treated), traverse occursIn (reverse on PatientDiagnosis) then references to Diagnosis (what conditions), traverse billsFor (reverse from Claim) to get claim_status, billed_amount, denial_flag. Also traverse livesIn to CommunityHealth to check SDOH risk factors. Tell the story chronologically: admission → diagnosis → discharge → readmission → costs → SDOH context."
+    },
+    {
+      "id": "ga000005-0005-0005-0005-000000000005",
+      "question": "Who is the provider that treated patient PAT0000050 and what other patients have they treated?",
+      "query": "Find Patient with patient_id = 'PAT0000050', traverse involves (reverse) to Encounter, then treatedBy to Provider. Get the Provider's display_name, specialty, department. Then reverse — from that Provider, traverse treatedBy (reverse) to get ALL their Encounters, then involves to get ALL patients they've treated. Show the provider's patient panel."
+    },
+    {
+      "id": "ga000006-0006-0006-0006-000000000006",
+      "question": "What diagnoses does patient PAT0000010 have? Are any of them chronic?",
+      "query": "Find Patient with patient_id = 'PAT0000010', traverse affects (reverse) to PatientDiagnosis (get diagnosis_type: principal vs secondary, present_on_admission). From each PatientDiagnosis, traverse references to Diagnosis (get icd_code, icd_description, icd_category, is_chronic). Also traverse occursIn to Encounter (get encounter_type, encounter_id) to show WHEN each diagnosis was recorded. Flag chronic conditions prominently."
+    },
+    {
+      "id": "ga000007-0007-0007-0007-000000000007",
+      "question": "Show the full care pathway for patient PAT0000005 — from their first encounter through all claims, prescriptions, and diagnoses",
+      "query": "Find Patient PAT0000005. Fan out comprehensively: Encounters (involves) with types and dates, for each encounter: Provider (treatedBy), Claims (billsFor reverse) with amounts and status, Prescriptions (originatesFrom reverse) with medications (dispenses), Diagnoses (occursIn reverse then references). Also show CommunityHealth (livesIn) for SDOH context. Present as a chronological care timeline."
+    },
+    {
+      "id": "ga000008-0008-0008-0008-000000000008",
+      "question": "Which payer covers the claims for patient PAT0000015 and were any denied?",
+      "query": "Find Patient PAT0000015, traverse covers (reverse) to Claim. For each Claim, get claim_status, denial_flag, billed_amount, paid_amount, primary_denial_reason. Traverse ClaimHasPayer to Payer (get payer_name, payer_type). Also traverse billsFor to Encounter and submittedBy to Provider to show the full context of each claim."
+    },
+    {
+      "id": "ga000009-0009-0009-0009-000000000009",
+      "question": "What claims are linked to encounter ENC0001234 and what's the financial picture?",
+      "query": "Find Encounter with encounter_id = 'ENC0001234'. Traverse billsFor (reverse) to Claim (get claim_id, claim_status, denial_flag, billed_amount, paid_amount, primary_denial_reason). For each Claim, traverse ClaimHasPayer to Payer and submittedBy to Provider. Also traverse involves to Patient and treatedBy to Provider for the encounter context."
+    },
+    {
+      "id": "ga000010-0010-0010-0010-000000000010",
+      "question": "What is the SDOH profile for patient PAT0000030 and how might it affect their care?",
+      "query": "Find Patient PAT0000030, traverse livesIn to CommunityHealth. Return risk_tier, poverty_rate, food_desert_flag, transportation_score, uninsured_rate, social_vulnerability_index, median_household_income, housing_instability_rate, broadband_access_pct. Also get the patient's encounters and readmission risk to see if there's a correlation with their SDOH factors."
+    },
+    {
+      "id": "ga000011-0011-0011-0011-000000000011",
+      "question": "Find patients with high readmission risk who live in high SDOH risk areas — these are our most vulnerable",
+      "query": "Find CommunityHealth where risk_tier = 'High', traverse livesIn (reverse) to Patient. For each Patient, traverse involves (reverse) to Encounter where readmission_risk_category = 'High'. Return patient name, age, zip_code, social_vulnerability_index, readmission_risk_score. Also traverse to their Diagnoses and Prescriptions to understand their clinical situation."
+    },
+    {
+      "id": "ga000012-0012-0012-0012-000000000012",
+      "question": "Show me denied claims and the full story behind each — who submitted, what patient, what encounter, what payer",
+      "query": "Find Claim entities where denial_flag = 1. For each: traverse covers to Patient (name, age), submittedBy to Provider (display_name, specialty), ClaimHasPayer to Payer (payer_name), billsFor to Encounter (encounter_type, length_of_stay, readmission_risk_category). Show primary_denial_reason and recommended_action. Tell the story of each denial."
+    },
+    {
+      "id": "ga000013-0013-0013-0013-000000000013",
+      "question": "Trace the complete journey of claim CLM0009999 from patient to payer",
+      "query": "Find Claim with claim_id = 'CLM0009999'. Traverse to Patient (covers), Provider (submittedBy), Payer (ClaimHasPayer), Encounter (billsFor). For the encounter, also get treatedBy to Provider and occursIn (reverse on PatientDiagnosis) then references to Diagnosis. Show the full lifecycle: patient admitted → diagnosed → treated → claim filed → payer billed → approved/denied."
+    },
+    {
+      "id": "ga000014-0014-0014-0014-000000000014",
+      "question": "Which providers prescribe chronic medications and to which patients?",
+      "query": "Find Medication where is_chronic = 1, traverse dispenses (reverse) to Prescription, then prescribedBy to Provider (display_name, specialty) AND serves to Patient (name, age). Show which chronic medications each provider prescribes and to whom."
+    },
+    {
+      "id": "ga000015-0015-0015-0015-000000000015",
+      "question": "What prescriptions originated from inpatient encounters for patient PAT0000008?",
+      "query": "Find Patient PAT0000008, traverse involves (reverse) to Encounter where encounter_type = 'Inpatient'. From each Inpatient encounter, traverse originatesFrom (reverse) to Prescription, then dispenses to Medication. Show which inpatient stays generated which prescriptions — medication_name, drug_class, total_cost, days_supply."
+    },
+    {
+      "id": "ga000016-0016-0016-0016-000000000016",
+      "question": "Which patients are connected to Dr. Smith? Show me all their encounters and outcomes",
+      "query": "Find Provider where display_name contains 'Smith', traverse treatedBy (reverse) to Encounter (get encounter_type, readmission_risk_category, length_of_stay, total_charges). For each Encounter, traverse involves to Patient (name, age). Group by patient to show Dr. Smith's patient panel with outcomes."
+    },
+    {
+      "id": "ga000017-0017-0017-0017-000000000017",
+      "question": "Show me everything connected to encounter ENC0005678 — I want the complete picture",
+      "query": "Find Encounter ENC0005678. Fan out to ALL connected entities: Patient (involves), Provider (treatedBy), Claims (billsFor reverse — get status, amounts, denial info), Prescriptions (originatesFrom reverse — then Medication via dispenses), PatientDiagnoses (occursIn reverse — then Diagnosis via references). Return the complete encounter context as a story."
+    },
+    {
+      "id": "ga000018-0018-0018-0018-000000000018",
+      "question": "Which payers are associated with denied claims for high-risk readmission patients?",
+      "query": "Find Encounter where readmission_risk_category = 'High', traverse billsFor (reverse) to Claim where denial_flag = 1, traverse ClaimHasPayer to Payer. Also traverse covers to Patient for patient details. Return payer_name, primary_denial_reason, billed_amount, patient name, readmission_risk_score."
+    },
+    {
+      "id": "ga000019-0019-0019-0019-000000000019",
+      "question": "I want to understand the relationship between a patient's diagnoses and their claims — do chronic conditions lead to more denials?",
+      "query": "Find Patient, traverse affects (reverse) to PatientDiagnosis then references to Diagnosis (focus on is_chronic = 1). Also traverse covers (reverse) to Claim (get denial_flag, primary_denial_reason). Show for each patient: their chronic diagnoses alongside their claim denial pattern. This is a relationship discovery question — for statistical correlation, recommend HealthcareHLSAgent."
+    },
+    {
+      "id": "ga000020-0020-0020-0020-000000000020",
+      "question": "Tell me about the sickest patients — who has the most encounters, most diagnoses, and highest costs?",
+      "query": "This question asks for rankings and counts, which require aggregation. For 'top patients by encounter count' or 'highest costs', use HealthcareHLSAgent with SQL. HOWEVER, if you name a specific patient, I can show you their full care story — every encounter, diagnosis, medication, claim, provider, and SDOH context."
+    },
+    {
+      "id": "ga000021-0021-0021-0021-000000000021",
+      "question": "Is patient PAT0000025 adherent to their medications? Show me their adherence by drug class.",
+      "query": "Find Patient with patient_id = 'PAT0000025'. Traverse adherenceFor (reverse) to MedicationAdherence (get adherence_category, pdc_score, gap_days, total_fills, is_chronic). From each MedicationAdherence, traverse adherenceMedication to Medication (get medication_name, drug_class, therapeutic_area). Present grouped by drug_class: for each drug class, show medication name, adherence_category, pdc_score, gap_days. Flag Non-Adherent medications (pdc_score < 0.50) and Partial (0.50-0.80). Emphasize chronic medications with poor adherence as clinical risk."
+    },
+    {
+      "id": "ga000022-0022-0022-0022-000000000022",
+      "question": "Show me patients who are non-adherent to chronic medications and also have high readmission risk — these are our biggest intervention targets.",
+      "query": "Find MedicationAdherence where adherence_category = 'Non-Adherent' AND is_chronic = 1. Traverse adherenceFor to Patient (get first_name, last_name, age, insurance_type). For each Patient, traverse involves (reverse) to Encounter — look for readmission_risk_category = 'High'. Also traverse adherenceMedication to Medication (get medication_name, drug_class). For patients that have BOTH non-adherent chronic meds AND high readmission risk, also check livesIn to CommunityHealth for SDOH factors. Present as a prioritized intervention list: patient name, non-adherent medication, drug class, pdc_score, readmission_risk_score, SDOH risk_tier."
+    },
+    {
+      "id": "ga000023-0023-0023-0023-000000000023",
+      "question": "What were the vitals for patient PAT0000012 at their last encounter? Were any abnormal?",
+      "query": "Find Patient with patient_id = 'PAT0000012'. Traverse vitalsTakenFor (reverse) to Vitals. From each Vitals, traverse vitalsDuringEncounter to Encounter (get encounter_id, encounter_type). Return all vital signs: systolic_bp, diastolic_bp, heart_rate, temperature, respiratory_rate, bmi, oxygen_saturation. Flag abnormals: systolic_bp >= 140 or diastolic_bp >= 90 (hypertension), heart_rate > 100 (tachycardia) or < 60 (bradycardia), temperature > 100.4 (fever), oxygen_saturation < 95 (hypoxia), bmi >= 30 (obese). Focus on the most recent encounter's vitals."
+    },
+    {
+      "id": "ga000024-0024-0024-0024-000000000024",
+      "question": "Give me the full clinical picture of patient PAT0000040 — vitals, medications, adherence, diagnoses, and encounters",
+      "query": "Find Patient PAT0000040. Fan out comprehensively: Encounters (involves — encounter_type, readmission_risk), Vitals (vitalsTakenFor — BP, HR, temp, O2 sat, BMI with abnormal flags), MedicationAdherence (adherenceFor — pdc_score, adherence_category per medication via adherenceMedication), Prescriptions (serves — then dispenses to Medication for drug names, drug class), PatientDiagnoses (affects — then references to Diagnosis for ICD codes/descriptions), CommunityHealth (livesIn — SDOH risk). Tell the complete clinical story: what conditions they have, what they're prescribed, whether they're taking their meds, what their vitals look like, and their social risk factors."
+    }
+  ]
+}

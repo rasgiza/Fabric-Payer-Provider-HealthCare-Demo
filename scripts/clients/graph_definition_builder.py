@@ -247,7 +247,7 @@ class GraphDefinitionBuilder:
                 "edgeTypeAlias": f"{r['name']}_edgeType",
                 "dataSourceName": f"{r['ctx_table']}_Source",
                 "sourceNodeKeyColumns": src_key,
-                "targetNodeKeyColumns": r["tgt_key_cols"],
+                "destinationNodeKeyColumns": r["tgt_key_cols"],
                 "propertyMappings": [],
             })
 

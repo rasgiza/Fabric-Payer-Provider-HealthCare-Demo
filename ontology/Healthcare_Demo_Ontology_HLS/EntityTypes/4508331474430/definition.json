@@ -69,7 +69,7 @@
     },
     {
       "id": "1214896384726243973",
-      "name": "sequence_number",
+      "name": "diagnosis_sequence",
       "redefines": null,
       "baseTypeNamespaceType": null,
       "valueType": "BigInt"

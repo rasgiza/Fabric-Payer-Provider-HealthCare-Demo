@@ -90,7 +90,7 @@
     },
     {
       "id": "1214894156432387370",
-      "name": "pharmacy_id",
+      "name": "pharmacy_type",
       "redefines": null,
       "baseTypeNamespaceType": null,
       "valueType": "String"

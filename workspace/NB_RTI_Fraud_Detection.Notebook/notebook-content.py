@@ -301,6 +301,10 @@ if KUSTO_QUERY_URI and KUSTO_INGEST_URI:
             except Exception as _me:
                 print(f"  KQL WARN: mgmt command failed (non-fatal): {_me}")
 
+        # Wait for table/mapping propagation across Kusto cluster nodes
+        import time as _time_kql
+        _time_kql.sleep(10)
+
         client = ManagedStreamingIngestClient(engine_kcsb, dm_kcsb)
         ingestion_props = IngestionProperties(
             database=KQL_DB_NAME, table="fraud_scores",

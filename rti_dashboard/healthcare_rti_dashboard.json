@@ -1,5 +1,5 @@
 {
-  "$schema": "https://dataexplorer.azure.com/static/d/schema/20/dashboard.json",
+  "$schema": "",
   "autoRefresh": {
     "enabled": true,
     "defaultRefreshRate": {
@@ -35,13 +35,8 @@
             "kind": "query",
             "queryId": "q-live-kpis"
           },
-          "visualType": "card",
-          "visualOptions": {
-            "multiStat__textSize": "auto",
-            "multiStat__valueColumn": null,
-            "colorRulesDisabled": true,
-            "colorRules": []
-          }
+          "visualType": "stat",
+          "visualOptions": {}
         },
         {
           "id": "tile-claims-volume-trend",
@@ -57,39 +52,7 @@
             "queryId": "q-claims-volume-trend"
           },
           "visualType": "line",
-          "visualOptions": {
-            "multipleYAxes": {
-              "base": {
-                "id": "-1",
-                "label": "",
-                "columns": [],
-                "yAxisMaximumValue": null,
-                "yAxisMinimumValue": null,
-                "yAxisScale": "linear",
-                "horizontalLines": []
-              },
-              "additional": [],
-              "showMultiplePanels": false
-            },
-            "seriesColors": {},
-            "hideLegend": false,
-            "legendLocation": "bottom",
-            "xColumnTitle": "",
-            "xColumn": null,
-            "yColumns": null,
-            "seriesColumns": null,
-            "xAxisScale": "linear",
-            "verticalLine": "",
-            "crossFilterDisabled": false,
-            "drillthroughDisabled": false,
-            "forceAxisTicks": false,
-            "crossFilter": [],
-            "drillthrough": [],
-            "selectedDataOnLoad": {
-              "all": true,
-              "limit": 10
-            }
-          }
+          "visualOptions": {}
         },
         {
           "id": "tile-event-type-dist",
@@ -105,39 +68,7 @@
             "queryId": "q-event-type-distribution"
           },
           "visualType": "column",
-          "visualOptions": {
-            "multipleYAxes": {
-              "base": {
-                "id": "-1",
-                "label": "",
-                "columns": [],
-                "yAxisMaximumValue": null,
-                "yAxisMinimumValue": null,
-                "yAxisScale": "linear",
-                "horizontalLines": []
-              },
-              "additional": [],
-              "showMultiplePanels": false
-            },
-            "seriesColors": {},
-            "hideLegend": false,
-            "legendLocation": "bottom",
-            "xColumnTitle": "",
-            "xColumn": null,
-            "yColumns": null,
-            "seriesColumns": null,
-            "xAxisScale": "linear",
-            "verticalLine": "",
-            "crossFilterDisabled": false,
-            "drillthroughDisabled": false,
-            "forceAxisTicks": false,
-            "crossFilter": [],
-            "drillthrough": [],
-            "selectedDataOnLoad": {
-              "all": true,
-              "limit": 10
-            }
-          }
+          "visualOptions": {}
         },
         {
           "id": "tile-fraud-score-dist",
@@ -153,39 +84,7 @@
             "queryId": "q-fraud-score-distribution"
           },
           "visualType": "bar",
-          "visualOptions": {
-            "multipleYAxes": {
-              "base": {
-                "id": "-1",
-                "label": "",
-                "columns": [],
-                "yAxisMaximumValue": null,
-                "yAxisMinimumValue": null,
-                "yAxisScale": "linear",
-                "horizontalLines": []
-              },
-              "additional": [],
-              "showMultiplePanels": false
-            },
-            "seriesColors": {},
-            "hideLegend": false,
-            "legendLocation": "bottom",
-            "xColumnTitle": "",
-            "xColumn": null,
-            "yColumns": null,
-            "seriesColumns": null,
-            "xAxisScale": "linear",
-            "verticalLine": "",
-            "crossFilterDisabled": false,
-            "drillthroughDisabled": false,
-            "forceAxisTicks": false,
-            "crossFilter": [],
-            "drillthrough": [],
-            "selectedDataOnLoad": {
-              "all": true,
-              "limit": 10
-            }
-          }
+          "visualOptions": {}
         },
         {
           "id": "tile-alert-velocity",
@@ -201,39 +100,7 @@
             "queryId": "q-alert-velocity"
           },
           "visualType": "line",
-          "visualOptions": {
-            "multipleYAxes": {
-              "base": {
-                "id": "-1",
-                "label": "",
-                "columns": [],
-                "yAxisMaximumValue": null,
-                "yAxisMinimumValue": null,
-                "yAxisScale": "linear",
-                "horizontalLines": []
-              },
-              "additional": [],
-              "showMultiplePanels": false
-            },
-            "seriesColors": {},
-            "hideLegend": false,
-            "legendLocation": "bottom",
-            "xColumnTitle": "",
-            "xColumn": null,
-            "yColumns": null,
-            "seriesColumns": null,
-            "xAxisScale": "linear",
-            "verticalLine": "",
-            "crossFilterDisabled": false,
-            "drillthroughDisabled": false,
-            "forceAxisTicks": false,
-            "crossFilter": [],
-            "drillthrough": [],
-            "selectedDataOnLoad": {
-              "all": true,
-              "limit": 10
-            }
-          }
+          "visualOptions": {}
         }
       ]
     },
@@ -254,13 +121,8 @@
             "kind": "query",
             "queryId": "q-care-gap-kpis"
           },
-          "visualType": "card",
-          "visualOptions": {
-            "multiStat__textSize": "auto",
-            "multiStat__valueColumn": null,
-            "colorRulesDisabled": true,
-            "colorRules": []
-          }
+          "visualType": "stat",
+          "visualOptions": {}
         },
         {
           "id": "tile-care-gap-by-measure",
@@ -276,39 +138,7 @@
             "queryId": "q-care-gap-by-measure"
           },
           "visualType": "bar",
-          "visualOptions": {
-            "multipleYAxes": {
-              "base": {
-                "id": "-1",
-                "label": "",
-                "columns": [],
-                "yAxisMaximumValue": null,
-                "yAxisMinimumValue": null,
-                "yAxisScale": "linear",
-                "horizontalLines": []
-              },
-              "additional": [],
-              "showMultiplePanels": false
-            },
-            "seriesColors": {},
-            "hideLegend": false,
-            "legendLocation": "bottom",
-            "xColumnTitle": "",
-            "xColumn": null,
-            "yColumns": null,
-            "seriesColumns": null,
-            "xAxisScale": "linear",
-            "verticalLine": "",
-            "crossFilterDisabled": false,
-            "drillthroughDisabled": false,
-            "forceAxisTicks": false,
-            "crossFilter": [],
-            "drillthrough": [],
-            "selectedDataOnLoad": {
-              "all": true,
-              "limit": 10
-            }
-          }
+          "visualOptions": {}
         },
         {
           "id": "tile-care-gap-priority",
@@ -324,39 +154,7 @@
             "queryId": "q-care-gap-priority"
           },
           "visualType": "column",
-          "visualOptions": {
-            "multipleYAxes": {
-              "base": {
-                "id": "-1",
-                "label": "",
-                "columns": [],
-                "yAxisMaximumValue": null,
-                "yAxisMinimumValue": null,
-                "yAxisScale": "linear",
-                "horizontalLines": []
-              },
-              "additional": [],
-              "showMultiplePanels": false
-            },
-            "seriesColors": {},
-            "hideLegend": false,
-            "legendLocation": "bottom",
-            "xColumnTitle": "",
-            "xColumn": null,
-            "yColumns": null,
-            "seriesColumns": null,
-            "xAxisScale": "linear",
-            "verticalLine": "",
-            "crossFilterDisabled": false,
-            "drillthroughDisabled": false,
-            "forceAxisTicks": false,
-            "crossFilter": [],
-            "drillthrough": [],
-            "selectedDataOnLoad": {
-              "all": true,
-              "limit": 10
-            }
-          }
+          "visualOptions": {}
         },
         {
           "id": "tile-overdue-gaps-table",
@@ -372,20 +170,7 @@
             "queryId": "q-overdue-care-gaps"
           },
           "visualType": "table",
-          "visualOptions": {
-            "table__enableRenderLinks": true,
-            "colorRulesDisabled": true,
-            "crossFilterDisabled": false,
-            "drillthroughDisabled": false,
-            "crossFilter": [],
-            "drillthrough": [],
-            "table__renderLinks": [],
-            "colorRules": [],
-            "selectedDataOnLoad": {
-              "all": true,
-              "limit": 10
-            }
-          }
+          "visualOptions": {}
         },
         {
           "id": "tile-highcost-risk-tiers",
@@ -401,39 +186,7 @@
             "queryId": "q-highcost-risk-tiers"
           },
           "visualType": "bar",
-          "visualOptions": {
-            "multipleYAxes": {
-              "base": {
-                "id": "-1",
-                "label": "",
-                "columns": [],
-                "yAxisMaximumValue": null,
-                "yAxisMinimumValue": null,
-                "yAxisScale": "linear",
-                "horizontalLines": []
-              },
-              "additional": [],
-              "showMultiplePanels": false
-            },
-            "seriesColors": {},
-            "hideLegend": false,
-            "legendLocation": "bottom",
-            "xColumnTitle": "",
-            "xColumn": null,
-            "yColumns": null,
-            "seriesColumns": null,
-            "xAxisScale": "linear",
-            "verticalLine": "",
-            "crossFilterDisabled": false,
-            "drillthroughDisabled": false,
-            "forceAxisTicks": false,
-            "crossFilter": [],
-            "drillthrough": [],
-            "selectedDataOnLoad": {
-              "all": true,
-              "limit": 10
-            }
-          }
+          "visualOptions": {}
         },
         {
           "id": "tile-highcost-trend",
@@ -449,39 +202,7 @@
             "queryId": "q-highcost-cost-trend"
           },
           "visualType": "column",
-          "visualOptions": {
-            "multipleYAxes": {
-              "base": {
-                "id": "-1",
-                "label": "",
-                "columns": [],
-                "yAxisMaximumValue": null,
-                "yAxisMinimumValue": null,
-                "yAxisScale": "linear",
-                "horizontalLines": []
-              },
-              "additional": [],
-              "showMultiplePanels": false
-            },
-            "seriesColors": {},
-            "hideLegend": false,
-            "legendLocation": "bottom",
-            "xColumnTitle": "",
-            "xColumn": null,
-            "yColumns": null,
-            "seriesColumns": null,
-            "xAxisScale": "linear",
-            "verticalLine": "",
-            "crossFilterDisabled": false,
-            "drillthroughDisabled": false,
-            "forceAxisTicks": false,
-            "crossFilter": [],
-            "drillthrough": [],
-            "selectedDataOnLoad": {
-              "all": true,
-              "limit": 10
-            }
-          }
+          "visualOptions": {}
         }
       ]
     },
@@ -502,13 +223,8 @@
             "kind": "query",
             "queryId": "q-fraud-kpis"
           },
-          "visualType": "card",
-          "visualOptions": {
-            "multiStat__textSize": "auto",
-            "multiStat__valueColumn": null,
-            "colorRulesDisabled": true,
-            "colorRules": []
-          }
+          "visualType": "stat",
+          "visualOptions": {}
         },
         {
           "id": "tile-fraud-trend",
@@ -524,39 +240,7 @@
             "queryId": "q-fraud-trend"
           },
           "visualType": "line",
-          "visualOptions": {
-            "multipleYAxes": {
-              "base": {
-                "id": "-1",
-                "label": "",
-                "columns": [],
-                "yAxisMaximumValue": null,
-                "yAxisMinimumValue": null,
-                "yAxisScale": "linear",
-                "horizontalLines": []
-              },
-              "additional": [],
-              "showMultiplePanels": false
-            },
-            "seriesColors": {},
-            "hideLegend": false,
-            "legendLocation": "bottom",
-            "xColumnTitle": "",
-            "xColumn": null,
-            "yColumns": null,
-            "seriesColumns": null,
-            "xAxisScale": "linear",
-            "verticalLine": "",
-            "crossFilterDisabled": false,
-            "drillthroughDisabled": false,
-            "forceAxisTicks": false,
-            "crossFilter": [],
-            "drillthrough": [],
-            "selectedDataOnLoad": {
-              "all": true,
-              "limit": 10
-            }
-          }
+          "visualOptions": {}
         },
         {
           "id": "tile-fraud-by-claim-type",
@@ -572,39 +256,7 @@
             "queryId": "q-fraud-by-claim-type"
           },
           "visualType": "bar",
-          "visualOptions": {
-            "multipleYAxes": {
-              "base": {
-                "id": "-1",
-                "label": "",
-                "columns": [],
-                "yAxisMaximumValue": null,
-                "yAxisMinimumValue": null,
-                "yAxisScale": "linear",
-                "horizontalLines": []
-              },
-              "additional": [],
-              "showMultiplePanels": false
-            },
-            "seriesColors": {},
-            "hideLegend": false,
-            "legendLocation": "bottom",
-            "xColumnTitle": "",
-            "xColumn": null,
-            "yColumns": null,
-            "seriesColumns": null,
-            "xAxisScale": "linear",
-            "verticalLine": "",
-            "crossFilterDisabled": false,
-            "drillthroughDisabled": false,
-            "forceAxisTicks": false,
-            "crossFilter": [],
-            "drillthrough": [],
-            "selectedDataOnLoad": {
-              "all": true,
-              "limit": 10
-            }
-          }
+          "visualOptions": {}
         },
         {
           "id": "tile-fraud-watchlist",
@@ -620,20 +272,7 @@
             "queryId": "q-fraud-watchlist"
           },
           "visualType": "table",
-          "visualOptions": {
-            "table__enableRenderLinks": true,
-            "colorRulesDisabled": true,
-            "crossFilterDisabled": false,
-            "drillthroughDisabled": false,
-            "crossFilter": [],
-            "drillthrough": [],
-            "table__renderLinks": [],
-            "colorRules": [],
-            "selectedDataOnLoad": {
-              "all": true,
-              "limit": 10
-            }
-          }
+          "visualOptions": {}
         },
         {
           "id": "tile-highcost-watchlist",
@@ -649,20 +288,7 @@
             "queryId": "q-highcost-watchlist"
           },
           "visualType": "table",
-          "visualOptions": {
-            "table__enableRenderLinks": true,
-            "colorRulesDisabled": true,
-            "crossFilterDisabled": false,
-            "drillthroughDisabled": false,
-            "crossFilter": [],
-            "drillthrough": [],
-            "table__renderLinks": [],
-            "colorRules": [],
-            "selectedDataOnLoad": {
-              "all": true,
-              "limit": 10
-            }
-          }
+          "visualOptions": {}
         }
       ]
     },
@@ -684,20 +310,7 @@
             "queryId": "q-data-freshness"
           },
           "visualType": "table",
-          "visualOptions": {
-            "table__enableRenderLinks": true,
-            "colorRulesDisabled": true,
-            "crossFilterDisabled": false,
-            "drillthroughDisabled": false,
-            "crossFilter": [],
-            "drillthrough": [],
-            "table__renderLinks": [],
-            "colorRules": [],
-            "selectedDataOnLoad": {
-              "all": true,
-              "limit": 10
-            }
-          }
+          "visualOptions": {}
         },
         {
           "id": "tile-ingestion-rate",
@@ -713,39 +326,7 @@
             "queryId": "q-ingestion-rate"
           },
           "visualType": "line",
-          "visualOptions": {
-            "multipleYAxes": {
-              "base": {
-                "id": "-1",
-                "label": "",
-                "columns": [],
-                "yAxisMaximumValue": null,
-                "yAxisMinimumValue": null,
-                "yAxisScale": "linear",
-                "horizontalLines": []
-              },
-              "additional": [],
-              "showMultiplePanels": false
-            },
-            "seriesColors": {},
-            "hideLegend": false,
-            "legendLocation": "bottom",
-            "xColumnTitle": "",
-            "xColumn": null,
-            "yColumns": null,
-            "seriesColumns": null,
-            "xAxisScale": "linear",
-            "verticalLine": "",
-            "crossFilterDisabled": false,
-            "drillthroughDisabled": false,
-            "forceAxisTicks": false,
-            "crossFilter": [],
-            "drillthrough": [],
-            "selectedDataOnLoad": {
-              "all": true,
-              "limit": 10
-            }
-          }
+          "visualOptions": {}
         },
         {
           "id": "tile-table-row-counts",
@@ -761,39 +342,7 @@
             "queryId": "q-table-row-counts"
           },
           "visualType": "bar",
-          "visualOptions": {
-            "multipleYAxes": {
-              "base": {
-                "id": "-1",
-                "label": "",
-                "columns": [],
-                "yAxisMaximumValue": null,
-                "yAxisMinimumValue": null,
-                "yAxisScale": "linear",
-                "horizontalLines": []
-              },
-              "additional": [],
-              "showMultiplePanels": false
-            },
-            "seriesColors": {},
-            "hideLegend": false,
-            "legendLocation": "bottom",
-            "xColumnTitle": "",
-            "xColumn": null,
-            "yColumns": null,
-            "seriesColumns": null,
-            "xAxisScale": "linear",
-            "verticalLine": "",
-            "crossFilterDisabled": false,
-            "drillthroughDisabled": false,
-            "forceAxisTicks": false,
-            "crossFilter": [],
-            "drillthrough": [],
-            "selectedDataOnLoad": {
-              "all": true,
-              "limit": 10
-            }
-          }
+          "visualOptions": {}
         },
         {
           "id": "tile-facility-volume",
@@ -809,39 +358,7 @@
             "queryId": "q-facility-volume"
           },
           "visualType": "bar",
-          "visualOptions": {
-            "multipleYAxes": {
-              "base": {
-                "id": "-1",
-                "label": "",
-                "columns": [],
-                "yAxisMaximumValue": null,
-                "yAxisMinimumValue": null,
-                "yAxisScale": "linear",
-                "horizontalLines": []
-              },
-              "additional": [],
-              "showMultiplePanels": false
-            },
-            "seriesColors": {},
-            "hideLegend": false,
-            "legendLocation": "bottom",
-            "xColumnTitle": "",
-            "xColumn": null,
-            "yColumns": null,
-            "seriesColumns": null,
-            "xAxisScale": "linear",
-            "verticalLine": "",
-            "crossFilterDisabled": false,
-            "drillthroughDisabled": false,
-            "forceAxisTicks": false,
-            "crossFilter": [],
-            "drillthrough": [],
-            "selectedDataOnLoad": {
-              "all": true,
-              "limit": 10
-            }
-          }
+          "visualOptions": {}
         }
       ]
     }

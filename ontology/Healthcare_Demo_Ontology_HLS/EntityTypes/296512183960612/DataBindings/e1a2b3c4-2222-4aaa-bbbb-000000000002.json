@@ -5,44 +5,92 @@
     "dataBindingType": "NonTimeSeries",
     "propertyBindings": [
       {
-        "sourceColumnName": "patient_key",
+        "sourceColumnName": "vitals_key",
         "targetPropertyId": "1318860002000000001"
       },
       {
-        "sourceColumnName": "encounter_key",
+        "sourceColumnName": "patient_key",
         "targetPropertyId": "1318860002000000002"
       },
       {
-        "sourceColumnName": "vital_date_key",
+        "sourceColumnName": "date_key",
         "targetPropertyId": "1318860002000000003"
       },
       {
-        "sourceColumnName": "systolic_bp",
+        "sourceColumnName": "hour_of_day",
         "targetPropertyId": "1318860002000000004"
       },
       {
-        "sourceColumnName": "diastolic_bp",
+        "sourceColumnName": "location_key",
         "targetPropertyId": "1318860002000000005"
       },
       {
-        "sourceColumnName": "heart_rate",
+        "sourceColumnName": "avg_heart_rate",
         "targetPropertyId": "1318860002000000006"
       },
       {
-        "sourceColumnName": "temperature",
+        "sourceColumnName": "max_heart_rate",
         "targetPropertyId": "1318860002000000007"
       },
       {
-        "sourceColumnName": "respiratory_rate",
+        "sourceColumnName": "min_heart_rate",
         "targetPropertyId": "1318860002000000008"
       },
       {
-        "sourceColumnName": "bmi",
+        "sourceColumnName": "avg_bp_systolic",
         "targetPropertyId": "1318860002000000009"
       },
       {
-        "sourceColumnName": "oxygen_saturation",
+        "sourceColumnName": "max_bp_systolic",
         "targetPropertyId": "1318860002000000010"
+      },
+      {
+        "sourceColumnName": "avg_bp_diastolic",
+        "targetPropertyId": "1318860002000000011"
+      },
+      {
+        "sourceColumnName": "avg_spo2",
+        "targetPropertyId": "1318860002000000012"
+      },
+      {
+        "sourceColumnName": "min_spo2",
+        "targetPropertyId": "1318860002000000013"
+      },
+      {
+        "sourceColumnName": "avg_temperature",
+        "targetPropertyId": "1318860002000000014"
+      },
+      {
+        "sourceColumnName": "max_temperature",
+        "targetPropertyId": "1318860002000000015"
+      },
+      {
+        "sourceColumnName": "avg_respiratory_rate",
+        "targetPropertyId": "1318860002000000016"
+      },
+      {
+        "sourceColumnName": "avg_risk_score",
+        "targetPropertyId": "1318860002000000017"
+      },
+      {
+        "sourceColumnName": "max_risk_score",
+        "targetPropertyId": "1318860002000000018"
+      },
+      {
+        "sourceColumnName": "risk_flag",
+        "targetPropertyId": "1318860002000000019"
+      },
+      {
+        "sourceColumnName": "critical_reading_count",
+        "targetPropertyId": "1318860002000000020"
+      },
+      {
+        "sourceColumnName": "reading_count",
+        "targetPropertyId": "1318860002000000021"
+      },
+      {
+        "sourceColumnName": "created_at",
+        "targetPropertyId": "1318860002000000022"
       }
     ],
     "sourceTableProperties": {

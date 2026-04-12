@@ -12,6 +12,10 @@
     {
       "sourceColumnName": "patient_key",
       "targetPropertyId": "1318860001000000001"
+    },
+    {
+      "sourceColumnName": "medication_key",
+      "targetPropertyId": "1318860001000000002"
     }
   ],
   "targetKeyRefBindings": [

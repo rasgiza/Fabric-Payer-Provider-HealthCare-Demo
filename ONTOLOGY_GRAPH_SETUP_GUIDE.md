@@ -384,7 +384,7 @@ These properties are auto-imported when you create the ontology from the semanti
 For automated deployment (CI/CD, repeatable environments), the API script deploys the ontology and its linked graph in one step:
 
 ```bash
-python 05_deploy_ontology.py        # Deploys ontology (12 entities, 18 relationships) + populates auto-provisioned graph
+python 05_deploy_ontology.py        # Deploys ontology (12 entities, 17 relationships) + populates auto-provisioned graph
 ```
 
 When Fabric creates an ontology via API, it auto-provisions a Graph child item. `deploy_ontology.py` Step 9 detects this child, pushes the GraphModel-format definition to it, and triggers data loading — producing the same linked ontology+graph as the UI approach.
@@ -417,11 +417,10 @@ When Fabric creates an ontology via API, it auto-provisions a Graph child item. 
     |PK:enc_key    |     |PK:clm_key |  |  | PK:pat_key+med_key  |
     +--+--+--^-----+     +-+--+--+---+  |  +----------+----------+
        |  |  |              |  |  |      |             |
-       |  |  |vitalsDuring  |  |  |      |serves   adherenceMedication
-       |  |  |Encounter     |  |  |      |             |
-       |  |  |           +--+  |  |      |             v
-       |  |  |           |     |  |      |    +---------------+
-       |  |  +--------+  |     |  |      |    |  Medication   |
+       |  |  |           +--+  |  |      |serves   adherenceMedication
+       |  |  |           |     |  |      |             |
+       |  |  |           |     |  |      |             v
+       |  |  +--------+  |     |  |      |    +---------------+
        |  |           |  |     |  |      |    |(dim_medication)|
        |  |treatedBy  |  |     |  |sub-  |    |PK:medication_k|
        |  |           |  |bill |  |mitted|    +------^--------+
@@ -445,11 +444,11 @@ When Fabric creates an ontology via API, it auto-provisions a Graph child item. 
        |              |  |     | |  Payer   |  | +----------+
        |              |  |     | +----------+  |
        |              |  |     |               |
-       | +----------+ |  |     |               |
-       | |  Vitals  | |  |     |               |
-       | |(fact_vit)| |  |     |               |
-       | |PK:pat+enc|-+  |     |               |
-       | +----------+    |     |               |
+       | +-------------+  |     |               |
+       | |   Vitals    |  |     |               |
+       | | (fact_vit)  |  |     |               |
+       | |PK:vitals_key|  |     |               |
+       | +-------------+  |     |               |
        |                 |     |               |
        |  +--------------+-----+               |
        +--|  PatientDiagnosis  |               |
@@ -481,11 +480,11 @@ When Fabric creates an ontology via API, it auto-provisions a Graph child item. 
 | `dim_medication` | Medication | - | dispenses, adherenceMedication |
 | `dim_provider` | Provider | - | treatedBy, submittedBy, prescribedBy |
 | `dim_sdoh` | CommunityHealth | - | livesIn |
-| `fact_encounter` | Encounter | involves, treatedBy | billsFor, originatesFrom, occursIn, vitalsDuringEncounter |
+| `fact_encounter` | Encounter | involves, treatedBy | billsFor, originatesFrom, occursIn |
 | `fact_claim` | Claim | covers, submittedBy, ClaimHasPayer, billsFor | - |
 | `fact_prescription` | Prescription | serves, prescribedBy, PrescriptionHasPayer, dispenses, originatesFrom | - |
 | `fact_diagnosis` | PatientDiagnosis | affects, references, occursIn | - |
 | `agg_medication_adherence` | MedicationAdherence | adherenceFor, adherenceMedication | - |
-| `fact_vitals` | Vitals | vitalsTakenFor, vitalsDuringEncounter | - |
+| `fact_vitals` | Vitals | vitalsTakenFor | - |
 
 All tables are in **lh_gold_curated** (Gold layer of the Medallion architecture).

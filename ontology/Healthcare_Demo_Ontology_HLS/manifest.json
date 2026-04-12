@@ -238,14 +238,6 @@
       "payloadType": "InlineBase64"
     },
     {
-      "path": "RelationshipTypes/4100000000000000004/definition.json",
-      "payloadType": "InlineBase64"
-    },
-    {
-      "path": "RelationshipTypes/4100000000000000004/Contextualizations/f1a2b3c4-6666-4aaa-bbbb-000000000006.json",
-      "payloadType": "InlineBase64"
-    },
-    {
       "path": ".platform",
       "payloadType": "InlineBase64"
     }

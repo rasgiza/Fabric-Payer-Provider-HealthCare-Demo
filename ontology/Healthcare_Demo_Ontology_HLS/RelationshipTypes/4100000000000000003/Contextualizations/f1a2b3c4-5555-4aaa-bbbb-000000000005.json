@@ -10,7 +10,7 @@
   },
   "sourceKeyRefBindings": [
     {
-      "sourceColumnName": "patient_key",
+      "sourceColumnName": "vitals_key",
       "targetPropertyId": "1318860002000000001"
     }
   ],

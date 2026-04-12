@@ -369,8 +369,17 @@ def main():
     print(f"\n  Step 9c: Deploying graph definition...")
 
     # Strategy: prefer auto-provisioned graph (child of ontology) over standalone.
-    # Auto-provisioned graphs typically share the ontology's display name.
-    auto_graph = graph_client.find_by_name(workspace_id, args.ontology)
+    # Fabric names auto-provisioned graph children as:
+    #   {OntologyName}_graph_{ontology_id_no_hyphens}
+    # e.g. Healthcare_Demo_Ontology_HLS_graph_f08d75fd73694abaa7e89bced24d2d12
+    # Search by prefix match, not exact name.
+    auto_graph = None
+    _all_graphs = graph_client.list(workspace_id)
+    for _g in _all_graphs:
+        _gname = _g.get("displayName", "")
+        if _gname.startswith(args.ontology) and "_graph_" in _gname:
+            auto_graph = _g
+            break
     existing_graph = graph_client.find_by_name(workspace_id, args.graph_model)
     graph_result = ""
     gm_id = None

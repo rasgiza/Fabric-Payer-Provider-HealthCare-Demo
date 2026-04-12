@@ -563,16 +563,21 @@ headers = {"Authorization": f"Bearer {token}", "Content-Type": "application/json
 gm_id = None
 auto_provisioned = False
 
-# Step A: Look for auto-provisioned graph (child of ontology, same name)
+# Step A: Look for auto-provisioned graph (child of ontology)
+# Fabric names auto-provisioned graph children as:
+#   {OntologyName}_graph_{ontology_id_no_hyphens}
+# e.g. Healthcare_Demo_Ontology_HLS_graph_f08d75fd73694abaa7e89bced24d2d12
 r = requests.get(GM_API, headers=headers)
 if r.status_code == 200:
     all_graphs = r.json().get("value", [])
-    # Auto-provisioned graphs typically share the ontology's display name
+    # Match by prefix: displayName starts with ontology name + "_graph_"
     for g in all_graphs:
-        if g.get("displayName") == ONTOLOGY_NAME:
+        gname = g.get("displayName", "")
+        if gname.startswith(ONTOLOGY_NAME) and "_graph_" in gname:
             gm_id = g["id"]
             auto_provisioned = True
             print(f"  Found auto-provisioned graph: {gm_id}")
+            print(f"  Name: {gname}")
             print(f"  (child of ontology '{ONTOLOGY_NAME}' — will push definition to it)")
             break
     # Fallback: check for existing standalone graph

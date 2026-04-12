@@ -4,7 +4,7 @@
 
 After your Gold lakehouse tables are populated and the semantic model (`HealthcareDemoHLS`) is deployed, create the **Ontology + linked Graph Model** from the semantic model in the Fabric UI. This approach ensures the ontology and graph are **fully linked** - enabling Fabric IQ graph traversal, Copilot integration, and visual exploration.
 
-> **Why from the semantic model?** Creating the ontology from the semantic model auto-generates entity types and properties from all 13 tables. You then rename entities, set keys/display names, replace the auto-generated relationships with curated ones, and build the graph - all in the UI. This avoids the Fabric Preview API limitation where ontology + graph deploy as **unlinked** items.
+> **Why from the semantic model?** Creating the ontology from the semantic model auto-generates entity types and properties from all 13 tables. You then rename entities, set keys/display names, replace the auto-generated relationships with curated ones, and build the graph - all in the UI. The API deployment path (`deploy_ontology.py`) also works and produces a linked ontology+graph automatically.
 
 ---
 
@@ -379,16 +379,17 @@ These properties are auto-imported when you create the ontology from the semanti
 
 ---
 
-## Alternative - API Deployment (Unlinked)
+## Alternative - API Deployment
 
-If you prefer automated deployment (CI/CD, repeatable environments), the API scripts deploy ontology and graph as **separate, unlinked items**:
+For automated deployment (CI/CD, repeatable environments), the API script deploys the ontology and its linked graph in one step:
 
 ```bash
-python 05_deploy_ontology.py        # Schema-only ontology (12 entities, 18 relationships)
-python 05b_deploy_graph_model.py     # Standalone graph model (loads data independently)
+python 05_deploy_ontology.py        # Deploys ontology (12 entities, 18 relationships) + populates auto-provisioned graph
 ```
 
-> **Limitation:** The Fabric Preview API (as of March 2026) has no endpoint to link an ontology to a graph model. The ontology's Graph tab remains empty, and graph traversal through the ontology does not activate. Use the UI approach (Steps 1-6 above) for full linked functionality. See `KNOWN_LIMITATIONS.md` section 1.7.
+When Fabric creates an ontology via API, it auto-provisions a Graph child item. `deploy_ontology.py` Step 9 detects this child, pushes the GraphModel-format definition to it, and triggers data loading — producing the same linked ontology+graph as the UI approach.
+
+`05b_deploy_graph_model.py` is still available as a standalone repair tool if you need to redeploy only the graph without re-deploying the ontology.
 
 ---
 

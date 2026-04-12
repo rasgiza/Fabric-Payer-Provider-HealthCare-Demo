@@ -323,9 +323,15 @@ def main():
         sys.exit(1)
 
     # ── Step 9: Auto-deploy Graph Model ───────────────────────
-    # The Fabric API does NOT auto-provision a graph model when you
-    # create an ontology programmatically (unlike the Fabric UI).
-    # So we chain the graph model deployment here automatically.
+    # The Fabric Ontology API auto-provisions a Graph child item when an
+    # ontology is created, but the child is an empty container — no graph
+    # definition is pushed to it. The ontology and graph APIs use two
+    # completely different definition formats:
+    #   - Ontology: EntityTypes/{id}/definition.json, DataBindings, Contextualizations
+    #   - GraphModel: graphType.json, graphDefinition.json, dataSources.json, stylingConfiguration.json
+    # We find the auto-provisioned graph child and push the 4-part GraphModel
+    # definition to it via updateDefinition, which triggers data loading.
+    # Only create a new standalone graph as a fallback if no child exists.
     if args.skip_graph:
         print()
         print("  --skip-graph: Skipping graph model deployment.")
@@ -336,11 +342,8 @@ def main():
 
     print()
     print("=" * 70)
-    print("  DEPLOYING GRAPH MODEL (auto-provisioned for ontology)")
+    print("  DEPLOYING GRAPH MODEL")
     print("=" * 70)
-    print()
-    print("  NOTE: The Fabric REST API does not auto-provision a graph model")
-    print("  underneath the ontology (unlike the Fabric UI). Deploying now...")
     print()
 
     graph_client = GraphModelClient(token)
@@ -363,12 +366,23 @@ def main():
         description=graph_description,
     )
 
-    print(f"\n  Step 9c: Deploying graph model '{args.graph_model}'...")
+    print(f"\n  Step 9c: Deploying graph definition...")
+
+    # Strategy: prefer auto-provisioned graph (child of ontology) over standalone.
+    # Auto-provisioned graphs typically share the ontology's display name.
+    auto_graph = graph_client.find_by_name(workspace_id, args.ontology)
     existing_graph = graph_client.find_by_name(workspace_id, args.graph_model)
     graph_result = ""
     gm_id = None
 
-    if existing_graph and args.update:
+    if auto_graph:
+        # Found auto-provisioned graph child — push definition to it
+        gm_id = auto_graph["id"]
+        print(f"    Found auto-provisioned graph: {gm_id}")
+        print(f"    (child of ontology '{args.ontology}' — pushing 4-part definition)")
+        ok = graph_client.update_definition(workspace_id, gm_id, graph_parts)
+        graph_result = "[OK] Auto-provisioned graph updated" if ok else "[FAIL] Update failed"
+    elif existing_graph and args.update:
         gm_id = existing_graph["id"]
         ok = graph_client.update_definition(workspace_id, gm_id, graph_parts)
         graph_result = "[OK] Updated" if ok else "[FAIL] Update failed"
@@ -377,13 +391,14 @@ def main():
         print(f"    Already exists: {args.graph_model} (use --update to overwrite)")
         graph_result = "[SKIP] Already exists"
     else:
+        print(f"    No auto-provisioned graph found — creating standalone: {args.graph_model}")
         folder_id_for_graph = get_or_create_folder(token, workspace_id, FOLDER_NAME)
         gm_id = graph_client.create(
             workspace_id, args.graph_model, graph_description,
             definition_parts=graph_parts, folder_id=folder_id_for_graph,
         )
         if gm_id:
-            graph_result = f"[OK] Created ({gm_id})"
+            graph_result = f"[OK] Created standalone ({gm_id})"
         else:
             graph_result = "[FAIL] Create failed"
             gm_id = None

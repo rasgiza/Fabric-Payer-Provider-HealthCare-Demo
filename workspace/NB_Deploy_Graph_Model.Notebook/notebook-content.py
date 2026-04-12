@@ -551,44 +551,66 @@ def _wait_lro(response, label, timeout=120):
     return False
 
 # Create/find graph model for testing
+# Strategy: prefer auto-provisioned graph (child of ontology) over standalone.
+# The Ontology API auto-creates a Graph child item, but never pushes a graph
+# definition to it. We find that child and push our 4-part definition to it
+# (graphType, graphDefinition, dataSources, stylingConfiguration), which
+# triggers the data-loading pipeline. Only create a new standalone graph
+# as a fallback if no auto-provisioned graph exists.
 token = mssparkutils.credentials.getToken("pbi")
 headers = {"Authorization": f"Bearer {token}", "Content-Type": "application/json"}
 
-# Delete existing and create fresh
+gm_id = None
+auto_provisioned = False
+
+# Step A: Look for auto-provisioned graph (child of ontology, same name)
 r = requests.get(GM_API, headers=headers)
 if r.status_code == 200:
-    for g in r.json().get("value", []):
-        if g.get("displayName") == GRAPH_MODEL_NAME:
-            print(f"  Deleting existing: {g['id']}")
-            dr = requests.delete(f"{GM_API}/{g['id']}", headers=headers)
-            if dr.status_code == 202:
-                _wait_lro(dr, "delete")
-            time.sleep(10)
-            break
-
-print(f"  Creating: {GRAPH_MODEL_NAME}")
-cr = requests.post(GM_API, headers=headers, json={
-    "displayName": GRAPH_MODEL_NAME,
-    "description": f"Graph for {ONTOLOGY_NAME}. "
-                   f"{len(node_types)} nodes, {len(edge_types)} edges.",
-})
-gm_id = None
-if cr.status_code in (200, 201):
-    gm_id = cr.json().get("id")
-elif cr.status_code == 202:
-    _wait_lro(cr, "create")
-    time.sleep(3)
-    r2 = requests.get(GM_API, headers=headers)
-    for g in r2.json().get("value", []):
-        if g["displayName"] == GRAPH_MODEL_NAME:
+    all_graphs = r.json().get("value", [])
+    # Auto-provisioned graphs typically share the ontology's display name
+    for g in all_graphs:
+        if g.get("displayName") == ONTOLOGY_NAME:
             gm_id = g["id"]
+            auto_provisioned = True
+            print(f"  Found auto-provisioned graph: {gm_id}")
+            print(f"  (child of ontology '{ONTOLOGY_NAME}' — will push definition to it)")
             break
-if not gm_id:
-    raise RuntimeError(f"Failed to create graph model: HTTP {cr.status_code}")
-print(f"  Created: {gm_id}")
+    # Fallback: check for existing standalone graph
+    if not gm_id:
+        for g in all_graphs:
+            if g.get("displayName") == GRAPH_MODEL_NAME:
+                gm_id = g["id"]
+                print(f"  Found existing standalone graph: {gm_id}")
+                print(f"  (will update definition)")
+                break
 
-print("  Waiting 60s for backend hydration...")
-time.sleep(60)
+# Step B: Create standalone graph only if nothing exists
+if not gm_id:
+    print(f"  No auto-provisioned or existing graph found")
+    print(f"  Creating standalone: {GRAPH_MODEL_NAME}")
+    cr = requests.post(GM_API, headers=headers, json={
+        "displayName": GRAPH_MODEL_NAME,
+        "description": f"Graph for {ONTOLOGY_NAME}. "
+                       f"{len(node_types)} nodes, {len(edge_types)} edges.",
+    })
+    if cr.status_code in (200, 201):
+        gm_id = cr.json().get("id")
+    elif cr.status_code == 202:
+        _wait_lro(cr, "create")
+        time.sleep(3)
+        r2 = requests.get(GM_API, headers=headers)
+        for g in r2.json().get("value", []):
+            if g["displayName"] == GRAPH_MODEL_NAME:
+                gm_id = g["id"]
+                break
+    if not gm_id:
+        raise RuntimeError(f"Failed to create graph model: HTTP {cr.status_code}")
+    print(f"  Created: {gm_id}")
+    print("  Waiting 60s for backend hydration...")
+    time.sleep(60)
+else:
+    print("  Waiting 15s before pushing definition...")
+    time.sleep(15)
 
 update_url = f"{GM_API}/{gm_id}/updateDefinition?updateMetadata=True"
 

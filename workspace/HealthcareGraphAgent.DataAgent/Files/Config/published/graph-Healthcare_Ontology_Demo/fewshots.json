@@ -113,13 +113,13 @@
     },
     {
       "id": "ga000023-0023-0023-0023-000000000023",
-      "question": "What were the vitals for patient PAT0000012 at their last encounter? Were any abnormal?",
-      "query": "Find Patient with patient_id = 'PAT0000012'. Traverse vitalsTakenFor (reverse) to Vitals. From each Vitals, traverse vitalsDuringEncounter to Encounter (get encounter_id, encounter_type). Return all vital signs: systolic_bp, diastolic_bp, heart_rate, temperature, respiratory_rate, bmi, oxygen_saturation. Flag abnormals: systolic_bp >= 140 or diastolic_bp >= 90 (hypertension), heart_rate > 100 (tachycardia) or < 60 (bradycardia), temperature > 100.4 (fever), oxygen_saturation < 95 (hypoxia), bmi >= 30 (obese). Focus on the most recent encounter's vitals."
+      "question": "What were the vitals for patient PAT0000012? Were any abnormal?",
+      "query": "Find Patient with patient_id = 'PAT0000012'. Traverse vitalsTakenFor (reverse) to Vitals. Return hourly-aggregated vital signs: avg_heart_rate, max_heart_rate, min_heart_rate, avg_bp_systolic, max_bp_systolic, avg_bp_diastolic, avg_spo2, min_spo2, avg_temperature, max_temperature, avg_respiratory_rate, avg_risk_score, max_risk_score, risk_flag, critical_reading_count. Flag abnormals: avg_bp_systolic >= 140 (hypertension), avg_heart_rate > 100 (tachycardia) or < 60 (bradycardia), avg_temperature > 100.4 (fever), min_spo2 < 95 (hypoxia), risk_flag = 1 (elevated risk). Sort by date_key and hour_of_day descending to show most recent readings first."
     },
     {
       "id": "ga000024-0024-0024-0024-000000000024",
       "question": "Give me the full clinical picture of patient PAT0000040 — vitals, medications, adherence, diagnoses, and encounters",
-      "query": "Find Patient PAT0000040. Fan out comprehensively: Encounters (involves — encounter_type, readmission_risk), Vitals (vitalsTakenFor — BP, HR, temp, O2 sat, BMI with abnormal flags), MedicationAdherence (adherenceFor — pdc_score, adherence_category per medication via adherenceMedication), Prescriptions (serves — then dispenses to Medication for drug names, drug class), PatientDiagnoses (affects — then references to Diagnosis for ICD codes/descriptions), CommunityHealth (livesIn — SDOH risk). Tell the complete clinical story: what conditions they have, what they're prescribed, whether they're taking their meds, what their vitals look like, and their social risk factors."
+      "query": "Find Patient PAT0000040. Fan out comprehensively: Encounters (involves — encounter_type, readmission_risk), Vitals (vitalsTakenFor — avg_heart_rate, avg_bp_systolic, avg_bp_diastolic, avg_spo2, avg_temperature, avg_respiratory_rate, risk_flag, critical_reading_count with abnormal flags), MedicationAdherence (adherenceFor — pdc_score, adherence_category per medication via adherenceMedication), Prescriptions (serves — then dispenses to Medication for drug names, drug class), PatientDiagnoses (affects — then references to Diagnosis for ICD codes/descriptions), CommunityHealth (livesIn — SDOH risk). Tell the complete clinical story: what conditions they have, what they're prescribed, whether they're taking their meds, what their vitals look like, and their social risk factors."
     }
   ]
 }

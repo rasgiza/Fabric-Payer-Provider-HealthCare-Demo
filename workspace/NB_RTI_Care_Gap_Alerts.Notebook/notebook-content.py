@@ -45,53 +45,64 @@ _ws_id = notebookutils.runtime.context.get("currentWorkspaceId", "")
 _tok = notebookutils.credentials.getToken("pbi")
 _hdr = {"Authorization": f"Bearer {_tok}"}
 _lh_resp = _req.get(f"https://api.fabric.microsoft.com/v1/workspaces/{_ws_id}/lakehouses", headers=_hdr)
+# Build lakehouse name → ABFSS mapping for all lakehouses in workspace
+_lh_map = {}  # e.g. {"lh_gold_curated": "abfss://ws@onelake/.../Tables", ...}
 if _lh_resp.status_code == 200:
     for _lh in _lh_resp.json().get("value", []):
+        _lh_map[_lh["displayName"]] = f"abfss://{_ws_id}@onelake.dfs.fabric.microsoft.com/{_lh['id']}/Tables"
+
+    _gold_id = None
+    for _lh in _lh_resp.json().get("value", []):
         if _lh["displayName"] == "lh_gold_curated":
-            _lh_id = _lh["id"]
-            _attached = False
-            try:
-                notebookutils.lakehouse.setDefaultLakehouse(_ws_id, _lh_id)
-                print(f"  Attached lh_gold_curated ({_lh_id[:8]}...)")
-                _attached = True
-            except (AttributeError, Exception):
-                pass
-            if not _attached:
-                import re as _re_mod
-                _abfss = f"abfss://{_ws_id}@onelake.dfs.fabric.microsoft.com/{_lh_id}/Tables"
-                _orig_sql = spark.sql
-                def _patched_sql(query, _base=_abfss, _orig=_orig_sql):
-                    query = _re_mod.sub(
-                        r'\blh_gold_curated\.(\w+)\b',
-                        lambda m: f'delta.`{_base}/{m.group(1)}`',
-                        query
-                    )
-                    return _orig(query)
-                spark.sql = _patched_sql
-                # Also patch saveAsTable for DataFrame writes
-                from pyspark.sql import DataFrameWriter as _DFW
-                _orig_sat = _DFW.saveAsTable
-                def _patched_sat(self, name, _base=_abfss, _orig=_orig_sat, **kwargs):
-                    if name.startswith('lh_gold_curated.'):
-                        tbl = name.split('.', 1)[1]
-                        self.save(f'{_base}/{tbl}')
-                        return
-                    return _orig(self, name, **kwargs)
-                _DFW.saveAsTable = _patched_sat
-                # Also patch spark.table() for reading
-                _orig_table = spark.table
-                def _patched_table(name, _base=_abfss, _orig=_orig_table):
-                    if name.startswith('lh_gold_curated.'):
-                        tbl = name.split('.', 1)[1]
-                        return spark.read.format('delta').load(f'{_base}/{tbl}')
-                    return _orig(name)
-                spark.table = _patched_table
-                print(f"  Registered lh_gold_curated via ABFSS path rewriter ({_lh_id[:8]}...)")
-                _attached = True
-            if not _attached:
-                print(f"  WARNING: Could not attach lh_gold_curated ({_lh_id[:8]}...)")
-                print(f"  Lakehouse methods: {[m for m in dir(notebookutils.lakehouse) if not m.startswith('_')]}")
+            _gold_id = _lh["id"]
             break
+
+    if _gold_id:
+        _attached = False
+        try:
+            notebookutils.lakehouse.setDefaultLakehouse(_ws_id, _gold_id)
+            print(f"  Attached lh_gold_curated ({_gold_id[:8]}...)")
+            _attached = True
+        except (AttributeError, Exception):
+            pass
+        if not _attached:
+            import re as _re_mod
+            # Build regex matching all discovered lakehouse names
+            _lh_names = sorted(_lh_map.keys(), key=len, reverse=True)
+            _lh_pattern = r'\b(' + '|'.join(_re_mod.escape(n) for n in _lh_names) + r')\.(\w+)\b'
+            _orig_sql = spark.sql
+            def _patched_sql(query, _pat=_lh_pattern, _m=_lh_map, _orig=_orig_sql):
+                query = _re_mod.sub(
+                    _pat,
+                    lambda m: f'delta.`{_m[m.group(1)]}/{m.group(2)}`',
+                    query
+                )
+                return _orig(query)
+            spark.sql = _patched_sql
+            # Also patch saveAsTable for DataFrame writes
+            from pyspark.sql import DataFrameWriter as _DFW
+            _orig_sat = _DFW.saveAsTable
+            def _patched_sat(self, name, _m=_lh_map, _orig=_orig_sat, **kwargs):
+                parts = name.split('.', 1)
+                if len(parts) == 2 and parts[0] in _m:
+                    self.save(f'{_m[parts[0]]}/{parts[1]}')
+                    return
+                return _orig(self, name, **kwargs)
+            _DFW.saveAsTable = _patched_sat
+            # Also patch spark.table() for reading
+            _orig_table = spark.table
+            def _patched_table(name, _m=_lh_map, _orig=_orig_table):
+                parts = name.split('.', 1)
+                if len(parts) == 2 and parts[0] in _m:
+                    return spark.read.format('delta').load(f'{_m[parts[0]]}/{parts[1]}')
+                return _orig(name)
+            spark.table = _patched_table
+            _discovered = [f"{n}({v.split('/')[-2][:8]})" for n, v in _lh_map.items()]
+            print(f"  Registered ABFSS rewriter for: {', '.join(_discovered)}")
+            _attached = True
+        if not _attached:
+            print(f"  WARNING: Could not attach lh_gold_curated ({_gold_id[:8]}...)")
+            print(f"  Lakehouse methods: {[m for m in dir(notebookutils.lakehouse) if not m.startswith('_')]}")
     else:
         print("  WARNING: lh_gold_curated not found in workspace")
 else:

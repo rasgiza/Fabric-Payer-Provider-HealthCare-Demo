@@ -49,8 +49,11 @@ if _lh_resp.status_code == 200:
     for _lh in _lh_resp.json().get("value", []):
         if _lh["displayName"] == "lh_gold_curated":
             _lh_id = _lh["id"]
-            notebookutils.lakehouse.setDefaultLakehouse(_ws_id, _lh_id)
-            print(f"  Attached lh_gold_curated ({_lh_id[:8]}...)")
+            try:
+                notebookutils.lakehouse.setDefaultLakehouse(_ws_id, _lh_id)
+                print(f"  Attached lh_gold_curated ({_lh_id[:8]}...)")
+            except AttributeError:
+                print(f"  lh_gold_curated found ({_lh_id[:8]}...) -- lakehouse set via notebook metadata")
             break
     else:
         print("  WARNING: lh_gold_curated not found in workspace")

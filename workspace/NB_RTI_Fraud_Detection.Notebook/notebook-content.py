@@ -67,6 +67,16 @@ if _lh_resp.status_code == 200:
                     )
                     return _orig(query)
                 spark.sql = _patched_sql
+                # Also patch saveAsTable for DataFrame writes
+                from pyspark.sql import DataFrameWriter as _DFW
+                _orig_sat = _DFW.saveAsTable
+                def _patched_sat(self, name, _base=_abfss, _orig=_orig_sat, **kwargs):
+                    if name.startswith('lh_gold_curated.'):
+                        tbl = name.split('.', 1)[1]
+                        self.save(f'{_base}/{tbl}')
+                        return
+                    return _orig(self, name, **kwargs)
+                _DFW.saveAsTable = _patched_sat
                 print(f"  Registered lh_gold_curated via ABFSS path rewriter ({_lh_id[:8]}...)")
                 _attached = True
             if not _attached:

@@ -132,7 +132,7 @@ df_patients = spark.sql("""
     SELECT patient_id, first_name, last_name, date_of_birth, zip_code
     FROM lh_gold_curated.dim_patient WHERE is_current = true
 """)
-df_facilities = spark.sql("SELECT facility_id, facility_name, latitude, longitude FROM lh_gold_curated.dim_facility")
+df_facilities = spark.sql("SELECT facility_id, facility_name, latitude AS fac_latitude, longitude AS fac_longitude FROM lh_gold_curated.dim_facility")
 
 print(f"  Claims events: {df_claims.count()}")
 print(f"  ADT events: {df_adt.count()}")
@@ -358,8 +358,8 @@ df_output = df_combined.select(
     "readmission_flag",
     "risk_tier",
     "cost_trend",
-    F.coalesce("latitude", df_facilities["latitude"]).alias("latitude"),
-    F.coalesce("longitude", df_facilities["longitude"]).alias("longitude"),
+    F.coalesce(F.col("latitude"), df_facilities["fac_latitude"]).alias("latitude"),
+    F.coalesce(F.col("longitude"), df_facilities["fac_longitude"]).alias("longitude"),
 )
 
 df_output.write.format("delta").mode("overwrite").saveAsTable("lh_gold_curated.rti_highcost_alerts")

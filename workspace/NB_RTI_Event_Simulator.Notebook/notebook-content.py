@@ -71,13 +71,19 @@ if _lh_resp.status_code == 200:
             except (AttributeError, Exception):
                 pass
             if not _attached:
+                import re as _re_mod
                 _abfss = f"abfss://{_ws_id}@onelake.dfs.fabric.microsoft.com/{_lh_id}/Tables"
-                try:
-                    spark.sql(f"CREATE SCHEMA IF NOT EXISTS lh_gold_curated LOCATION '{_abfss}'")
-                    print(f"  Registered lh_gold_curated via ABFSS ({_lh_id[:8]}...)")
-                    _attached = True
-                except Exception as _ex:
-                    print(f"  ABFSS fallback failed: {_ex}")
+                _orig_sql = spark.sql
+                def _patched_sql(query, _base=_abfss, _orig=_orig_sql):
+                    query = _re_mod.sub(
+                        r'\blh_gold_curated\.(\w+)\b',
+                        lambda m: f'delta.`{_base}/{m.group(1)}`',
+                        query
+                    )
+                    return _orig(query)
+                spark.sql = _patched_sql
+                print(f"  Registered lh_gold_curated via ABFSS path rewriter ({_lh_id[:8]}...)")
+                _attached = True
             if not _attached:
                 print(f"  WARNING: Could not attach lh_gold_curated ({_lh_id[:8]}...)")
                 print(f"  Lakehouse methods: {[m for m in dir(notebookutils.lakehouse) if not m.startswith('_')]}")

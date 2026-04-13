@@ -539,6 +539,8 @@ Edit the top cell of `Healthcare_Launcher.ipynb`:
 | `UPLOAD_KNOWLEDGE_DOCS` | `True` | Upload knowledge docs for AI agent |
 | `DEPLOY_RTI` | `True` | Deploy Real-Time Intelligence (Eventhouse + scoring notebooks) |
 
+> **Restricted networks:** The launcher downloads from GitHub at runtime. If your environment blocks `github.com` or `raw.githubusercontent.com`, fork this repo to an allowed internal location and update `GITHUB_OWNER` / `GITHUB_REPO` accordingly.
+
 ## Prerequisites
 
 - **Microsoft Fabric** workspace with **F64** or higher capacity

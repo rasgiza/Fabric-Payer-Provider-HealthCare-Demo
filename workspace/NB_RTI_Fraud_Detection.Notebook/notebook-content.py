@@ -48,11 +48,24 @@ if _lh_resp.status_code == 200:
     for _lh in _lh_resp.json().get("value", []):
         if _lh["displayName"] == "lh_gold_curated":
             _lh_id = _lh["id"]
+            _attached = False
             try:
                 notebookutils.lakehouse.setDefaultLakehouse(_ws_id, _lh_id)
                 print(f"  Attached lh_gold_curated ({_lh_id[:8]}...)")
-            except AttributeError:
-                print(f"  lh_gold_curated found ({_lh_id[:8]}...) -- lakehouse set via notebook metadata")
+                _attached = True
+            except (AttributeError, Exception):
+                pass
+            if not _attached:
+                _abfss = f"abfss://{_ws_id}@onelake.dfs.fabric.microsoft.com/{_lh_id}/Tables"
+                try:
+                    spark.sql(f"CREATE SCHEMA IF NOT EXISTS lh_gold_curated LOCATION '{_abfss}'")
+                    print(f"  Registered lh_gold_curated via ABFSS ({_lh_id[:8]}...)")
+                    _attached = True
+                except Exception as _ex:
+                    print(f"  ABFSS fallback failed: {_ex}")
+            if not _attached:
+                print(f"  WARNING: Could not attach lh_gold_curated ({_lh_id[:8]}...)")
+                print(f"  Lakehouse methods: {[m for m in dir(notebookutils.lakehouse) if not m.startswith('_')]}")
             break
     else:
         print("  WARNING: lh_gold_curated not found in workspace")

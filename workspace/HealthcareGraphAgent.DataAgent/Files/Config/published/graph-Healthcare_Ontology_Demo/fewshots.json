@@ -4,117 +4,117 @@
     {
       "id": "ga000001-0001-0001-0001-000000000001",
       "question": "Give me a full profile of provider PRV0000010 — patients treated, encounters, claims submitted, and prescriptions written",
-      "query": "MATCH (p:Provider)<-[:treatedBy]-(e:Encounter)-[:involves]->(pt:Patient) WHERE p.provider_id = 'PRV0000010' RETURN p.display_name, p.specialty, p.department, p.npi_number, e.encounter_id, e.encounter_type, e.total_charges, e.readmission_risk_category, e.length_of_stay, pt.patient_id, pt.first_name, pt.last_name, pt.age, pt.insurance_type"
+      "query": "MATCH (p:Provider)<-[:treatedBy]-(e:Encounter)-[:involves]->(pt:Patient) WHERE p.provider_id = 'PRV0000010' RETURN p.display_name AS provider_name, p.specialty AS specialty, p.department AS department, p.npi_number AS npi_number, e.encounter_id AS encounter_id, e.encounter_type AS encounter_type, e.total_charges AS total_charges, e.readmission_risk_category AS readmission_risk, e.length_of_stay AS length_of_stay, pt.patient_id AS patient_id, pt.first_name AS patient_first_name, pt.last_name AS patient_last_name, pt.age AS patient_age, pt.insurance_type AS insurance_type"
     },
     {
       "id": "ga000002-0002-0002-0002-000000000002",
       "question": "Which providers have submitted claims that were denied? Show each provider with their denied claims, denial reasons, payers, and patients",
-      "query": "MATCH (c:Claim)-[:submittedBy]->(p:Provider) MATCH (c)-[:covers]->(pt:Patient) MATCH (c)-[:ClaimHasPayer]->(py:Payer) WHERE c.denial_flag = 1 RETURN p.display_name, p.specialty, c.claim_id, c.primary_denial_reason, c.recommended_action, c.billed_amount, pt.first_name, pt.last_name, pt.insurance_type, py.payer_name"
+      "query": "MATCH (c:Claim)-[:submittedBy]->(p:Provider) MATCH (c)-[:covers]->(pt:Patient) MATCH (c)-[:ClaimHasPayer]->(py:Payer) WHERE c.denial_flag = 1 RETURN p.display_name AS provider_name, p.specialty AS specialty, c.claim_id AS claim_id, c.primary_denial_reason AS denial_reason, c.recommended_action AS recommended_action, c.billed_amount AS billed_amount, pt.first_name AS patient_first_name, pt.last_name AS patient_last_name, pt.insurance_type AS insurance_type, py.payer_name AS payer_name"
     },
     {
       "id": "ga000003-0003-0003-0003-000000000003",
       "question": "What does Dr. Smith's patient panel look like? Show encounters, diagnoses, and outcomes for their patients",
-      "query": "MATCH (p:Provider)<-[:treatedBy]-(e:Encounter)-[:involves]->(pt:Patient) WHERE p.last_name = 'Smith' RETURN p.display_name, e.encounter_id, e.encounter_type, e.readmission_risk_category, e.length_of_stay, e.total_charges, e.readmission_flag, pt.first_name, pt.last_name, pt.age, pt.insurance_type"
+      "query": "MATCH (p:Provider)<-[:treatedBy]-(e:Encounter)-[:involves]->(pt:Patient) WHERE p.last_name = 'Smith' RETURN p.display_name AS provider_name, e.encounter_id AS encounter_id, e.encounter_type AS encounter_type, e.readmission_risk_category AS readmission_risk, e.length_of_stay AS length_of_stay, e.total_charges AS total_charges, e.readmission_flag AS readmission_flag, pt.first_name AS patient_first_name, pt.last_name AS patient_last_name, pt.age AS patient_age, pt.insurance_type AS insurance_type"
     },
     {
       "id": "ga000004-0004-0004-0004-000000000004",
       "question": "Show me prescribing patterns for Cardiology providers — what medications, which patients, and which payers cover the prescriptions",
-      "query": "MATCH (p:Provider)<-[:prescribedBy]-(rx:Prescription)-[:dispenses]->(m:Medication) MATCH (rx)-[:serves]->(pt:Patient) MATCH (rx)-[:PrescriptionHasPayer]->(py:Payer) WHERE p.specialty = 'Cardiology' RETURN p.display_name, rx.prescription_id, rx.total_cost, rx.is_chronic_medication, rx.days_supply, m.medication_name, m.drug_class, m.therapeutic_area, pt.first_name, pt.last_name, py.payer_name"
+      "query": "MATCH (p:Provider)<-[:prescribedBy]-(rx:Prescription)-[:dispenses]->(m:Medication) MATCH (rx)-[:serves]->(pt:Patient) MATCH (rx)-[:PrescriptionHasPayer]->(py:Payer) WHERE p.specialty = 'Cardiology' RETURN p.display_name AS provider_name, rx.prescription_id AS prescription_id, rx.total_cost AS total_cost, rx.is_chronic_medication AS is_chronic_medication, rx.days_supply AS days_supply, m.medication_name AS medication_name, m.drug_class AS drug_class, m.therapeutic_area AS therapeutic_area, pt.first_name AS patient_first_name, pt.last_name AS patient_last_name, py.payer_name AS payer_name"
     },
     {
       "id": "ga000005-0005-0005-0005-000000000005",
       "question": "Which providers treat patients with high readmission risk? Show the provider, their high-risk patients, and conditions",
-      "query": "MATCH (e:Encounter)-[:treatedBy]->(p:Provider) MATCH (e)-[:involves]->(pt:Patient) WHERE e.readmission_risk_category = 'High' RETURN p.display_name, p.specialty, p.department, e.encounter_id, e.readmission_risk_score, pt.first_name, pt.last_name, pt.age, pt.insurance_type"
+      "query": "MATCH (e:Encounter)-[:treatedBy]->(p:Provider) MATCH (e)-[:involves]->(pt:Patient) WHERE e.readmission_risk_category = 'High' RETURN p.display_name AS provider_name, p.specialty AS specialty, p.department AS department, e.encounter_id AS encounter_id, e.readmission_risk_score AS readmission_risk_score, pt.first_name AS patient_first_name, pt.last_name AS patient_last_name, pt.age AS patient_age, pt.insurance_type AS insurance_type"
     },
     {
       "id": "ga000006-0006-0006-0006-000000000006",
       "question": "Which providers serve patients in socially vulnerable communities? Show the SDOH profile alongside provider details",
-      "query": "MATCH (p:Provider)<-[:treatedBy]-(e:Encounter)-[:involves]->(pt:Patient)-[:livesIn]->(ch:CommunityHealth) WHERE ch.risk_tier = 'High' RETURN p.display_name, p.specialty, pt.first_name, pt.last_name, pt.zip_code, ch.poverty_rate, ch.social_vulnerability_index, ch.food_desert_flag, ch.uninsured_rate"
+      "query": "MATCH (p:Provider)<-[:treatedBy]-(e:Encounter)-[:involves]->(pt:Patient)-[:livesIn]->(ch:CommunityHealth) WHERE ch.risk_tier = 'High' RETURN p.display_name AS provider_name, p.specialty AS specialty, pt.first_name AS patient_first_name, pt.last_name AS patient_last_name, pt.zip_code AS zip_code, ch.poverty_rate AS poverty_rate, ch.social_vulnerability_index AS svi, ch.food_desert_flag AS food_desert, ch.uninsured_rate AS uninsured_rate"
     },
     {
       "id": "ga000007-0007-0007-0007-000000000007",
       "question": "Show me all claims for payer Aetna — which providers submitted them, which patients, and what were the outcomes",
-      "query": "MATCH (c:Claim)-[:ClaimHasPayer]->(py:Payer) MATCH (c)-[:submittedBy]->(p:Provider) MATCH (c)-[:covers]->(pt:Patient) MATCH (c)-[:billsFor]->(e:Encounter) WHERE py.payer_name = 'Aetna' RETURN c.claim_id, c.claim_status, c.denial_flag, c.billed_amount, c.paid_amount, c.primary_denial_reason, p.display_name, p.specialty, pt.first_name, pt.last_name, e.encounter_type, e.total_charges"
+      "query": "MATCH (c:Claim)-[:ClaimHasPayer]->(py:Payer) MATCH (c)-[:submittedBy]->(p:Provider) MATCH (c)-[:covers]->(pt:Patient) MATCH (c)-[:billsFor]->(e:Encounter) WHERE py.payer_name = 'Aetna' RETURN c.claim_id AS claim_id, c.claim_status AS claim_status, c.denial_flag AS denial_flag, c.billed_amount AS billed_amount, c.paid_amount AS paid_amount, c.primary_denial_reason AS denial_reason, p.display_name AS provider_name, p.specialty AS specialty, pt.first_name AS patient_first_name, pt.last_name AS patient_last_name, e.encounter_type AS encounter_type, e.total_charges AS total_charges"
     },
     {
       "id": "ga000008-0008-0008-0008-000000000008",
       "question": "Which payers have the most denied claims? For each payer show the denials with provider, patient, encounter, and denial reason",
-      "query": "MATCH (c:Claim)-[:ClaimHasPayer]->(py:Payer) MATCH (c)-[:submittedBy]->(p:Provider) MATCH (c)-[:covers]->(pt:Patient) MATCH (c)-[:billsFor]->(e:Encounter) WHERE c.denial_flag = 1 RETURN py.payer_name, py.payer_type, c.claim_id, c.primary_denial_reason, c.recommended_action, c.billed_amount, p.display_name, p.specialty, pt.first_name, pt.last_name, e.encounter_type, e.readmission_risk_category"
+      "query": "MATCH (c:Claim)-[:ClaimHasPayer]->(py:Payer) MATCH (c)-[:submittedBy]->(p:Provider) MATCH (c)-[:covers]->(pt:Patient) MATCH (c)-[:billsFor]->(e:Encounter) WHERE c.denial_flag = 1 RETURN py.payer_name AS payer_name, py.payer_type AS payer_type, c.claim_id AS claim_id, c.primary_denial_reason AS denial_reason, c.recommended_action AS recommended_action, c.billed_amount AS billed_amount, p.display_name AS provider_name, p.specialty AS specialty, pt.first_name AS patient_first_name, pt.last_name AS patient_last_name, e.encounter_type AS encounter_type, e.readmission_risk_category AS readmission_risk"
     },
     {
       "id": "ga000009-0009-0009-0009-000000000009",
       "question": "What prescriptions does each payer cover? Show the medication, prescribing provider, and patient",
-      "query": "MATCH (py:Payer)<-[:PrescriptionHasPayer]-(rx:Prescription)-[:dispenses]->(m:Medication) MATCH (rx)-[:prescribedBy]->(p:Provider) MATCH (rx)-[:serves]->(pt:Patient) RETURN py.payer_name, m.medication_name, m.drug_class, m.is_chronic, rx.total_cost, rx.payer_paid, rx.patient_copay, rx.is_chronic_medication, p.display_name, p.specialty, pt.first_name, pt.last_name"
+      "query": "MATCH (py:Payer)<-[:PrescriptionHasPayer]-(rx:Prescription)-[:dispenses]->(m:Medication) MATCH (rx)-[:prescribedBy]->(p:Provider) MATCH (rx)-[:serves]->(pt:Patient) RETURN py.payer_name AS payer_name, m.medication_name AS medication_name, m.drug_class AS drug_class, m.is_chronic AS is_chronic, rx.total_cost AS total_cost, rx.payer_paid AS payer_paid, rx.patient_copay AS patient_copay, rx.is_chronic_medication AS is_chronic_medication, p.display_name AS provider_name, p.specialty AS specialty, pt.first_name AS patient_first_name, pt.last_name AS patient_last_name"
     },
     {
       "id": "ga000010-0010-0010-0010-000000000010",
       "question": "Show me the provider network that bills payer BlueCross — which providers submit claims and for what encounter types",
-      "query": "MATCH (c:Claim)-[:ClaimHasPayer]->(py:Payer) MATCH (c)-[:submittedBy]->(p:Provider) MATCH (c)-[:billsFor]->(e:Encounter) WHERE py.payer_name = 'BlueCross' RETURN p.display_name, p.specialty, p.department, e.encounter_type, c.claim_id, c.billed_amount"
+      "query": "MATCH (c:Claim)-[:ClaimHasPayer]->(py:Payer) MATCH (c)-[:submittedBy]->(p:Provider) MATCH (c)-[:billsFor]->(e:Encounter) WHERE py.payer_name = 'BlueCross' RETURN p.display_name AS provider_name, p.specialty AS specialty, p.department AS department, e.encounter_type AS encounter_type, c.claim_id AS claim_id, c.billed_amount AS billed_amount"
     },
     {
       "id": "ga000011-0011-0011-0011-000000000011",
       "question": "Which payers cover patients in high SDOH risk areas? Show the payer, the patients, and their social risk factors",
-      "query": "MATCH (pt:Patient)-[:livesIn]->(ch:CommunityHealth) MATCH (c:Claim)-[:covers]->(pt) MATCH (c)-[:ClaimHasPayer]->(py:Payer) WHERE ch.risk_tier = 'High' RETURN py.payer_name, py.payer_type, pt.first_name, pt.last_name, pt.zip_code, ch.poverty_rate, ch.social_vulnerability_index, ch.food_desert_flag, ch.median_household_income"
+      "query": "MATCH (pt:Patient)-[:livesIn]->(ch:CommunityHealth) MATCH (c:Claim)-[:covers]->(pt) MATCH (c)-[:ClaimHasPayer]->(py:Payer) WHERE ch.risk_tier = 'High' RETURN py.payer_name AS payer_name, py.payer_type AS payer_type, pt.first_name AS patient_first_name, pt.last_name AS patient_last_name, pt.zip_code AS zip_code, ch.poverty_rate AS poverty_rate, ch.social_vulnerability_index AS svi, ch.food_desert_flag AS food_desert, ch.median_household_income AS median_income"
     },
     {
       "id": "ga000012-0012-0012-0012-000000000012",
       "question": "Trace claim CLM0009999 end-to-end — from patient through encounter, provider, and payer",
-      "query": "MATCH (c:Claim)-[:covers]->(pt:Patient) MATCH (c)-[:submittedBy]->(p:Provider) MATCH (c)-[:ClaimHasPayer]->(py:Payer) MATCH (c)-[:billsFor]->(e:Encounter) WHERE c.claim_id = 'CLM0009999' RETURN c.claim_id, c.claim_status, c.denial_flag, c.billed_amount, c.paid_amount, c.primary_denial_reason, pt.first_name, pt.last_name, pt.insurance_type, p.display_name, p.specialty, py.payer_name, e.encounter_id, e.encounter_type, e.total_charges"
+      "query": "MATCH (c:Claim)-[:covers]->(pt:Patient) MATCH (c)-[:submittedBy]->(p:Provider) MATCH (c)-[:ClaimHasPayer]->(py:Payer) MATCH (c)-[:billsFor]->(e:Encounter) WHERE c.claim_id = 'CLM0009999' RETURN c.claim_id AS claim_id, c.claim_status AS claim_status, c.denial_flag AS denial_flag, c.billed_amount AS billed_amount, c.paid_amount AS paid_amount, c.primary_denial_reason AS denial_reason, pt.first_name AS patient_first_name, pt.last_name AS patient_last_name, pt.insurance_type AS insurance_type, p.display_name AS provider_name, p.specialty AS specialty, py.payer_name AS payer_name, e.encounter_id AS encounter_id, e.encounter_type AS encounter_type, e.total_charges AS total_charges"
     },
     {
       "id": "ga000013-0013-0013-0013-000000000013",
       "question": "Show me all denied claims with the complete story — which provider submitted, to which payer, for which patient, and why denied",
-      "query": "MATCH (c:Claim)-[:covers]->(pt:Patient) MATCH (c)-[:submittedBy]->(p:Provider) MATCH (c)-[:ClaimHasPayer]->(py:Payer) MATCH (c)-[:billsFor]->(e:Encounter) WHERE c.denial_flag = 1 RETURN c.claim_id, c.claim_status, c.primary_denial_reason, c.recommended_action, c.billed_amount, c.paid_amount, pt.first_name, pt.last_name, pt.age, pt.insurance_type, p.display_name, p.specialty, py.payer_name, e.encounter_type, e.length_of_stay, e.total_charges"
+      "query": "MATCH (c:Claim)-[:covers]->(pt:Patient) MATCH (c)-[:submittedBy]->(p:Provider) MATCH (c)-[:ClaimHasPayer]->(py:Payer) MATCH (c)-[:billsFor]->(e:Encounter) WHERE c.denial_flag = 1 RETURN c.claim_id AS claim_id, c.claim_status AS claim_status, c.primary_denial_reason AS denial_reason, c.recommended_action AS recommended_action, c.billed_amount AS billed_amount, c.paid_amount AS paid_amount, pt.first_name AS patient_first_name, pt.last_name AS patient_last_name, pt.age AS patient_age, pt.insurance_type AS insurance_type, p.display_name AS provider_name, p.specialty AS specialty, py.payer_name AS payer_name, e.encounter_type AS encounter_type, e.length_of_stay AS length_of_stay, e.total_charges AS total_charges"
     },
     {
       "id": "ga000014-0014-0014-0014-000000000014",
       "question": "What claims are linked to encounter ENC0001234? Show the financial picture including payer and provider",
-      "query": "MATCH (c:Claim)-[:billsFor]->(e:Encounter) MATCH (c)-[:submittedBy]->(p:Provider) MATCH (c)-[:ClaimHasPayer]->(py:Payer) MATCH (c)-[:covers]->(pt:Patient) WHERE e.encounter_id = 'ENC0001234' RETURN c.claim_id, c.claim_status, c.denial_flag, c.billed_amount, c.paid_amount, c.primary_denial_reason, p.display_name, py.payer_name, pt.first_name, pt.last_name, e.encounter_type, e.total_charges"
+      "query": "MATCH (c:Claim)-[:billsFor]->(e:Encounter) MATCH (c)-[:submittedBy]->(p:Provider) MATCH (c)-[:ClaimHasPayer]->(py:Payer) MATCH (c)-[:covers]->(pt:Patient) WHERE e.encounter_id = 'ENC0001234' RETURN c.claim_id AS claim_id, c.claim_status AS claim_status, c.denial_flag AS denial_flag, c.billed_amount AS billed_amount, c.paid_amount AS paid_amount, c.primary_denial_reason AS denial_reason, p.display_name AS provider_name, py.payer_name AS payer_name, pt.first_name AS patient_first_name, pt.last_name AS patient_last_name, e.encounter_type AS encounter_type, e.total_charges AS total_charges"
     },
     {
       "id": "ga000015-0015-0015-0015-000000000015",
       "question": "Show me denied claims for high-risk readmission patients — which providers and payers are involved",
-      "query": "MATCH (c:Claim)-[:billsFor]->(e:Encounter) MATCH (c)-[:submittedBy]->(p:Provider) MATCH (c)-[:ClaimHasPayer]->(py:Payer) MATCH (c)-[:covers]->(pt:Patient) WHERE e.readmission_risk_category = 'High' AND c.denial_flag = 1 RETURN c.claim_id, c.primary_denial_reason, c.billed_amount, e.encounter_id, e.readmission_risk_score, p.display_name, p.specialty, py.payer_name, pt.first_name, pt.last_name, pt.age"
+      "query": "MATCH (c:Claim)-[:billsFor]->(e:Encounter) MATCH (c)-[:submittedBy]->(p:Provider) MATCH (c)-[:ClaimHasPayer]->(py:Payer) MATCH (c)-[:covers]->(pt:Patient) WHERE e.readmission_risk_category = 'High' AND c.denial_flag = 1 RETURN c.claim_id AS claim_id, c.primary_denial_reason AS denial_reason, c.billed_amount AS billed_amount, e.encounter_id AS encounter_id, e.readmission_risk_score AS readmission_risk_score, p.display_name AS provider_name, p.specialty AS specialty, py.payer_name AS payer_name, pt.first_name AS patient_first_name, pt.last_name AS patient_last_name, pt.age AS patient_age"
     },
     {
       "id": "ga000016-0016-0016-0016-000000000016",
       "question": "Show me high-cost encounters — who was the provider, what payer, and was the claim denied",
-      "query": "MATCH (e:Encounter)-[:treatedBy]->(p:Provider) MATCH (e)-[:involves]->(pt:Patient) MATCH (c:Claim)-[:billsFor]->(e) MATCH (c)-[:ClaimHasPayer]->(py:Payer) WHERE e.total_charges > 50000 RETURN e.encounter_id, e.encounter_type, e.total_charges, e.readmission_risk_category, p.display_name, p.specialty, pt.first_name, pt.last_name, pt.insurance_type, c.claim_status, c.denial_flag, py.payer_name"
+      "query": "MATCH (e:Encounter)-[:treatedBy]->(p:Provider) MATCH (e)-[:involves]->(pt:Patient) MATCH (c:Claim)-[:billsFor]->(e) MATCH (c)-[:ClaimHasPayer]->(py:Payer) WHERE e.total_charges > 50000 RETURN e.encounter_id AS encounter_id, e.encounter_type AS encounter_type, e.total_charges AS total_charges, e.readmission_risk_category AS readmission_risk, p.display_name AS provider_name, p.specialty AS specialty, pt.first_name AS patient_first_name, pt.last_name AS patient_last_name, pt.insurance_type AS insurance_type, c.claim_status AS claim_status, c.denial_flag AS denial_flag, py.payer_name AS payer_name"
     },
     {
       "id": "ga000017-0017-0017-0017-000000000017",
       "question": "How are providers and payers connected through claims? Show me the provider-payer claims network",
-      "query": "MATCH (c:Claim)-[:submittedBy]->(p:Provider) MATCH (c)-[:ClaimHasPayer]->(py:Payer) RETURN p.display_name, p.specialty, py.payer_name, py.payer_type, c.claim_id, c.claim_status, c.billed_amount, c.denial_flag"
+      "query": "MATCH (c:Claim)-[:submittedBy]->(p:Provider) MATCH (c)-[:ClaimHasPayer]->(py:Payer) RETURN p.display_name AS provider_name, p.specialty AS specialty, py.payer_name AS payer_name, py.payer_type AS payer_type, c.claim_id AS claim_id, c.claim_status AS claim_status, c.billed_amount AS billed_amount, c.denial_flag AS denial_flag"
     },
     {
       "id": "ga000018-0018-0018-0018-000000000018",
       "question": "Which chronic medications are prescribed across the provider network and which payers reimburse them",
-      "query": "MATCH (m:Medication)<-[:dispenses]-(rx:Prescription)-[:prescribedBy]->(p:Provider) MATCH (rx)-[:PrescriptionHasPayer]->(py:Payer) WHERE m.is_chronic = 1 RETURN m.medication_name, m.drug_class, rx.total_cost, rx.payer_paid, p.display_name, p.specialty, py.payer_name"
+      "query": "MATCH (m:Medication)<-[:dispenses]-(rx:Prescription)-[:prescribedBy]->(p:Provider) MATCH (rx)-[:PrescriptionHasPayer]->(py:Payer) WHERE m.is_chronic = 1 RETURN m.medication_name AS medication_name, m.drug_class AS drug_class, rx.total_cost AS total_cost, rx.payer_paid AS payer_paid, p.display_name AS provider_name, p.specialty AS specialty, py.payer_name AS payer_name"
     },
     {
       "id": "ga000019-0019-0019-0019-000000000019",
       "question": "Show me the relationship between claim denials and patient diagnoses — what conditions are associated with denied claims",
-      "query": "MATCH (c:Claim)-[:billsFor]->(e:Encounter)<-[:occursIn]-(pd:PatientDiagnosis)-[:references]->(d:Diagnosis) MATCH (c)-[:submittedBy]->(p:Provider) MATCH (c)-[:ClaimHasPayer]->(py:Payer) WHERE c.denial_flag = 1 RETURN c.claim_id, c.primary_denial_reason, c.billed_amount, d.icd_description, d.icd_category, d.is_chronic, e.encounter_type, p.specialty, py.payer_name"
+      "query": "MATCH (c:Claim)-[:billsFor]->(e:Encounter)<-[:occursIn]-(pd:PatientDiagnosis)-[:references]->(d:Diagnosis) MATCH (c)-[:submittedBy]->(p:Provider) MATCH (c)-[:ClaimHasPayer]->(py:Payer) WHERE c.denial_flag = 1 RETURN c.claim_id AS claim_id, c.primary_denial_reason AS denial_reason, c.billed_amount AS billed_amount, d.icd_description AS diagnosis, d.icd_category AS icd_category, d.is_chronic AS is_chronic, e.encounter_type AS encounter_type, p.specialty AS specialty, py.payer_name AS payer_name"
     },
     {
       "id": "ga000020-0020-0020-0020-000000000020",
       "question": "Trace prescription costs by payer — which payers bear the highest prescription burden and for what drug classes",
-      "query": "MATCH (py:Payer)<-[:PrescriptionHasPayer]-(rx:Prescription)-[:dispenses]->(m:Medication) MATCH (rx)-[:prescribedBy]->(p:Provider) RETURN py.payer_name, m.drug_class, m.therapeutic_area, m.is_chronic, rx.total_cost, rx.payer_paid, rx.patient_copay, rx.is_chronic_medication, p.display_name, p.specialty"
+      "query": "MATCH (py:Payer)<-[:PrescriptionHasPayer]-(rx:Prescription)-[:dispenses]->(m:Medication) MATCH (rx)-[:prescribedBy]->(p:Provider) RETURN py.payer_name AS payer_name, m.drug_class AS drug_class, m.therapeutic_area AS therapeutic_area, m.is_chronic AS is_chronic, rx.total_cost AS total_cost, rx.payer_paid AS payer_paid, rx.patient_copay AS patient_copay, rx.is_chronic_medication AS is_chronic_medication, p.display_name AS provider_name, p.specialty AS specialty"
     },
     {
       "id": "ga000021-0021-0021-0021-000000000021",
       "question": "Show me patients with poor medication adherence — who are their providers and which payers cover them? These are intervention opportunities",
-      "query": "MATCH (ma:MedicationAdherence)-[:adherenceFor]->(pt:Patient)<-[:involves]-(e:Encounter)-[:treatedBy]->(p:Provider) MATCH (ma)-[:adherenceMedication]->(m:Medication) WHERE ma.adherence_category = 'Non-Adherent' RETURN pt.first_name, pt.last_name, pt.age, pt.insurance_type, m.medication_name, m.drug_class, m.is_chronic, ma.pdc_score, ma.gap_days, p.display_name, p.specialty"
+      "query": "MATCH (ma:MedicationAdherence)-[:adherenceFor]->(pt:Patient)<-[:involves]-(e:Encounter)-[:treatedBy]->(p:Provider) MATCH (ma)-[:adherenceMedication]->(m:Medication) WHERE ma.adherence_category = 'Non-Adherent' RETURN pt.first_name AS patient_first_name, pt.last_name AS patient_last_name, pt.age AS patient_age, pt.insurance_type AS insurance_type, m.medication_name AS medication_name, m.drug_class AS drug_class, m.is_chronic AS is_chronic, ma.pdc_score AS pdc_score, ma.gap_days AS gap_days, p.display_name AS provider_name, p.specialty AS specialty"
     },
     {
       "id": "ga000022-0022-0022-0022-000000000022",
       "question": "Show me patients with abnormal vitals — who are their treating providers and what diagnoses do they have",
-      "query": "MATCH (v:Vitals)-[:vitalsTakenFor]->(pt:Patient)<-[:involves]-(e:Encounter)-[:treatedBy]->(p:Provider) WHERE v.risk_flag = 1 RETURN pt.first_name, pt.last_name, pt.age, v.avg_heart_rate, v.avg_bp_systolic, v.avg_bp_diastolic, v.avg_spo2, v.avg_temperature, v.critical_reading_count, p.display_name, p.specialty"
+      "query": "MATCH (v:Vitals)-[:vitalsTakenFor]->(pt:Patient)<-[:involves]-(e:Encounter)-[:treatedBy]->(p:Provider) WHERE v.risk_flag = 1 RETURN pt.first_name AS patient_first_name, pt.last_name AS patient_last_name, pt.age AS patient_age, v.avg_heart_rate AS avg_heart_rate, v.avg_bp_systolic AS avg_bp_systolic, v.avg_bp_diastolic AS avg_bp_diastolic, v.avg_spo2 AS avg_spo2, v.avg_temperature AS avg_temperature, v.critical_reading_count AS critical_readings, p.display_name AS provider_name, p.specialty AS specialty"
     },
     {
       "id": "ga000023-0023-0023-0023-000000000023",
       "question": "Find our most vulnerable population — patients in high SDOH risk areas who are non-adherent with high readmission risk. Show providers and payers involved",
-      "query": "MATCH (pt:Patient)-[:livesIn]->(ch:CommunityHealth) MATCH (ma:MedicationAdherence)-[:adherenceFor]->(pt) MATCH (ma)-[:adherenceMedication]->(m:Medication) WHERE ch.risk_tier = 'High' AND ma.adherence_category = 'Non-Adherent' RETURN pt.first_name, pt.last_name, pt.zip_code, ch.social_vulnerability_index, ch.poverty_rate, m.medication_name, m.drug_class, ma.pdc_score, ma.gap_days"
+      "query": "MATCH (pt:Patient)-[:livesIn]->(ch:CommunityHealth) MATCH (ma:MedicationAdherence)-[:adherenceFor]->(pt) MATCH (ma)-[:adherenceMedication]->(m:Medication) WHERE ch.risk_tier = 'High' AND ma.adherence_category = 'Non-Adherent' RETURN pt.first_name AS patient_first_name, pt.last_name AS patient_last_name, pt.zip_code AS zip_code, ch.social_vulnerability_index AS svi, ch.poverty_rate AS poverty_rate, m.medication_name AS medication_name, m.drug_class AS drug_class, ma.pdc_score AS pdc_score, ma.gap_days AS gap_days"
     },
     {
       "id": "ga000024-0024-0024-0024-000000000024",

@@ -140,6 +140,20 @@ The launcher creates a deploy lakehouse, downloads the repo, deploys all artifac
 
 Dual-path design: **Batch ETL** (authoritative, historical) + **Real-Time Intelligence** (operational, sub-minute). Batch feeds streaming — Gold dimension tables are the enrichment layer for real-time scoring.
 
+### Solution Architecture
+
+![Provider Healthcare Solution with Microsoft Fabric & AI](diagrams/healthcare-architecture.svg)
+
+> *Open the [interactive Draw.io diagram](diagrams/healthcare-architecture.drawio) in VS Code or [app.diagrams.net](https://app.diagrams.net) for full detail.*
+
+### Healthcare Ontology — Entity Relationship Diagram
+
+![Healthcare Ontology ERD — 12 Entities, 18 Relationships](diagrams/healthcare-ontology-erd.svg)
+
+> *Open the [interactive Draw.io diagram](diagrams/healthcare-ontology-erd.drawio) for entity-level detail.*
+
+### Detailed Data Flow
+
 ```
 ┌──────────────────────────────────────────────────────────────────────────────┐
 │                     HEALTHCARE ANALYTICS ARCHITECTURE                        │

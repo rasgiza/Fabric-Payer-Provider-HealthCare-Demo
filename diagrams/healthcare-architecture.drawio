@@ -1,0 +1,492 @@
+<mxfile host="app.diagrams.net" modified="2026-04-16T18:00:00.000Z" agent="GitHub Copilot" version="22.1.0" type="device">
+  <diagram name="Provider Healthcare — Fabric Architecture" id="healthcare-arch">
+    <mxGraphModel dx="2200" dy="1500" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="2200" pageHeight="1500" math="0" shadow="0">
+      <root>
+        <mxCell id="0" />
+        <mxCell id="1" parent="0" />
+
+        <!-- ══════════════════════ TITLE ══════════════════════ -->
+        <mxCell id="title" value="Provider HealthCare Solution Approach With Microsoft Fabric &amp; AI" style="text;html=1;strokeColor=none;fillColor=none;align=center;verticalAlign=middle;fontSize=22;fontStyle=1;fontColor=#008272;" vertex="1" parent="1">
+          <mxGeometry x="400" y="8" width="900" height="35" as="geometry" />
+        </mxCell>
+        <mxCell id="subtitle" value="End-to-End Healthcare Analytics: Bronze → Silver → Gold → Semantic Model → Ontology &amp; Graph → AI Data Agents → Power BI | Real-Time Intelligence" style="text;html=1;strokeColor=none;fillColor=none;align=center;verticalAlign=middle;fontSize=11;fontColor=#606060;" vertex="1" parent="1">
+          <mxGeometry x="300" y="40" width="1100" height="18" as="geometry" />
+        </mxCell>
+
+        <!-- ══════════════════════ DATA SOURCES (LEFT) ══════════════════════ -->
+        <mxCell id="ds-border" value="" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#F7F7F7;strokeColor=#999999;strokeWidth=1.5;arcSize=4;" vertex="1" parent="1">
+          <mxGeometry x="20" y="75" width="190" height="520" as="geometry" />
+        </mxCell>
+        <mxCell id="ds-title" value="Data Sources" style="text;html=1;strokeColor=none;fillColor=none;align=center;verticalAlign=middle;fontSize=14;fontStyle=1;fontColor=#323130;" vertex="1" parent="1">
+          <mxGeometry x="35" y="82" width="160" height="22" as="geometry" />
+        </mxCell>
+
+        <!-- EHR System sub-box -->
+        <mxCell id="ehr-box" value="" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#FFFFFF;strokeColor=#D2D0CE;strokeWidth=1;" vertex="1" parent="1">
+          <mxGeometry x="32" y="112" width="166" height="200" as="geometry" />
+        </mxCell>
+        <mxCell id="ehr-title" value="EHR SYSTEM" style="text;html=1;strokeColor=none;fillColor=none;align=center;verticalAlign=middle;fontSize=11;fontStyle=1;fontColor=#323130;" vertex="1" parent="1">
+          <mxGeometry x="42" y="118" width="146" height="18" as="geometry" />
+        </mxCell>
+
+        <!-- DB icons as colored boxes -->
+        <mxCell id="db-reporting" value="" style="shape=cylinder3;whiteSpace=wrap;html=1;boundedLbl=1;backgroundOutline=1;size=6;fillColor=#0078D4;strokeColor=#0078D4;fontColor=#FFFFFF;" vertex="1" parent="1">
+          <mxGeometry x="48" y="146" width="30" height="36" as="geometry" />
+        </mxCell>
+        <mxCell id="db-reporting-lbl" value="Reporting&#xa;DB" style="text;html=1;strokeColor=none;fillColor=none;align=center;verticalAlign=top;fontSize=8;fontColor=#605E5C;" vertex="1" parent="1">
+          <mxGeometry x="38" y="184" width="50" height="22" as="geometry" />
+        </mxCell>
+        <mxCell id="db-oracle" value="" style="shape=cylinder3;whiteSpace=wrap;html=1;boundedLbl=1;backgroundOutline=1;size=6;fillColor=#D13438;strokeColor=#D13438;" vertex="1" parent="1">
+          <mxGeometry x="112" y="146" width="30" height="36" as="geometry" />
+        </mxCell>
+        <mxCell id="db-oracle-lbl" value="Oracle&#xa;DB" style="text;html=1;strokeColor=none;fillColor=none;align=center;verticalAlign=top;fontSize=8;fontColor=#605E5C;" vertex="1" parent="1">
+          <mxGeometry x="102" y="184" width="50" height="22" as="geometry" />
+        </mxCell>
+        <mxCell id="db-sql" value="" style="shape=cylinder3;whiteSpace=wrap;html=1;boundedLbl=1;backgroundOutline=1;size=6;fillColor=#0078D4;strokeColor=#0078D4;" vertex="1" parent="1">
+          <mxGeometry x="48" y="216" width="30" height="36" as="geometry" />
+        </mxCell>
+        <mxCell id="db-sql-lbl" value="Azure&#xa;SQL DB" style="text;html=1;strokeColor=none;fillColor=none;align=center;verticalAlign=top;fontSize=8;fontColor=#605E5C;" vertex="1" parent="1">
+          <mxGeometry x="38" y="254" width="50" height="22" as="geometry" />
+        </mxCell>
+        <mxCell id="db-sqlsrv" value="" style="shape=cylinder3;whiteSpace=wrap;html=1;boundedLbl=1;backgroundOutline=1;size=6;fillColor=#5C2D91;strokeColor=#5C2D91;" vertex="1" parent="1">
+          <mxGeometry x="112" y="216" width="30" height="36" as="geometry" />
+        </mxCell>
+        <mxCell id="db-sqlsrv-lbl" value="SQL&#xa;Server" style="text;html=1;strokeColor=none;fillColor=none;align=center;verticalAlign=top;fontSize=8;fontColor=#605E5C;" vertex="1" parent="1">
+          <mxGeometry x="102" y="254" width="50" height="22" as="geometry" />
+        </mxCell>
+
+        <!-- Streaming sources -->
+        <mxCell id="stream-1" value="Bedside Monitors" style="text;html=1;strokeColor=none;fillColor=none;align=left;verticalAlign=middle;fontSize=10;fontColor=#605E5C;" vertex="1" parent="1">
+          <mxGeometry x="32" y="330" width="160" height="18" as="geometry" />
+        </mxCell>
+        <mxCell id="stream-2" value="ADT System" style="text;html=1;strokeColor=none;fillColor=none;align=left;verticalAlign=middle;fontSize=10;fontColor=#605E5C;" vertex="1" parent="1">
+          <mxGeometry x="32" y="356" width="160" height="18" as="geometry" />
+        </mxCell>
+        <mxCell id="stream-3" value="Nurse Call System" style="text;html=1;strokeColor=none;fillColor=none;align=left;verticalAlign=middle;fontSize=10;fontColor=#605E5C;" vertex="1" parent="1">
+          <mxGeometry x="32" y="382" width="160" height="18" as="geometry" />
+        </mxCell>
+        <mxCell id="stream-4" value="Lab Systems (STAT)" style="text;html=1;strokeColor=none;fillColor=none;align=left;verticalAlign=middle;fontSize=10;fontColor=#605E5C;" vertex="1" parent="1">
+          <mxGeometry x="32" y="408" width="160" height="18" as="geometry" />
+        </mxCell>
+        <mxCell id="stream-5" value="And many more..." style="text;html=1;strokeColor=none;fillColor=none;align=left;verticalAlign=middle;fontSize=10;fontColor=#A19F9D;fontStyle=2;" vertex="1" parent="1">
+          <mxGeometry x="32" y="434" width="160" height="18" as="geometry" />
+        </mxCell>
+
+        <!-- Azure Event Hub -->
+        <mxCell id="eventhub" value="Azure Event Hub&#xa;Or&#xa;Custom Endpoint" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#E8E8E8;strokeColor=#999;fontSize=10;fontColor=#0078D4;fontStyle=1;" vertex="1" parent="1">
+          <mxGeometry x="44" y="470" width="155" height="56" as="geometry" />
+        </mxCell>
+
+        <!-- ══════════════════════ FABRIC WORKSPACE (MAIN BOX) ══════════════════════ -->
+        <mxCell id="fabric-box" value="" style="rounded=1;whiteSpace=wrap;html=1;fillColor=none;strokeColor=#5C2D91;strokeWidth=2.5;arcSize=2;" vertex="1" parent="1">
+          <mxGeometry x="240" y="68" width="1700" height="640" as="geometry" />
+        </mxCell>
+        <!-- Fabric icon placeholder -->
+        <mxCell id="fabric-logo" value="🟩" style="text;html=1;strokeColor=none;fillColor=none;align=center;verticalAlign=middle;fontSize=18;" vertex="1" parent="1">
+          <mxGeometry x="1050" y="72" width="30" height="24" as="geometry" />
+        </mxCell>
+
+        <!-- ═══════ ROW 1: BATCH ANALYTICS PIPELINE ═══════ -->
+
+        <!-- Data Factory Pipeline -->
+        <mxCell id="pipeline-box" value="" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#FFFFFF;strokeColor=#0078D4;strokeWidth=1.5;" vertex="1" parent="1">
+          <mxGeometry x="290" y="140" width="120" height="70" as="geometry" />
+        </mxCell>
+        <mxCell id="pipeline-label" value="Data Ingestion&#xa;/Workflow" style="text;html=1;strokeColor=none;fillColor=none;align=center;verticalAlign=top;fontSize=9;fontColor=#605E5C;" vertex="1" parent="1">
+          <mxGeometry x="288" y="113" width="124" height="26" as="geometry" />
+        </mxCell>
+        <mxCell id="pipeline-icon" value="📋" style="text;html=1;strokeColor=none;fillColor=none;align=center;verticalAlign=middle;fontSize=20;" vertex="1" parent="1">
+          <mxGeometry x="325" y="142" width="50" height="30" as="geometry" />
+        </mxCell>
+        <mxCell id="pipeline-text" value="Fabric Data&#xa;Factory Pipeline" style="text;html=1;strokeColor=none;fillColor=none;align=center;verticalAlign=middle;fontSize=9;fontColor=#323130;" vertex="1" parent="1">
+          <mxGeometry x="298" y="174" width="104" height="30" as="geometry" />
+        </mxCell>
+
+        <!-- Bronze Layer -->
+        <mxCell id="bronze-box" value="" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#FFFFFF;strokeColor=#0078D4;strokeWidth=1.5;" vertex="1" parent="1">
+          <mxGeometry x="470" y="140" width="120" height="70" as="geometry" />
+        </mxCell>
+        <mxCell id="bronze-icon" value="🏠" style="text;html=1;strokeColor=none;fillColor=none;align=center;verticalAlign=middle;fontSize=20;" vertex="1" parent="1">
+          <mxGeometry x="505" y="140" width="50" height="30" as="geometry" />
+        </mxCell>
+        <mxCell id="bronze-text" value="Bronze&#xa;Layer" style="text;html=1;strokeColor=none;fillColor=none;align=center;verticalAlign=middle;fontSize=9;fontColor=#323130;" vertex="1" parent="1">
+          <mxGeometry x="478" y="174" width="104" height="30" as="geometry" />
+        </mxCell>
+
+        <!-- Silver — Transform -->
+        <mxCell id="silver-box" value="" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#0078D4;strokeColor=#0078D4;strokeWidth=1.5;" vertex="1" parent="1">
+          <mxGeometry x="650" y="140" width="120" height="70" as="geometry" />
+        </mxCell>
+        <mxCell id="silver-label" value="Transform" style="text;html=1;strokeColor=none;fillColor=none;align=center;verticalAlign=middle;fontSize=12;fontStyle=1;fontColor=#FFFFFF;" vertex="1" parent="1">
+          <mxGeometry x="655" y="146" width="110" height="22" as="geometry" />
+        </mxCell>
+        <mxCell id="silver-text" value="Silver&#xa;Layer" style="text;html=1;strokeColor=none;fillColor=none;align=center;verticalAlign=middle;fontSize=10;fontColor=#FFFFFF;" vertex="1" parent="1">
+          <mxGeometry x="660" y="172" width="100" height="30" as="geometry" />
+        </mxCell>
+
+        <!-- Gold — Ready To Use -->
+        <mxCell id="gold-box" value="" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#107C10;strokeColor=#107C10;strokeWidth=1.5;" vertex="1" parent="1">
+          <mxGeometry x="830" y="140" width="120" height="70" as="geometry" />
+        </mxCell>
+        <mxCell id="gold-label" value="Ready To Use" style="text;html=1;strokeColor=none;fillColor=none;align=center;verticalAlign=middle;fontSize=12;fontStyle=1;fontColor=#FFFFFF;" vertex="1" parent="1">
+          <mxGeometry x="835" y="146" width="110" height="22" as="geometry" />
+        </mxCell>
+        <mxCell id="gold-text" value="Gold&#xa;Layer" style="text;html=1;strokeColor=none;fillColor=none;align=center;verticalAlign=middle;fontSize=10;fontColor=#FFFFFF;" vertex="1" parent="1">
+          <mxGeometry x="840" y="172" width="100" height="30" as="geometry" />
+        </mxCell>
+
+        <!-- Semantic Model — Model -->
+        <mxCell id="model-box" value="" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#FFFFFF;strokeColor=#107C10;strokeWidth=1.5;" vertex="1" parent="1">
+          <mxGeometry x="1010" y="140" width="120" height="70" as="geometry" />
+        </mxCell>
+        <mxCell id="model-label" value="Model" style="text;html=1;strokeColor=none;fillColor=none;align=center;verticalAlign=middle;fontSize=12;fontStyle=1;fontColor=#107C10;" vertex="1" parent="1">
+          <mxGeometry x="1015" y="146" width="110" height="22" as="geometry" />
+        </mxCell>
+        <mxCell id="model-text" value="Semantic&#xa;Model" style="text;html=1;strokeColor=none;fillColor=none;align=center;verticalAlign=middle;fontSize=10;fontColor=#323130;" vertex="1" parent="1">
+          <mxGeometry x="1020" y="172" width="100" height="30" as="geometry" />
+        </mxCell>
+
+        <!-- Power BI — Visualize -->
+        <mxCell id="pbi-box" value="" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#F2C811;strokeColor=#F2C811;strokeWidth=1.5;" vertex="1" parent="1">
+          <mxGeometry x="1190" y="140" width="120" height="70" as="geometry" />
+        </mxCell>
+        <mxCell id="pbi-label" value="Visualize" style="text;html=1;strokeColor=none;fillColor=none;align=center;verticalAlign=middle;fontSize=12;fontStyle=1;fontColor=#323130;" vertex="1" parent="1">
+          <mxGeometry x="1195" y="146" width="110" height="22" as="geometry" />
+        </mxCell>
+        <mxCell id="pbi-text" value="PowerBI" style="text;html=1;strokeColor=none;fillColor=none;align=center;verticalAlign=middle;fontSize=10;fontColor=#323130;" vertex="1" parent="1">
+          <mxGeometry x="1200" y="172" width="100" height="30" as="geometry" />
+        </mxCell>
+
+        <!-- ══ Pipeline flow arrows (Row 1) ══ -->
+        <mxCell id="arr-ds-pipeline" value="" style="endArrow=classic;html=1;strokeWidth=2;strokeColor=#0078D4;" edge="1" parent="1">
+          <mxGeometry relative="1" as="geometry"><mxPoint x="210" y="175" as="sourcePoint" /><mxPoint x="290" y="175" as="targetPoint" /></mxGeometry>
+        </mxCell>
+        <mxCell id="arr-pipeline-bronze" value="" style="endArrow=classic;html=1;strokeWidth=2;strokeColor=#0078D4;" edge="1" parent="1">
+          <mxGeometry relative="1" as="geometry"><mxPoint x="410" y="175" as="sourcePoint" /><mxPoint x="470" y="175" as="targetPoint" /></mxGeometry>
+        </mxCell>
+        <mxCell id="arr-bronze-silver" value="" style="endArrow=classic;html=1;strokeWidth=2;strokeColor=#0078D4;" edge="1" parent="1">
+          <mxGeometry relative="1" as="geometry"><mxPoint x="590" y="175" as="sourcePoint" /><mxPoint x="650" y="175" as="targetPoint" /></mxGeometry>
+        </mxCell>
+        <mxCell id="arr-silver-gold" value="" style="endArrow=classic;html=1;strokeWidth=2;strokeColor=#107C10;" edge="1" parent="1">
+          <mxGeometry relative="1" as="geometry"><mxPoint x="770" y="175" as="sourcePoint" /><mxPoint x="830" y="175" as="targetPoint" /></mxGeometry>
+        </mxCell>
+        <mxCell id="arr-gold-model" value="" style="endArrow=classic;html=1;strokeWidth=2;strokeColor=#107C10;" edge="1" parent="1">
+          <mxGeometry relative="1" as="geometry"><mxPoint x="950" y="175" as="sourcePoint" /><mxPoint x="1010" y="175" as="targetPoint" /></mxGeometry>
+        </mxCell>
+        <mxCell id="arr-model-pbi" value="" style="endArrow=classic;html=1;strokeWidth=2;strokeColor=#F2C811;" edge="1" parent="1">
+          <mxGeometry relative="1" as="geometry"><mxPoint x="1130" y="175" as="sourcePoint" /><mxPoint x="1190" y="175" as="targetPoint" /></mxGeometry>
+        </mxCell>
+
+        <!-- ═══════ ROW 2: AI / INTELLIGENCE LAYER ═══════ -->
+
+        <!-- Data Agent (Semantic Model) -->
+        <mxCell id="agent-sm-box" value="" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#FFFFFF;strokeColor=#008272;strokeWidth=1.5;" vertex="1" parent="1">
+          <mxGeometry x="1010" y="100" width="120" height="36" as="geometry" />
+        </mxCell>
+        <mxCell id="agent-sm-label" value="Data Agent" style="text;html=1;strokeColor=none;fillColor=none;align=center;verticalAlign=middle;fontSize=10;fontStyle=1;fontColor=#008272;" vertex="1" parent="1">
+          <mxGeometry x="1010" y="78" width="120" height="18" as="geometry" />
+        </mxCell>
+        <mxCell id="agent-sm-icon" value="🤖" style="text;html=1;strokeColor=none;fillColor=none;align=center;verticalAlign=middle;fontSize=16;" vertex="1" parent="1">
+          <mxGeometry x="1040" y="102" width="60" height="30" as="geometry" />
+        </mxCell>
+
+        <!-- Ontology + Graph Model -->
+        <mxCell id="ontology-box" value="" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#F3E5F5;strokeColor=#7C3AED;strokeWidth=1.5;" vertex="1" parent="1">
+          <mxGeometry x="1380" y="100" width="170" height="50" as="geometry" />
+        </mxCell>
+        <mxCell id="ontology-label" value="(Ontology – Semantic&#xa;Intelligence Layer)" style="text;html=1;strokeColor=none;fillColor=none;align=center;verticalAlign=middle;fontSize=10;fontStyle=1;fontColor=#7C3AED;" vertex="1" parent="1">
+          <mxGeometry x="1380" y="104" width="170" height="36" as="geometry" />
+        </mxCell>
+
+        <!-- Arrow: Semantic Model → Ontology -->
+        <mxCell id="arr-model-ontology" value="" style="endArrow=classic;html=1;strokeWidth=1.5;strokeColor=#7C3AED;curved=1;" edge="1" parent="1">
+          <mxGeometry relative="1" as="geometry"><mxPoint x="1130" y="118" as="sourcePoint" /><mxPoint x="1380" y="118" as="targetPoint" /></mxGeometry>
+        </mxCell>
+
+        <!-- Data Agent (Ontology) — right side -->
+        <mxCell id="agent-ont-box" value="" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#FFFFFF;strokeColor=#008272;strokeWidth=1.5;" vertex="1" parent="1">
+          <mxGeometry x="1610" y="98" width="120" height="55" as="geometry" />
+        </mxCell>
+        <mxCell id="agent-ont-label" value="Data Agent" style="text;html=1;strokeColor=none;fillColor=none;align=center;verticalAlign=middle;fontSize=10;fontStyle=1;fontColor=#008272;" vertex="1" parent="1">
+          <mxGeometry x="1610" y="78" width="120" height="18" as="geometry" />
+        </mxCell>
+        <mxCell id="agent-ont-icon" value="🤖" style="text;html=1;strokeColor=none;fillColor=none;align=center;verticalAlign=middle;fontSize=16;" vertex="1" parent="1">
+          <mxGeometry x="1635" y="100" width="28" height="30" as="geometry" />
+        </mxCell>
+        <mxCell id="agent-ont-text" value="Ontology&#xa;Graph Agent" style="text;html=1;strokeColor=none;fillColor=none;align=left;verticalAlign=middle;fontSize=9;fontColor=#323130;" vertex="1" parent="1">
+          <mxGeometry x="1660" y="100" width="65" height="30" as="geometry" />
+        </mxCell>
+
+        <!-- Arrow: Ontology → Data Agent -->
+        <mxCell id="arr-ontology-agent" value="" style="endArrow=classic;html=1;strokeWidth=1.5;strokeColor=#7C3AED;" edge="1" parent="1">
+          <mxGeometry relative="1" as="geometry"><mxPoint x="1550" y="125" as="sourcePoint" /><mxPoint x="1610" y="125" as="targetPoint" /></mxGeometry>
+        </mxCell>
+
+        <!-- Arrow: PBI → Business Users (top row) -->
+        <mxCell id="arr-pbi-users" value="" style="endArrow=classic;html=1;strokeWidth=2;strokeColor=#F2C811;" edge="1" parent="1">
+          <mxGeometry relative="1" as="geometry"><mxPoint x="1310" y="175" as="sourcePoint" /><mxPoint x="1810" y="175" as="targetPoint" /></mxGeometry>
+        </mxCell>
+
+        <!-- Arrow: Agent Ontology → Business Users -->
+        <mxCell id="arr-agent-users" value="" style="endArrow=classic;html=1;strokeWidth=1.5;strokeColor=#008272;curved=1;" edge="1" parent="1">
+          <mxGeometry relative="1" as="geometry"><mxPoint x="1730" y="125" as="sourcePoint" /><mxPoint x="1860" y="200" as="targetPoint" /></mxGeometry>
+        </mxCell>
+
+        <!-- ═══════ BUSINESS USERS (RIGHT) ═══════ -->
+        <mxCell id="users-box" value="" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#F7F7F7;strokeColor=#999;strokeWidth=1;" vertex="1" parent="1">
+          <mxGeometry x="1810" y="120" width="120" height="160" as="geometry" />
+        </mxCell>
+        <mxCell id="users-icon1" value="👨‍⚕️" style="text;html=1;strokeColor=none;fillColor=none;align=center;verticalAlign=middle;fontSize=28;" vertex="1" parent="1">
+          <mxGeometry x="1830" y="130" width="40" height="40" as="geometry" />
+        </mxCell>
+        <mxCell id="users-icon2" value="👩‍⚕️" style="text;html=1;strokeColor=none;fillColor=none;align=center;verticalAlign=middle;fontSize=28;" vertex="1" parent="1">
+          <mxGeometry x="1875" y="130" width="40" height="40" as="geometry" />
+        </mxCell>
+        <mxCell id="users-lbl" value="Clinical &amp;&#xa;Business&#xa;Users" style="text;html=1;strokeColor=none;fillColor=none;align=center;verticalAlign=middle;fontSize=11;fontStyle=1;fontColor=#323130;" vertex="1" parent="1">
+          <mxGeometry x="1820" y="180" width="100" height="50" as="geometry" />
+        </mxCell>
+        <mxCell id="users-sub" value="Providers&#xa;Administrators&#xa;Care Managers" style="text;html=1;strokeColor=none;fillColor=none;align=center;verticalAlign=middle;fontSize=8;fontColor=#A19F9D;" vertex="1" parent="1">
+          <mxGeometry x="1820" y="230" width="100" height="42" as="geometry" />
+        </mxCell>
+
+        <!-- ═══════ ROW 3: REAL-TIME INTELLIGENCE (BOTTOM SECTION) ═══════ -->
+        <mxCell id="rti-border" value="" style="rounded=1;whiteSpace=wrap;html=1;fillColor=none;strokeColor=#0078D4;strokeWidth=2;dashed=0;arcSize=3;" vertex="1" parent="1">
+          <mxGeometry x="260" y="280" width="1660" height="400" as="geometry" />
+        </mxCell>
+        <mxCell id="rti-title" value="Real-Time Intelligence" style="text;html=1;strokeColor=none;fillColor=none;align=center;verticalAlign=middle;fontSize=14;fontStyle=1;fontColor=#0078D4;" vertex="1" parent="1">
+          <mxGeometry x="900" y="282" width="240" height="22" as="geometry" />
+        </mxCell>
+
+        <!-- Activator -->
+        <mxCell id="activator-box" value="" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#FFF3E0;strokeColor=#E8700A;strokeWidth=1.5;" vertex="1" parent="1">
+          <mxGeometry x="300" y="330" width="110" height="60" as="geometry" />
+        </mxCell>
+        <mxCell id="activator-label" value="⚡ Activator" style="text;html=1;strokeColor=none;fillColor=none;align=center;verticalAlign=middle;fontSize=11;fontStyle=1;fontColor=#E8700A;" vertex="1" parent="1">
+          <mxGeometry x="305" y="340" width="100" height="40" as="geometry" />
+        </mxCell>
+
+        <!-- Lakehouse Bronze (RTI) -->
+        <mxCell id="rti-lakehouse" value="" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#FFFFFF;strokeColor=#0078D4;strokeWidth=1.5;" vertex="1" parent="1">
+          <mxGeometry x="470" y="330" width="110" height="60" as="geometry" />
+        </mxCell>
+        <mxCell id="rti-lakehouse-lbl" value="Lakehouse&#xa;Bronze Layer" style="text;html=1;strokeColor=none;fillColor=none;align=center;verticalAlign=middle;fontSize=10;fontColor=#323130;" vertex="1" parent="1">
+          <mxGeometry x="475" y="338" width="100" height="44" as="geometry" />
+        </mxCell>
+
+        <!-- RTI Dashboard -->
+        <mxCell id="rti-dash-box" value="" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#FFFFFF;strokeColor=#0078D4;strokeWidth=1.5;" vertex="1" parent="1">
+          <mxGeometry x="650" y="310" width="150" height="50" as="geometry" />
+        </mxCell>
+        <mxCell id="rti-dash-label" value="📊 Real-Time Dashboard" style="text;html=1;strokeColor=none;fillColor=none;align=center;verticalAlign=middle;fontSize=10;fontStyle=1;fontColor=#0078D4;" vertex="1" parent="1">
+          <mxGeometry x="655" y="318" width="140" height="34" as="geometry" />
+        </mxCell>
+
+        <!-- Arrow: Activator → Lakehouse -->
+        <mxCell id="arr-act-lh" value="" style="endArrow=classic;html=1;strokeWidth=1.5;strokeColor=#E8700A;" edge="1" parent="1">
+          <mxGeometry relative="1" as="geometry"><mxPoint x="410" y="360" as="sourcePoint" /><mxPoint x="470" y="360" as="targetPoint" /></mxGeometry>
+        </mxCell>
+        <!-- Arrow: Lakehouse → Dashboard -->
+        <mxCell id="arr-lh-dash" value="" style="endArrow=classic;html=1;strokeWidth=1.5;strokeColor=#0078D4;" edge="1" parent="1">
+          <mxGeometry relative="1" as="geometry"><mxPoint x="580" y="345" as="sourcePoint" /><mxPoint x="650" y="335" as="targetPoint" /></mxGeometry>
+        </mxCell>
+
+        <!-- Ingest & Process label -->
+        <mxCell id="ingest-lbl" value="Ingest &amp; Process" style="text;html=1;strokeColor=none;fillColor=none;align=center;verticalAlign=middle;fontSize=9;fontColor=#605E5C;fontStyle=2;" vertex="1" parent="1">
+          <mxGeometry x="300" y="395" width="110" height="16" as="geometry" />
+        </mxCell>
+
+        <!-- Eventstream -->
+        <mxCell id="eventstream-box" value="" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#FFFFFF;strokeColor=#0078D4;strokeWidth=1.5;" vertex="1" parent="1">
+          <mxGeometry x="300" y="450" width="110" height="60" as="geometry" />
+        </mxCell>
+        <mxCell id="eventstream-label" value="🌊 Eventstream" style="text;html=1;strokeColor=none;fillColor=none;align=center;verticalAlign=middle;fontSize=11;fontStyle=1;fontColor=#0078D4;" vertex="1" parent="1">
+          <mxGeometry x="305" y="460" width="100" height="40" as="geometry" />
+        </mxCell>
+
+        <!-- Eventhouse -->
+        <mxCell id="eventhouse-box" value="" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#FFFFFF;strokeColor=#0078D4;strokeWidth=1.5;" vertex="1" parent="1">
+          <mxGeometry x="470" y="450" width="130" height="60" as="geometry" />
+        </mxCell>
+        <mxCell id="eventhouse-label" value="Eventhouse&#xa;Real time- KQL" style="text;html=1;strokeColor=none;fillColor=none;align=center;verticalAlign=middle;fontSize=10;fontStyle=1;fontColor=#0078D4;" vertex="1" parent="1">
+          <mxGeometry x="475" y="455" width="120" height="50" as="geometry" />
+        </mxCell>
+
+        <!-- Store label -->
+        <mxCell id="store-lbl" value="Store" style="text;html=1;strokeColor=none;fillColor=none;align=center;verticalAlign=middle;fontSize=9;fontColor=#605E5C;fontStyle=2;" vertex="1" parent="1">
+          <mxGeometry x="470" y="515" width="130" height="16" as="geometry" />
+        </mxCell>
+
+        <!-- KQL Database -->
+        <mxCell id="kql-box" value="" style="shape=cylinder3;whiteSpace=wrap;html=1;boundedLbl=1;backgroundOutline=1;size=8;fillColor=#E3F2FD;strokeColor=#0078D4;strokeWidth=1.5;" vertex="1" parent="1">
+          <mxGeometry x="660" y="440" width="120" height="70" as="geometry" />
+        </mxCell>
+        <mxCell id="kql-label" value="KQL Database" style="text;html=1;strokeColor=none;fillColor=none;align=center;verticalAlign=middle;fontSize=11;fontStyle=1;fontColor=#0078D4;" vertex="1" parent="1">
+          <mxGeometry x="665" y="462" width="110" height="22" as="geometry" />
+        </mxCell>
+
+        <!-- Real-Time Hub label -->
+        <mxCell id="rthub-lbl" value="Real-Time Hub" style="text;html=1;strokeColor=none;fillColor=none;align=center;verticalAlign=middle;fontSize=10;fontStyle=2;fontColor=#0078D4;" vertex="1" parent="1">
+          <mxGeometry x="500" y="540" width="200" height="16" as="geometry" />
+        </mxCell>
+
+        <!-- Arrow: Eventstream → Eventhouse -->
+        <mxCell id="arr-es-eh" value="" style="endArrow=classic;html=1;strokeWidth=1.5;strokeColor=#0078D4;" edge="1" parent="1">
+          <mxGeometry relative="1" as="geometry"><mxPoint x="410" y="480" as="sourcePoint" /><mxPoint x="470" y="480" as="targetPoint" /></mxGeometry>
+        </mxCell>
+        <!-- Arrow: Eventhouse → KQL -->
+        <mxCell id="arr-eh-kql" value="" style="endArrow=classic;html=1;strokeWidth=1.5;strokeColor=#0078D4;" edge="1" parent="1">
+          <mxGeometry relative="1" as="geometry"><mxPoint x="600" y="480" as="sourcePoint" /><mxPoint x="660" y="480" as="targetPoint" /></mxGeometry>
+        </mxCell>
+        <!-- Arrow: Event Hub → Eventstream -->
+        <mxCell id="arr-hub-es" value="" style="endArrow=classic;html=1;strokeWidth=1.5;strokeColor=#999;" edge="1" parent="1">
+          <mxGeometry relative="1" as="geometry"><mxPoint x="199" y="498" as="sourcePoint" /><mxPoint x="300" y="480" as="targetPoint" /></mxGeometry>
+        </mxCell>
+
+        <!-- Operational Agent -->
+        <mxCell id="opagent-box" value="" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#FFFFFF;strokeColor=#008272;strokeWidth=1.5;" vertex="1" parent="1">
+          <mxGeometry x="840" y="445" width="140" height="60" as="geometry" />
+        </mxCell>
+        <mxCell id="opagent-icon" value="🤖" style="text;html=1;strokeColor=none;fillColor=none;align=center;verticalAlign=middle;fontSize=16;" vertex="1" parent="1">
+          <mxGeometry x="850" y="448" width="30" height="30" as="geometry" />
+        </mxCell>
+        <mxCell id="opagent-label" value="Operational&#xa;Agent" style="text;html=1;strokeColor=none;fillColor=none;align=center;verticalAlign=middle;fontSize=10;fontStyle=1;fontColor=#008272;" vertex="1" parent="1">
+          <mxGeometry x="880" y="448" width="90" height="50" as="geometry" />
+        </mxCell>
+
+        <!-- Arrow: KQL → Operational Agent -->
+        <mxCell id="arr-kql-opagent" value="" style="endArrow=classic;html=1;strokeWidth=1.5;strokeColor=#008272;" edge="1" parent="1">
+          <mxGeometry relative="1" as="geometry"><mxPoint x="780" y="475" as="sourcePoint" /><mxPoint x="840" y="475" as="targetPoint" /></mxGeometry>
+        </mxCell>
+
+        <!-- Teams -->
+        <mxCell id="teams-box" value="" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#E8E8FF;strokeColor=#5C2D91;strokeWidth=1.5;" vertex="1" parent="1">
+          <mxGeometry x="1040" y="445" width="90" height="60" as="geometry" />
+        </mxCell>
+        <mxCell id="teams-icon" value="💬" style="text;html=1;strokeColor=none;fillColor=none;align=center;verticalAlign=middle;fontSize=16;" vertex="1" parent="1">
+          <mxGeometry x="1055" y="448" width="28" height="24" as="geometry" />
+        </mxCell>
+        <mxCell id="teams-label" value="Teams" style="text;html=1;strokeColor=none;fillColor=none;align=center;verticalAlign=middle;fontSize=11;fontStyle=1;fontColor=#5C2D91;" vertex="1" parent="1">
+          <mxGeometry x="1050" y="475" width="70" height="22" as="geometry" />
+        </mxCell>
+
+        <!-- Power Automate -->
+        <mxCell id="pa-box" value="" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#E3F2FF;strokeColor=#0078D4;strokeWidth=1.5;" vertex="1" parent="1">
+          <mxGeometry x="1190" y="430" width="180" height="80" as="geometry" />
+        </mxCell>
+        <mxCell id="pa-icon" value="⚙️" style="text;html=1;strokeColor=none;fillColor=none;align=center;verticalAlign=middle;fontSize=18;" vertex="1" parent="1">
+          <mxGeometry x="1200" y="438" width="30" height="30" as="geometry" />
+        </mxCell>
+        <mxCell id="pa-label" value="Power Automate" style="text;html=1;strokeColor=none;fillColor=none;align=center;verticalAlign=middle;fontSize=11;fontStyle=1;fontColor=#0078D4;" vertex="1" parent="1">
+          <mxGeometry x="1230" y="438" width="130" height="22" as="geometry" />
+        </mxCell>
+        <mxCell id="pa-desc" value="(sends email, pages on-call,&#xa;creates ticket, etc.)" style="text;html=1;strokeColor=none;fillColor=none;align=center;verticalAlign=middle;fontSize=9;fontColor=#605E5C;fontStyle=2;" vertex="1" parent="1">
+          <mxGeometry x="1195" y="470" width="170" height="30" as="geometry" />
+        </mxCell>
+
+        <!-- Arrow: Op Agent → Teams -->
+        <mxCell id="arr-opagent-teams" value="" style="endArrow=classic;html=1;strokeWidth=1.5;strokeColor=#5C2D91;" edge="1" parent="1">
+          <mxGeometry relative="1" as="geometry"><mxPoint x="980" y="475" as="sourcePoint" /><mxPoint x="1040" y="475" as="targetPoint" /></mxGeometry>
+        </mxCell>
+        <!-- Arrow: Teams → Power Automate -->
+        <mxCell id="arr-teams-pa" value="" style="endArrow=classic;html=1;strokeWidth=1.5;strokeColor=#0078D4;" edge="1" parent="1">
+          <mxGeometry relative="1" as="geometry"><mxPoint x="1130" y="475" as="sourcePoint" /><mxPoint x="1190" y="475" as="targetPoint" /></mxGeometry>
+        </mxCell>
+
+        <!-- ═══════ DOMAIN MODEL SUMMARY (inside RTI bottom) ═══════ -->
+        <mxCell id="dm-border" value="" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#FAFAFA;strokeColor=#D2D0CE;strokeWidth=1;" vertex="1" parent="1">
+          <mxGeometry x="300" y="570" width="1300" height="90" as="geometry" />
+        </mxCell>
+        <mxCell id="dm-title" value="Ontology Domain Model — 12 Entity Types, 18 Relationships (Star Schema + Graph)" style="text;html=1;strokeColor=none;fillColor=none;align=left;verticalAlign=middle;fontSize=11;fontStyle=1;fontColor=#323130;" vertex="1" parent="1">
+          <mxGeometry x="310" y="574" width="600" height="20" as="geometry" />
+        </mxCell>
+
+        <!-- Domain modules as small colored cards -->
+        <mxCell id="dm-clin" value="&lt;b style='color:#2563EB'&gt;Patient Care&lt;/b&gt;&#xa;Patient, Provider, Encounter" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#DBEAFE;strokeColor=#2563EB;strokeWidth=1;fontSize=8;fontColor=#605E5C;align=center;" vertex="1" parent="1">
+          <mxGeometry x="310" y="600" width="160" height="48" as="geometry" />
+        </mxCell>
+        <mxCell id="dm-fin" value="&lt;b style='color:#059669'&gt;Financial / Claims&lt;/b&gt;&#xa;Claim, Payer, Prescription" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#D1FAE5;strokeColor=#059669;strokeWidth=1;fontSize=8;fontColor=#605E5C;align=center;" vertex="1" parent="1">
+          <mxGeometry x="480" y="600" width="160" height="48" as="geometry" />
+        </mxCell>
+        <mxCell id="dm-pharm" value="&lt;b style='color:#7C3AED'&gt;Pharmacy / Rx&lt;/b&gt;&#xa;Medication, MedicationAdherence" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#EDE9FE;strokeColor=#7C3AED;strokeWidth=1;fontSize=8;fontColor=#605E5C;align=center;" vertex="1" parent="1">
+          <mxGeometry x="650" y="600" width="180" height="48" as="geometry" />
+        </mxCell>
+        <mxCell id="dm-dx" value="&lt;b style='color:#DC2626'&gt;Diagnosis&lt;/b&gt;&#xa;PatientDiagnosis, Diagnosis" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#FEE2E2;strokeColor=#DC2626;strokeWidth=1;fontSize=8;fontColor=#605E5C;align=center;" vertex="1" parent="1">
+          <mxGeometry x="840" y="600" width="160" height="48" as="geometry" />
+        </mxCell>
+        <mxCell id="dm-vitals" value="&lt;b style='color:#E8700A'&gt;Monitoring&lt;/b&gt;&#xa;Vitals" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#FFF3E0;strokeColor=#E8700A;strokeWidth=1;fontSize=8;fontColor=#605E5C;align=center;" vertex="1" parent="1">
+          <mxGeometry x="1010" y="600" width="120" height="48" as="geometry" />
+        </mxCell>
+        <mxCell id="dm-sdoh" value="&lt;b style='color:#D97706'&gt;Population Health&lt;/b&gt;&#xa;CommunityHealth (SDOH)" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#FEF3C7;strokeColor=#D97706;strokeWidth=1;fontSize=8;fontColor=#605E5C;align=center;" vertex="1" parent="1">
+          <mxGeometry x="1140" y="600" width="170" height="48" as="geometry" />
+        </mxCell>
+
+        <!-- Cross-domain reasoning arc -->
+        <mxCell id="xmod-label" value="Cross-Domain Reasoning — ontology connects 6 healthcare domains in a single graph query" style="text;html=1;strokeColor=none;fillColor=none;align=center;verticalAlign=middle;fontSize=9;fontColor=#605E5C;fontStyle=2;" vertex="1" parent="1">
+          <mxGeometry x="560" y="652" width="520" height="16" as="geometry" />
+        </mxCell>
+
+        <!-- ══════════════════════ ONELAKE (BOTTOM) ══════════════════════ -->
+        <mxCell id="onelake-box" value="" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#F7F7F7;strokeColor=#999;strokeWidth=1.5;arcSize=8;" vertex="1" parent="1">
+          <mxGeometry x="880" y="740" width="200" height="60" as="geometry" />
+        </mxCell>
+        <mxCell id="onelake-icon" value="☁️" style="text;html=1;strokeColor=none;fillColor=none;align=center;verticalAlign=middle;fontSize=20;" vertex="1" parent="1">
+          <mxGeometry x="930" y="744" width="40" height="30" as="geometry" />
+        </mxCell>
+        <mxCell id="onelake-label" value="OneLake" style="text;html=1;strokeColor=none;fillColor=none;align=center;verticalAlign=middle;fontSize=14;fontStyle=1;fontColor=#0078D4;" vertex="1" parent="1">
+          <mxGeometry x="965" y="748" width="100" height="22" as="geometry" />
+        </mxCell>
+
+        <!-- Bracket connecting Fabric → OneLake -->
+        <mxCell id="arr-fabric-onelake" value="" style="endArrow=classic;startArrow=classic;html=1;strokeWidth=1;strokeColor=#999;dashed=1;dashPattern=4 3;curved=1;" edge="1" parent="1">
+          <mxGeometry relative="1" as="geometry">
+            <mxPoint x="700" y="710" as="sourcePoint" />
+            <mxPoint x="880" y="770" as="targetPoint" />
+            <Array as="points"><mxPoint x="700" y="770" /></Array>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="arr-fabric-onelake2" value="" style="endArrow=classic;startArrow=classic;html=1;strokeWidth=1;strokeColor=#999;dashed=1;dashPattern=4 3;curved=1;" edge="1" parent="1">
+          <mxGeometry relative="1" as="geometry">
+            <mxPoint x="1260" y="710" as="sourcePoint" />
+            <mxPoint x="1080" y="770" as="targetPoint" />
+            <Array as="points"><mxPoint x="1260" y="770" /></Array>
+          </mxGeometry>
+        </mxCell>
+
+        <!-- ══════════════════════ LEGEND ══════════════════════ -->
+        <mxCell id="legend-box" value="" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#FFFFFF;strokeColor=#D2D0CE;strokeWidth=1;" vertex="1" parent="1">
+          <mxGeometry x="1640" y="580" width="280" height="200" as="geometry" />
+        </mxCell>
+        <mxCell id="legend-title" value="&lt;b&gt;Legend&lt;/b&gt;" style="text;html=1;strokeColor=none;fillColor=none;align=center;verticalAlign=middle;fontSize=12;fontColor=#323130;fontStyle=1;" vertex="1" parent="1">
+          <mxGeometry x="1640" y="582" width="280" height="22" as="geometry" />
+        </mxCell>
+        <mxCell id="leg-batch" value="── Batch Analytics Pipeline" style="text;html=1;strokeColor=none;fillColor=none;align=left;verticalAlign=middle;fontSize=9;fontColor=#0078D4;" vertex="1" parent="1">
+          <mxGeometry x="1660" y="608" width="200" height="16" as="geometry" />
+        </mxCell>
+        <mxCell id="leg-gold" value="── Gold / Star Schema" style="text;html=1;strokeColor=none;fillColor=none;align=left;verticalAlign=middle;fontSize=9;fontColor=#107C10;" vertex="1" parent="1">
+          <mxGeometry x="1660" y="628" width="200" height="16" as="geometry" />
+        </mxCell>
+        <mxCell id="leg-pbi" value="── Visualization (Power BI)" style="text;html=1;strokeColor=none;fillColor=none;align=left;verticalAlign=middle;fontSize=9;fontColor=#F2C811;" vertex="1" parent="1">
+          <mxGeometry x="1660" y="648" width="200" height="16" as="geometry" />
+        </mxCell>
+        <mxCell id="leg-ont" value="── Ontology / Semantic Intelligence" style="text;html=1;strokeColor=none;fillColor=none;align=left;verticalAlign=middle;fontSize=9;fontColor=#7C3AED;" vertex="1" parent="1">
+          <mxGeometry x="1660" y="668" width="240" height="16" as="geometry" />
+        </mxCell>
+        <mxCell id="leg-agent" value="── AI Data Agents" style="text;html=1;strokeColor=none;fillColor=none;align=left;verticalAlign=middle;fontSize=9;fontColor=#008272;" vertex="1" parent="1">
+          <mxGeometry x="1660" y="688" width="200" height="16" as="geometry" />
+        </mxCell>
+        <mxCell id="leg-rti" value="── Real-Time Intelligence" style="text;html=1;strokeColor=none;fillColor=none;align=left;verticalAlign=middle;fontSize=9;fontColor=#E8700A;" vertex="1" parent="1">
+          <mxGeometry x="1660" y="708" width="200" height="16" as="geometry" />
+        </mxCell>
+        <mxCell id="leg-stats" value="&lt;div style='font-size:9px;color:#A19F9D;line-height:1.4'&gt;12 Entities · 18 Relationships · 6 Fact Tables · 6 Dimensions&lt;br&gt;Star Schema + Graph Model · Medallion Architecture&lt;br&gt;3 AI Data Agents · Power BI Dashboards&lt;/div&gt;" style="text;html=1;strokeColor=none;fillColor=none;align=left;verticalAlign=top;" vertex="1" parent="1">
+          <mxGeometry x="1660" y="730" width="250" height="42" as="geometry" />
+        </mxCell>
+
+        <!-- ══════════════════════ FOOTER ══════════════════════ -->
+        <mxCell id="footer" value="Provider Healthcare — Microsoft Fabric Payer-Provider Analytics — Architecture Reference Diagram" style="text;html=1;strokeColor=none;fillColor=none;align=center;verticalAlign=middle;fontSize=10;fontColor=#A19F9D;fontStyle=2;" vertex="1" parent="1">
+          <mxGeometry x="540" y="810" width="680" height="18" as="geometry" />
+        </mxCell>
+
+      </root>
+    </mxGraphModel>
+  </diagram>
+</mxfile>

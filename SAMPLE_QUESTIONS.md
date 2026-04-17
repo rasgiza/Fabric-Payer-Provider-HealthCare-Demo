@@ -71,28 +71,28 @@ Open **Healthcare Ontology Agent** in your Fabric workspace. This agent navigate
 ### Provider Operations & Network
 | # | Question |
 |---|----------|
-| 1 | Give me a full profile of provider PRV0000010 — patients treated, encounters, claims submitted, and prescriptions written. |
+| 1 | Show me a full provider profile — patients treated, encounters, claims submitted, and prescriptions written. (You can specify a provider_id, name, or specialty — or let the agent pick one.) |
 | 2 | Which providers have submitted claims that were denied? Show each provider with their denied claims, denial reasons, payers, and patients. |
-| 3 | What does Dr. Smith's patient panel look like? Show encounters, diagnoses, and outcomes for their patients. |
-| 4 | Show me prescribing patterns for Cardiology providers — what medications, which patients, and which payers cover the prescriptions. |
+| 3 | Pick a provider and show me their patient panel — encounters, diagnoses, and outcomes for their patients. |
+| 4 | Show me prescribing patterns for providers in a given specialty — what medications, which patients, and which payers cover the prescriptions? (Try Cardiology, Internal Medicine, etc.) |
 | 5 | Which providers treat patients with high readmission risk? Show the provider, their high-risk patients, and conditions. |
 | 6 | Which providers serve patients in socially vulnerable communities? Show the SDOH profile alongside provider details. |
 
 ### Payer Portfolio & Coverage
 | # | Question |
 |---|----------|
-| 7 | Show me all claims for payer Aetna — which providers submitted them, which patients, and what were the outcomes. |
+| 7 | Show me all claims for a specific payer — which providers submitted them, which patients, and what were the outcomes? (Name any payer or let the agent list them.) |
 | 8 | Which payers have the most denied claims? For each payer show the denials with provider, patient, encounter, and denial reason. |
 | 9 | What prescriptions does each payer cover? Show the medication, prescribing provider, and patient. |
-| 10 | Show me the provider network that bills payer BlueCross — which providers submit claims and for what encounter types. |
+| 10 | Show me the provider network that bills a specific payer — which providers submit claims and for what encounter types? |
 | 11 | Which payers cover patients in high SDOH risk areas? Show the payer, the patients, and their social risk factors. |
 
 ### Claims & Financial Investigation
 | # | Question |
 |---|----------|
-| 12 | Trace claim CLM0009999 end-to-end — from patient through encounter, provider, and payer. |
+| 12 | Trace a claim end-to-end — from patient through encounter, provider, and payer. (Provide a claim_id or say "pick a denied claim".) |
 | 13 | Show me all denied claims with the complete story — which provider submitted, to which payer, for which patient, and why denied. |
-| 14 | What claims are linked to encounter ENC0001234? Show the financial picture including payer and provider. |
+| 14 | What claims are linked to a specific encounter? Show the financial picture including payer and provider. |
 | 15 | Show me denied claims for high-risk readmission patients — which providers and payers are involved. |
 | 16 | Show me high-cost encounters — who was the provider, what diagnoses, what payer, and was the claim denied. |
 

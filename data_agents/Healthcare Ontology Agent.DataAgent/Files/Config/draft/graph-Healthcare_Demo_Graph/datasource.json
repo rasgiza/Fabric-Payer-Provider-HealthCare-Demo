@@ -4,7 +4,7 @@
   "workspaceId": "00000000-0000-0000-0000-000000000000",
   "displayName": "Healthcare_Demo_Graph",
   "type": "graph",
-  "userDescription": "Healthcare ontology graph with 12 entity types and 18 relationships. Use for: (1) Entity lookups by ID or name (provider PRV0000010, patient PAT0000001, claim CLM0009999), (2) Relationship traversals — trace claims to providers/payers/patients, follow prescriptions to medications, map provider-payer networks, (3) Care pathway exploration — patient encounters, diagnoses, prescriptions, adherence, vitals, SDOH, (4) Pattern discovery — denied claims with reasons, non-adherent patients, abnormal vitals, high readmission risk. Start with the entity closest to what the user asks about, then traverse outward. Limit to 10 results per hop.",
+  "userDescription": "Healthcare ontology graph with 12 entity types and 18 relationships. Use for: (1) Entity lookups by ID or name (any provider, patient, claim, payer, or medication), (2) Relationship traversals — trace claims to providers/payers/patients, follow prescriptions to medications, map provider-payer networks, (3) Care pathway exploration — patient encounters, diagnoses, prescriptions, adherence, vitals, SDOH, (4) Pattern discovery — denied claims with reasons, non-adherent patients, abnormal vitals, high readmission risk. Start with the entity closest to what the user asks about, then traverse outward. If the user does not specify a particular entity, pick one or list options. Limit to 10 results per hop.",
   "metadata": {},
   "elements": []
 }

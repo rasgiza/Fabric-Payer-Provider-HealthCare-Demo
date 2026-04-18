@@ -107,7 +107,6 @@ The lakehouse data source (`lh_gold_curated`) is configured in:
 | `fact_claim` | Fact | claim_key | patient_key, provider_key, payer_key, encounter_key, claim_date_key, claim_type, claim_status, denial_flag, denial_risk_score, denial_risk_category, primary_denial_reason, billed_amount, paid_amount |
 | `fact_prescription` | Fact | prescription_key | patient_key, provider_key, payer_key, medication_key, encounter_key, fill_date_key, fill_number, days_supply, total_cost, payer_paid, patient_copay |
 | `fact_diagnosis` | Fact | -- | diagnosis_key (FK), patient_key, encounter_key, diagnosis_date_key, icd_code, diagnosis_type, present_on_admission |
-| `fact_vitals` | Fact | -- | patient_key, encounter_key, vital_date_key, systolic_bp, diastolic_bp, heart_rate, bmi, oxygen_saturation |
 | `dim_patient` | SCD2 Dim | patient_key | patient_id, first_name, last_name, age, age_group, gender, zip_code, insurance_type, **is_current** |
 | `dim_provider` | SCD2 Dim | provider_key | provider_id, display_name, specialty, department, npi_number, **is_current** |
 | `dim_payer` | Dim | payer_key | payer_name, payer_type |

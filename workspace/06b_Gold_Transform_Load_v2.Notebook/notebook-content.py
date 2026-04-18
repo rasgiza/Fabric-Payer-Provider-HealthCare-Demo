@@ -1244,6 +1244,28 @@ if df_prescriptions is not None:
     df_medication_lkp = spark.table(f"{GOLD}.dim_medication") \
         .select(col("medication_key"), col("rxnorm_code"))
 
+    # Payer lookup: prescriptions don't carry payer_id directly, but each
+    # prescription originates from an encounter that has a claim.  Derive
+    # payer_key through the encounter → claim → payer path.
+    df_payer_lkp = spark.table(f"{GOLD}.dim_payer") \
+        .select(col("payer_key"), col("payer_id"))
+    try:
+        # Pick one payer per encounter (an encounter can have multiple claims
+        # but they overwhelmingly share the same payer).
+        df_enc_payer = spark.table(f"{SILVER}.claims_enriched") \
+            .select("encounter_id", "payer_id") \
+            .dropDuplicates(["encounter_id"]) \
+            .join(df_payer_lkp, "payer_id", "inner") \
+            .select(
+                col("encounter_id").alias("ep_encounter_id"),
+                col("payer_key").alias("ep_payer_key")
+            )
+        has_enc_payer = True
+        print("   ✓ Payer lookup via encounter → claim → dim_payer")
+    except Exception:
+        has_enc_payer = False
+        print("   ⚠️ claims_enriched not available — payer_key will be NULL")
+
     # Try to get encounter and facility keys from fact_encounter
     try:
         df_encounter_lkp = spark.table(f"{GOLD}.fact_encounter") \
@@ -1252,9 +1274,11 @@ if df_prescriptions is not None:
         df_encounter_lkp = None
 
     # ── Build fact table ──────────────────────────────────────
+    # INNER join on provider — prescriptions without a valid provider
+    # should not appear in the gold layer (mirrors fact_claim behaviour).
     df_rx = df_prescriptions.alias("rx") \
         .join(df_patient_lkp.alias("p"), col("rx.patient_id") == col("p.patient_id"), "inner") \
-        .join(df_provider_lkp.alias("pr"), col("rx.provider_id") == col("pr.provider_id"), "left") \
+        .join(df_provider_lkp.alias("pr"), col("rx.provider_id") == col("pr.provider_id"), "inner") \
         .join(df_medication_lkp.alias("m"), col("rx.rxnorm_code") == col("m.rxnorm_code"), "left")
 
     if df_encounter_lkp is not None:
@@ -1265,13 +1289,20 @@ if df_prescriptions is not None:
         encounter_key_col = lit(None).cast("bigint")
         facility_key_col = lit(None).cast("bigint")
 
+    # Join payer via encounter → claim path
+    if has_enc_payer:
+        df_rx = df_rx.join(df_enc_payer.alias("ep"), col("rx.encounter_id") == col("ep.ep_encounter_id"), "left")
+        payer_key_col = col("ep.ep_payer_key")
+    else:
+        payer_key_col = lit(None).cast("bigint")
+
     # Compute fill_date_key
     df_rx = df_rx.withColumn(
         "fill_date_key",
         (year(col("rx.fill_date")) * 10000 + month(col("rx.fill_date")) * 100 + dayofmonth(col("rx.fill_date"))).cast("int")
     )
 
-    # Assign surrogate keys (no payer join — prescriptions don't have payer_id)
+    # Assign surrogate keys
     PRESCRIPTION_TABLE = f"{GOLD}.fact_prescription"
     df_fact_rx = df_rx.select(
         col("rx.prescription_id"),
@@ -1279,7 +1310,7 @@ if df_prescriptions is not None:
         col("fill_date_key"),
         col("p.patient_key"),
         col("pr.provider_key"),
-        lit(None).cast("bigint").alias("payer_key"),
+        payer_key_col.alias("payer_key"),
         encounter_key_col.alias("encounter_key"),
         col("m.medication_key"),
         facility_key_col.alias("facility_key"),
@@ -1303,8 +1334,10 @@ if df_prescriptions is not None:
         .option("overwriteSchema", "true").saveAsTable(PRESCRIPTION_TABLE)
 
     rx_count = spark.table(PRESCRIPTION_TABLE).count()
+    payer_filled = spark.table(PRESCRIPTION_TABLE).filter("payer_key IS NOT NULL").count()
     print(f"   ✓ fact_prescription: {rx_count:,} rows")
     print(f"      Unique patients: {df_fact_rx.select('patient_key').distinct().count():,}")
+    print(f"      Payer coverage:  {payer_filled:,}/{rx_count:,} ({payer_filled * 100 // max(rx_count, 1)}%)")
 else:
     print("   ⏭️ Skipped fact_prescription (no source data)")
 
@@ -1618,7 +1651,6 @@ tables = [
     ("fact_claim", None),
     ("fact_prescription", None),
     ("fact_diagnosis", None),
-    ("fact_vitals", None),
     ("agg_readmission_by_date", None),
     ("agg_denial_by_date", None),
     ("agg_denial_by_payer", None),
@@ -1648,7 +1680,7 @@ for fact_name, key_checks in [
     ("fact_claim", [("patient_key", "dim_patient"), ("provider_key", "dim_provider"),
                     ("payer_key", "dim_payer"), ("encounter_key", "fact_encounter"), ("facility_key", "dim_facility")]),
     ("fact_prescription", [("patient_key", "dim_patient"), ("provider_key", "dim_provider"),
-                           ("medication_key", "dim_medication"), ("encounter_key", "fact_encounter")]),
+                           ("payer_key", "dim_payer"), ("medication_key", "dim_medication"), ("encounter_key", "fact_encounter")]),
     ("fact_diagnosis", [("patient_key", "dim_patient"), ("encounter_key", "fact_encounter"),
                         ("diagnosis_key", "dim_diagnosis"), ("facility_key", "dim_facility")])
 ]:

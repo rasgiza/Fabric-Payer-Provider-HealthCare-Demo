@@ -315,6 +315,26 @@
       "id": "sq30-chronic-conditions-readmission",
       "question": "Which chronic conditions have the highest readmission rates? Show the top 5 ICD categories with readmission counts.",
       "query": "SELECT TOP 5 dd_diag.icd_category, dd_diag.icd_description, COUNT(DISTINCT fe.encounter_key) as total_encounters, SUM(fe.readmission_flag) as readmissions, CAST(SUM(fe.readmission_flag) AS FLOAT) / NULLIF(COUNT(DISTINCT fe.encounter_key), 0) * 100 as readmission_rate_pct FROM fact_encounter fe JOIN fact_diagnosis fd ON fe.encounter_key = fd.encounter_key JOIN dim_diagnosis dd_diag ON fd.diagnosis_key = dd_diag.diagnosis_key WHERE dd_diag.is_chronic = 1 GROUP BY dd_diag.icd_category, dd_diag.icd_description ORDER BY readmission_rate_pct DESC"
+    },
+    {
+      "id": "sq31-rx-cost-by-payer",
+      "question": "Compare prescription costs by payer — which payer pays the most and which shifts the most cost to patients?",
+      "query": "SELECT py.payer_name, py.payer_type, COUNT(*) as total_fills, SUM(fp.total_cost) as total_cost, SUM(fp.payer_paid) as payer_paid, SUM(fp.patient_copay) as patient_copay, CAST(SUM(fp.payer_paid) AS FLOAT) / NULLIF(SUM(fp.total_cost), 0) * 100 as payer_coverage_pct, CAST(SUM(fp.patient_copay) AS FLOAT) / NULLIF(SUM(fp.total_cost), 0) * 100 as patient_burden_pct FROM fact_prescription fp JOIN dim_payer py ON fp.payer_key = py.payer_key GROUP BY py.payer_name, py.payer_type ORDER BY patient_burden_pct DESC"
+    },
+    {
+      "id": "sq32-avg-copay-by-payer-drugclass",
+      "question": "What is the average patient copay by payer and drug class?",
+      "query": "SELECT py.payer_name, dm.drug_class, COUNT(*) as total_fills, AVG(fp.patient_copay) as avg_copay, AVG(fp.payer_paid) as avg_payer_paid, AVG(fp.total_cost) as avg_total_cost FROM fact_prescription fp JOIN dim_payer py ON fp.payer_key = py.payer_key JOIN dim_medication dm ON fp.medication_key = dm.medication_key GROUP BY py.payer_name, dm.drug_class ORDER BY py.payer_name, avg_copay DESC"
+    },
+    {
+      "id": "sq33-payer-chronic-rx-burden",
+      "question": "Which payers bear the highest cost burden for chronic medications?",
+      "query": "SELECT py.payer_name, py.payer_type, COUNT(*) as chronic_fills, SUM(fp.total_cost) as total_cost, SUM(fp.payer_paid) as payer_paid, SUM(fp.patient_copay) as patient_copay, AVG(fp.days_supply) as avg_days_supply FROM fact_prescription fp JOIN dim_payer py ON fp.payer_key = py.payer_key JOIN dim_medication dm ON fp.medication_key = dm.medication_key WHERE dm.is_chronic = 1 GROUP BY py.payer_name, py.payer_type ORDER BY payer_paid DESC"
+    },
+    {
+      "id": "sq34-provider-payer-rx-network",
+      "question": "Show me which providers prescribe the most to each payer — the provider-payer prescription network.",
+      "query": "SELECT dpr.display_name as provider, dpr.specialty, py.payer_name, COUNT(*) as total_fills, SUM(fp.total_cost) as total_cost, SUM(fp.payer_paid) as payer_paid FROM fact_prescription fp JOIN dim_provider dpr ON fp.provider_key = dpr.provider_key AND dpr.is_current = 1 JOIN dim_payer py ON fp.payer_key = py.payer_key GROUP BY dpr.display_name, dpr.specialty, py.payer_name ORDER BY total_cost DESC"
     }
   ]
 }

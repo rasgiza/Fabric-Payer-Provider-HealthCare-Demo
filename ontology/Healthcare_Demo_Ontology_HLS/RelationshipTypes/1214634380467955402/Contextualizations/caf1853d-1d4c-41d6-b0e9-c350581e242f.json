@@ -10,7 +10,7 @@
   },
   "sourceKeyRefBindings": [
     {
-      "sourceColumnName": "payer_key",
+      "sourceColumnName": "prescription_key",
       "targetPropertyId": "1214894028149169513"
     }
   ],

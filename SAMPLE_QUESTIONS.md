@@ -51,12 +51,23 @@ Open **HealthcareHLSAgent** in your Fabric workspace. The Data Agent queries the
 | 26 | Which patients have the highest prescription costs? |
 | 27 | How many patients are in each age group? |
 
+### Payer & Prescription Cost Analysis
+| # | Question |
+|---|----------|
+| 28 | Compare prescription costs by payer — which payer pays the most and which shifts the most cost to patients? |
+| 29 | What is the average patient copay by payer and drug class? |
+| 30 | Which payers bear the highest cost burden for chronic medications? |
+| 31 | Show me which providers prescribe the most to each payer — the provider-payer prescription network. |
+| 32 | Which payers have the lowest collection rate (paid vs billed)? Show the reimbursement gap. |
+
 ### Cross-Domain Analytics
 | # | Question |
 |---|----------|
-| 28 | Show me patients who were readmitted AND are non-adherent to their medications with their risk scores and drug class. |
-| 29 | Show me denied claims with their primary diagnosis. |
-| 30 | Which encounters are linked to denied claims? |
+| 33 | Show me patients who were readmitted AND are non-adherent to their medications with their risk scores and drug class. |
+| 34 | Show me denied claims with their primary diagnosis. |
+| 35 | Which encounters are linked to denied claims? |
+| 36 | For patients in high-poverty zip codes, how does denial rate compare to the overall population? |
+| 37 | Show me high-risk readmission patients who are also medication non-adherent — what payers cover them and what's the cost? |
 
 ---
 
@@ -108,9 +119,18 @@ Open **Healthcare Ontology Agent** in your Fabric workspace. This agent navigate
 | # | Question |
 |---|----------|
 | 21 | Show me patients with poor medication adherence — who are their providers and which payers cover them? These are intervention opportunities. |
-| 22 | Show me patients with abnormal vitals — who are their treating providers and what diagnoses do they have. |
+| 22 | Show me which payers cover prescriptions for each drug class — break down total cost, payer-paid, and patient copay. |
 | 23 | Find our most vulnerable population — patients in high SDOH risk areas who are non-adherent with high readmission risk. Show providers and payers involved. |
 | 24 | What is the overall denial rate by payer or the average cost per provider across the network? |
+
+### Prescription-Payer Relationship Traversal
+| # | Question |
+|---|----------|
+| 25 | For a specific patient, trace all their prescriptions — which provider prescribed each, which payer covers it, and what's the patient copay? |
+| 26 | Which payers cover the highest-cost specialty medications? Show the drug, prescribing provider, and payer for the top 20 most expensive prescriptions. |
+| 27 | Show me the full prescription lifecycle for a chronic medication — from prescribing provider to payer reimbursement to patient out-of-pocket cost. |
+| 28 | Which providers prescribe the most non-generic medications and which payers are absorbing that cost? |
+| 29 | For patients in food desert zip codes, trace their prescriptions — are payers covering their chronic medications adequately or are copays high? |
 
 > **Note:** Question 24 involves aggregation — the graph agent will explain that rates/rankings require HealthcareHLSAgent and offer to explore specific payers or providers instead. This demonstrates the agent's ability to redirect to the right tool.
 

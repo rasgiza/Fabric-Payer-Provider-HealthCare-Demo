@@ -121,3 +121,60 @@
 
 .create-or-alter table rx_events ingestion json mapping 'rx_events_mapping'
     '[{"column":"event_id","path":"$.event_id","datatype":"string"},{"column":"event_timestamp","path":"$.event_timestamp","datatype":"datetime"},{"column":"event_type","path":"$.event_type","datatype":"string"},{"column":"patient_id","path":"$.patient_id","datatype":"string"},{"column":"provider_id","path":"$.provider_id","datatype":"string"},{"column":"medication_code","path":"$.medication_code","datatype":"string"},{"column":"medication_name","path":"$.medication_name","datatype":"string"},{"column":"drug_class","path":"$.drug_class","datatype":"string"},{"column":"quantity","path":"$.quantity","datatype":"int"},{"column":"days_supply","path":"$.days_supply","datatype":"int"},{"column":"latitude","path":"$.latitude","datatype":"real"},{"column":"longitude","path":"$.longitude","datatype":"real"}]'
+
+// ============================================================================
+// 5. OPERATIONS AGENT TABLES — unified triage, SLA monitoring, action routing
+// ============================================================================
+
+.create-merge table rti_unified_worklist (
+    worklist_id: string,
+    generated_at: datetime,
+    patient_id: string,
+    alert_type: string,
+    alert_id: string,
+    priority: int,
+    risk_tier: string,
+    detail: string,
+    alert_count: int,
+    alert_types: string,
+    latitude: real,
+    longitude: real
+)
+
+.alter table rti_unified_worklist policy streamingingestion enable
+
+.create-or-alter table rti_unified_worklist ingestion json mapping 'rti_unified_worklist_mapping'
+    '[{"column":"worklist_id","path":"$.worklist_id","datatype":"string"},{"column":"generated_at","path":"$.generated_at","datatype":"datetime"},{"column":"patient_id","path":"$.patient_id","datatype":"string"},{"column":"alert_type","path":"$.alert_type","datatype":"string"},{"column":"alert_id","path":"$.alert_id","datatype":"string"},{"column":"priority","path":"$.priority","datatype":"int"},{"column":"risk_tier","path":"$.risk_tier","datatype":"string"},{"column":"detail","path":"$.detail","datatype":"string"},{"column":"alert_count","path":"$.alert_count","datatype":"int"},{"column":"alert_types","path":"$.alert_types","datatype":"string"},{"column":"latitude","path":"$.latitude","datatype":"real"},{"column":"longitude","path":"$.longitude","datatype":"real"}]'
+
+.create-merge table rti_sla_status (
+    check_id: string,
+    check_timestamp: datetime,
+    table_name: string,
+    latest_event_timestamp: datetime,
+    minutes_ago: real,
+    status: string,
+    threshold_warn_min: int,
+    threshold_crit_min: int
+)
+
+.alter table rti_sla_status policy streamingingestion enable
+
+.create-or-alter table rti_sla_status ingestion json mapping 'rti_sla_status_mapping'
+    '[{"column":"check_id","path":"$.check_id","datatype":"string"},{"column":"check_timestamp","path":"$.check_timestamp","datatype":"datetime"},{"column":"table_name","path":"$.table_name","datatype":"string"},{"column":"latest_event_timestamp","path":"$.latest_event_timestamp","datatype":"datetime"},{"column":"minutes_ago","path":"$.minutes_ago","datatype":"real"},{"column":"status","path":"$.status","datatype":"string"},{"column":"threshold_warn_min","path":"$.threshold_warn_min","datatype":"int"},{"column":"threshold_crit_min","path":"$.threshold_crit_min","datatype":"int"}]'
+
+.create-merge table rti_action_log (
+    action_id: string,
+    action_timestamp: datetime,
+    alert_type: string,
+    alert_id: string,
+    patient_id: string,
+    action_type: string,
+    destination: string,
+    status: string,
+    detail: string
+)
+
+.alter table rti_action_log policy streamingingestion enable
+
+.create-or-alter table rti_action_log ingestion json mapping 'rti_action_log_mapping'
+    '[{"column":"action_id","path":"$.action_id","datatype":"string"},{"column":"action_timestamp","path":"$.action_timestamp","datatype":"datetime"},{"column":"alert_type","path":"$.alert_type","datatype":"string"},{"column":"alert_id","path":"$.alert_id","datatype":"string"},{"column":"patient_id","path":"$.patient_id","datatype":"string"},{"column":"action_type","path":"$.action_type","datatype":"string"},{"column":"destination","path":"$.destination","datatype":"string"},{"column":"status","path":"$.status","datatype":"string"},{"column":"detail","path":"$.detail","datatype":"string"}]'

@@ -90,10 +90,11 @@ table fact_encounter
 		annotation PBI_FormatHint = {"isGeneralNumber":true}
 
 	measure 'PMPM' =
-			VAR _total_cost = SUM(fact_encounter[total_cost]) + SUM(fact_prescription[total_cost])
+			VAR _encounter_cost = SUM(fact_encounter[total_cost])
+			VAR _rx_cost = CALCULATE(SUM(fact_prescription[total_cost]))
 			VAR _members = [Total Patients]
-			VAR _months = DISTINCTCOUNT(dim_date[month_name])
-			RETURN DIVIDE(_total_cost, _members * _months)
+			VAR _months = COUNTROWS(SUMMARIZE(dim_date, dim_date[year], dim_date[month_number]))
+			RETURN DIVIDE(_encounter_cost + _rx_cost, _members * MAX(_months, 1))
 		lineageTag: a1b2c3d4-2222-4222-8222-000000000002
 
 		annotation PBI_FormatHint = {"isGeneralNumber":true}

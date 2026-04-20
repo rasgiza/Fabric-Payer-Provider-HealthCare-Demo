@@ -382,43 +382,31 @@ Risk tiers: **CRITICAL** (high spend + frequent ED) → **HIGH** (high spend) �
 
 ### RTI Ingestion Architecture
 
-The RTI stack uses **two complementary ingestion paths**. Direct Kusto is always active (zero-config). Eventstream adds production-grade fan-out to Lakehouse + Activator, wired automatically by Cell 12.
-
-#### Direct Kusto (Always Active, Zero-Config)
-
-Events flow directly from the Simulator notebook into the KQL Database via `ManagedStreamingIngestClient`. This is fully automated — the notebook discovers the Eventhouse and KQL Database by name and starts writing immediately.
-
-```
-NB_RTI_Event_Simulator ──► Healthcare_RTI_DB (KQL tables)
-                              ManagedStreamingIngestClient
-```
-
-- **No setup required** — works out of the box after deployment
-- **Batch mode** (`MODE = "batch"`): one-shot push of all events
-- **Stream mode** (`MODE = "stream"`): continuous events every 5 seconds
-- KQL Dashboard, Data Agent, and Operations Agent all query the KQL tables directly
-
-#### Eventstream — Full Topology Wired by API (1 Manual Step)
-
-Cell 12 of `Healthcare_Launcher` uses the Fabric REST API to create the Eventstream **and** wire its complete topology: Custom Endpoint source → Default Stream → up to 3 destinations (Eventhouse, Lakehouse, Activator). The simulator then dual-writes to **both** KQL (direct) and the Eventstream.
+**Eventstream is the front door for all streaming data.** Cell 12 of `Healthcare_Launcher` wires the full Eventstream topology via API. The user copies the connection string from the portal and pastes it into the simulator notebook — then events stream continuously through the entire pipeline.
 
 ```
 NB_RTI_Event_Simulator
-    ├──► Healthcare_RTI_DB (direct Kusto)        ✅ always
-    └──► Healthcare_RTI_Eventstream (EventHub)   ✅ if ES_CONNECTION_STRING set
-              │
-              ├──► Eventhouse / KQL DB destination   (real-time dashboards, scoring)
-              ├──► Lakehouse (lh_bronze_raw)         (raw archival, medallion pattern)
-              └──► Activator / Reflex                (fraud/care-gap/high-cost alerts)
+    │
+    ▼
+Healthcare_RTI_Eventstream (Custom Endpoint — EventHub protocol)
+    │
+    ├──► Eventhouse / KQL DB          (real-time dashboards, scoring, Operations Agent)
+    ├──► Lakehouse (lh_bronze_raw)    (raw archival, medallion pattern)
+    └──► Activator / Reflex           (fraud/care-gap/high-cost alerts)
 ```
 
-**To enable Eventstream streaming (1 manual step):**
+One path in, three paths out. No direct Kusto writes, no batch mode.
 
-1. Open the **Healthcare_RTI_Eventstream** in the Fabric portal (Cell 12 prints the URL)
-2. Click the **HealthcareCustomEndpoint** source node → copy the **Connection String**
-3. Paste the connection string into `ES_CONNECTION_STRING` in **NB_RTI_Event_Simulator**
+**How to start streaming (1 manual step):**
 
-> That's it — the API already wired the source, destinations, and stream routing. The only gap is that the Fabric API cannot expose the connection string (the `CustomEndpointSourceProperties` schema is empty in the API spec).
+1. Cell 12 of `Healthcare_Launcher` wires the Eventstream topology and prints the URL
+2. Open **Healthcare_RTI_Eventstream** in the Fabric portal
+3. Click the **HealthcareCustomEndpoint** source node → copy the **Connection String**
+4. Open **NB_RTI_Event_Simulator** → paste into `ES_CONNECTION_STRING`
+5. Run the notebook → events stream continuously every 5 seconds
+6. Then run the scoring notebooks: `NB_RTI_Fraud_Detection`, `NB_RTI_Care_Gap_Alerts`, `NB_RTI_HighCost_Trajectory`
+
+> The user can re-run the simulator and scoring notebooks anytime to generate and process fresh data.
 
 #### API vs Portal Capabilities
 
@@ -434,16 +422,6 @@ NB_RTI_Event_Simulator
 | Verify topology status | ✅ GET /topology endpoint | ✅ |
 
 > **Reference:** The [ontology-coldchain](https://github.com/microsoft/ontology-coldchain) architecture also requires a manual `.env` step for the connection string — this is a platform-level constraint, not a design choice.
-
-#### When to Use Which Path
-
-| Scenario | Recommended |
-|---|---|
-| First-time demo / quick deploy | **Direct Kusto only** — zero-config, everything works immediately |
-| Production streaming with fan-out | **Eventstream** — Cell 12 wires topology, copy 1 connection string |
-| Need Data Activator alerts (email/Teams) | **Eventstream** — Activator wired as destination automatically |
-| Need Lakehouse archival of raw events | **Eventstream** — lh_bronze_raw wired as destination automatically |
-| Single KQL sink, minimal moving parts | **Direct Kusto only** — simpler architecture |
 
 ### Use Case 4 — Operations Agent (HealthcareOpsAgent)
 

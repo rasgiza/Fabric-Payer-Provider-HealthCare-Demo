@@ -1167,6 +1167,26 @@ if has_denial_ml:
         df_ml_denial.alias("ml"), col("c.claim_id") == col("ml.claim_id"), "left"
     )
 
+# Synthea data rarely has "denied" claim_status — generate realistic denials
+# Uses deterministic hash so results are reproducible across runs
+# Overall ~8% denial rate: higher for high-dollar claims
+df_clm = df_clm.withColumn(
+    "_is_denied",
+    when(lower(col("c.claim_status")).contains("denied"), lit(True))
+    .when(
+        (col("c.billed_amount").cast("double") > 50000) &
+        (abs(hash(col("c.claim_id"))) % 100 < 18), lit(True)
+    ).when(
+        (col("c.billed_amount").cast("double") > 20000) &
+        (abs(hash(col("c.claim_id"))) % 100 < 12), lit(True)
+    ).when(
+        abs(hash(col("c.claim_id"))) % 100 < 5, lit(True)
+    ).otherwise(lit(False))
+).withColumn(
+    "_denial_reason_idx",
+    (abs(hash(col("c.claim_id"))) % 7).cast("int")
+)
+
 df_fact_claim = df_clm.select(
     col("c.claim_id"),
     (year("c.claim_date") * 10000 + month("c.claim_date") * 100 + dayofmonth("c.claim_date")).alias("claim_date_key"),
@@ -1179,49 +1199,55 @@ df_fact_claim = df_clm.select(
     col("ek.encounter_key"),
     col("ek.facility_key"),
     coalesce(col("c.claim_type"), lit("Professional")).alias("claim_type"),
-    coalesce(col("c.claim_status"), lit("Paid")).alias("claim_status"),
+    when(col("_is_denied"), lit("Denied"))
+    .otherwise(coalesce(col("c.claim_status"), lit("Paid"))).alias("claim_status"),
     coalesce(col("c.billed_amount").cast("double"), lit(0.0)).alias("billed_amount"),
     coalesce(col("c.allowed_amount").cast("double"), col("c.billed_amount").cast("double") * 0.85, lit(0.0)).alias("allowed_amount"),
     coalesce(col("c.paid_amount").cast("double"), col("c.billed_amount").cast("double") * 0.80, lit(0.0)).alias("paid_amount"),
-    when(lower(col("c.claim_status")).contains("denied"), lit(1))
-    .otherwise(lit(0)).alias("denial_flag"),
+    when(col("_is_denied"), lit(1)).otherwise(lit(0)).alias("denial_flag"),
     coalesce(col("ml.denial_risk_score").cast("double") if has_denial_ml else lit(None),
-             # Rule-based risk score when no ML model: derive from claim attributes
-             when(lower(col("c.claim_status")).contains("denied"), lit(0.75))
+             # Rule-based risk score: denied claims get higher scores
+             when(col("_is_denied"), lit(0.75))
              .when(col("c.billed_amount").cast("double") > 50000, lit(0.55))
              .when(col("c.billed_amount").cast("double") > 20000, lit(0.40))
              .when(col("c.billed_amount").cast("double") > 10000, lit(0.30))
              .otherwise(lit(0.15))
              ).alias("denial_risk_score"),
     when(coalesce(col("ml.denial_risk_score").cast("double") if has_denial_ml else lit(None),
-             when(lower(col("c.claim_status")).contains("denied"), lit(0.75))
+             when(col("_is_denied"), lit(0.75))
              .when(col("c.billed_amount").cast("double") > 50000, lit(0.55))
              .when(col("c.billed_amount").cast("double") > 20000, lit(0.40))
              .when(col("c.billed_amount").cast("double") > 10000, lit(0.30))
              .otherwise(lit(0.15))
              ) >= 0.6, "High")
     .when(coalesce(col("ml.denial_risk_score").cast("double") if has_denial_ml else lit(None),
-             when(lower(col("c.claim_status")).contains("denied"), lit(0.75))
+             when(col("_is_denied"), lit(0.75))
              .when(col("c.billed_amount").cast("double") > 50000, lit(0.55))
              .when(col("c.billed_amount").cast("double") > 20000, lit(0.40))
              .when(col("c.billed_amount").cast("double") > 10000, lit(0.30))
              .otherwise(lit(0.15))
              ) >= 0.3, "Medium")
     .otherwise("Low").alias("denial_risk_category"),
-    when(lower(col("c.claim_status")).contains("denied"),
+    when(col("_is_denied"),
          coalesce(col("c.denial_reason"),
                   col("ml.primary_denial_reason") if has_denial_ml else lit(None),
-                  lit("Unspecified")))
+                  # Deterministic reason assignment for synthetic denials
+                  when(col("_denial_reason_idx") == 0, lit("Prior Authorization Required"))
+                  .when(col("_denial_reason_idx") == 1, lit("Not Medically Necessary"))
+                  .when(col("_denial_reason_idx") == 2, lit("Coding Error"))
+                  .when(col("_denial_reason_idx") == 3, lit("Coverage Expired"))
+                  .when(col("_denial_reason_idx") == 4, lit("Duplicate Claim"))
+                  .when(col("_denial_reason_idx") == 5, lit("Out of Network"))
+                  .otherwise(lit("Missing Documentation"))))
     .otherwise(lit(None)).alias("primary_denial_reason"),
-    when(lower(col("c.claim_status")).contains("denied"),
-        when(lower(coalesce(col("c.denial_reason"), lit(""))).contains("auth"), lit("Obtain prior authorization and resubmit"))
-        .when(lower(coalesce(col("c.denial_reason"), lit(""))).contains("medically"), lit("Submit additional clinical documentation"))
-        .when(lower(coalesce(col("c.denial_reason"), lit(""))).contains("cod"), lit("Correct coding and resubmit"))
-        .when(lower(coalesce(col("c.denial_reason"), lit(""))).contains("elig") | lower(coalesce(col("c.denial_reason"), lit(""))).contains("expired"), lit("Verify eligibility and resubmit"))
-        .when(lower(coalesce(col("c.denial_reason"), lit(""))).contains("duplic"), lit("Verify not a duplicate claim"))
-        .when(lower(coalesce(col("c.denial_reason"), lit(""))).contains("network"), lit("Verify network status or obtain authorization"))
-        .when(lower(coalesce(col("c.denial_reason"), lit(""))).contains("document"), lit("Gather missing documentation and resubmit"))
-        .otherwise(coalesce(col("ml.recommended_action") if has_denial_ml else lit(None), lit("Review denial reason and resubmit")))
+    when(col("_is_denied"),
+        when(col("_denial_reason_idx") == 0, lit("Obtain prior authorization and resubmit"))
+        .when(col("_denial_reason_idx") == 1, lit("Submit additional clinical documentation"))
+        .when(col("_denial_reason_idx") == 2, lit("Correct coding and resubmit"))
+        .when(col("_denial_reason_idx") == 3, lit("Verify eligibility and resubmit"))
+        .when(col("_denial_reason_idx") == 4, lit("Verify not a duplicate claim"))
+        .when(col("_denial_reason_idx") == 5, lit("Verify network status or obtain authorization"))
+        .otherwise(coalesce(col("ml.recommended_action") if has_denial_ml else lit(None), lit("Gather missing documentation and resubmit")))
     ).otherwise(lit(None)).alias("recommended_action"),
     current_timestamp().alias("_load_timestamp")
 ).dropDuplicates(["claim_id"])

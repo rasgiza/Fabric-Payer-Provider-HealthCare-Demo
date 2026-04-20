@@ -9,12 +9,10 @@ table dim_patient
 		changedProperty = Name
 
 	measure 'Chronic Patients' =
-			VAR _chronic_patients =
-				CALCULATE(
-					DISTINCTCOUNT(fact_diagnosis[patient_key]),
-					dim_diagnosis[is_chronic] = 1
-				)
-			RETURN _chronic_patients
+			CALCULATE(
+				DISTINCTCOUNT(fact_diagnosis[patient_key]),
+				dim_diagnosis[is_chronic] = 1
+			)
 		formatString: 0
 		lineageTag: a1b2c3d4-1111-4111-8111-000000000001
 

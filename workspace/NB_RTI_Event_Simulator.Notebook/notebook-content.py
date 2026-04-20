@@ -4,33 +4,33 @@
 
 # MARKDOWN **{"language":"markdown"}**
 
-# # RTI Event Simulator -- Streaming Healthcare Events
+# # RTI Event Simulator — Streaming Healthcare Events
 # 
-# Generates realistic real-time events for **3 RTI use cases**:
-# 1. **Claims Fraud Detection** -- Claims submissions with amounts, diagnoses, geo
-# 2. **Care Gap Closure** -- ADT admit/discharge events triggering gap checks
-# 3. **High-Cost Member Trajectory** -- Claims + ED visits for rolling cost analysis
+# Generates realistic **streaming** events for **3 RTI use cases**:
+# 1. **Claims Fraud Detection** — Claims submissions with amounts, diagnoses, geo
+# 2. **Care Gap Closure** — ADT admit/discharge events triggering gap checks
+# 3. **High-Cost Member Trajectory** — Claims + ED visits for rolling cost analysis
 # 
-# **Modes:**
-# - `batch` -- Generate one batch, save as Delta tables + push to KQL (used by launcher)
-# - `stream` -- Continuously push events to KQL in a loop (for live demos)
+# **How it works:**
 # 
-# **Ingestion:**
+# Events flow through the **Eventstream** (the front door for all streaming data).
+# Cell 12 of Healthcare_Launcher wires the full topology via API:
 # 
-# **Direct Kusto (always active, zero-config)**
-# - `azure-kusto-ingest` ManagedStreamingIngestClient
-# - Token from `notebookutils.credentials.getToken("kusto")` — no setup needed
-# - Used automatically by the Launcher (batch mode)
+# ```
+# This Notebook  ──►  Eventstream Custom Endpoint (EventHub protocol)
+#                          │
+#                          ├──► Eventhouse / KQL DB  (real-time dashboards, scoring)
+#                          ├──► Lakehouse (lh_bronze_raw)  (raw archival, medallion)
+#                          └──► Activator / Reflex   (fraud/care-gap/high-cost alerts)
+# ```
 # 
-# **Eventstream (recommended for production — 1 manual step)**
-# - Cell 12 of Healthcare_Launcher wires the full Eventstream topology via API:
-#   `Custom Endpoint → Stream → Eventhouse + Lakehouse + Activator`
-# - Set `ES_CONNECTION_STRING` to enable dual-write (KQL direct + Eventstream)
-# - **1 manual step:** Copy the connection string from the Fabric portal
-#   (the API creates the endpoint but cannot expose the connection string)
-# - Open the Eventstream → click 'HealthcareCustomEndpoint' → copy Connection String
-# - Eventstream routes events to: KQL DB (real-time), Bronze Lakehouse (archival),
-#   and Activator/Reflex (alerts) — all wired automatically by Cell 12
+# **Setup (1 step):**
+# 1. Open the Healthcare_RTI_Eventstream in the Fabric portal
+# 2. Click the **HealthcareCustomEndpoint** source node → copy the **Connection String**
+# 3. Paste it into the `ES_CONNECTION_STRING` parameter below
+# 4. Run this notebook — events stream continuously
+# 
+# The user can re-run this notebook anytime to generate more streaming events.
 # 
 # **Default lakehouse:** `lh_gold_curated`
 
@@ -47,7 +47,7 @@
 #   - High-Cost Member Trajectory (claims + ED events)
 #
 # Reads dimension/fact tables from lh_gold_curated, produces event batches.
-# Pushes to KQL via direct Kusto ingestion (zero config).
+# Pushes events to Eventstream Custom Endpoint (single path in, 3 paths out).
 # Default lakehouse: lh_gold_curated
 # ============================================================================
 
@@ -123,26 +123,24 @@ del _req, _ws_id, _tok, _hdr, _lh_resp
 
 # CELL **{"language":"python"}**
 
-%pip install azure-kusto-data azure-kusto-ingest azure-eventhub azure-core>=1.31.0 --quiet
+%pip install azure-eventhub azure-core>=1.31.0 --quiet
 
 # METADATA **{"language":"python"}**
 
 # CELL **{"language":"python"}**
 
 # ---------- Parameters (override from pipeline or %run) ----------
-MODE = "batch"           # "batch" = single batch to Delta + KQL | "stream" = continuous to KQL
-BATCH_SIZE = 500         # events per batch
-STREAM_INTERVAL_SEC = 5  # seconds between stream batches
-STREAM_BATCHES = 10      # number of batches in stream mode (0 = infinite)
+BATCH_SIZE = 500         # events per streaming batch
+STREAM_INTERVAL_SEC = 5  # seconds between batches
+STREAM_BATCHES = 10      # number of batches (0 = infinite)
 
-# Kusto config -- auto-discovered from NB_RTI_Setup_Eventhouse output
-KUSTO_QUERY_URI = ""     # Auto-detected from Eventhouse API if blank
-KUSTO_INGEST_URI = ""    # Auto-detected from Eventhouse API if blank
-KQL_DB_NAME = "Healthcare_RTI_DB"
-
-# Eventstream (Approach 2 — optional)
-# Paste the connection string from your Eventstream Custom App source.
-# Leave blank to use direct Kusto only (Approach 1 — default).
+# ┌─────────────────────────────────────────────────────────────────┐
+# │  PASTE YOUR EVENTSTREAM CONNECTION STRING BELOW                │
+# │                                                                │
+# │  1. Open Healthcare_RTI_Eventstream in the Fabric portal       │
+# │  2. Click 'HealthcareCustomEndpoint' source node               │
+# │  3. Copy the Connection String → paste below                   │
+# └─────────────────────────────────────────────────────────────────┘
 ES_CONNECTION_STRING = ""
 
 # METADATA **{"language":"python"}**
@@ -163,159 +161,48 @@ np.random.seed(None)  # Truly random for each run
 
 # CELL **{"language":"python"}**
 
-# ---------- Auto-discover Kusto ingestion URI ----------
-print("Discovering Kusto ingestion URI...")
-
-BASE_URL = "https://api.fabric.microsoft.com/v1"
-
-def get_fabric_token():
-    return notebookutils.credentials.getToken("https://analysis.windows.net/powerbi/api")
-
-def get_kusto_token():
-    return notebookutils.credentials.getToken("kusto")
+# ---------- Connect to Eventstream Custom Endpoint ----------
+# This is the ONLY ingestion path. The Eventstream fans out to:
+#   → Eventhouse / KQL DB   (real-time dashboards, scoring)
+#   → Lakehouse (lh_bronze_raw)  (raw archival, medallion)
+#   → Activator / Reflex    (fraud/care-gap/high-cost alerts)
+# All destinations were wired by Cell 12 of Healthcare_Launcher.
 
 WORKSPACE_ID = notebookutils.runtime.context.get("currentWorkspaceId", "")
 
-if not KUSTO_INGEST_URI:
-    # Discover Eventhouse and get both query + ingestion URIs
-    headers = {"Authorization": f"Bearer {get_fabric_token()}", "Content-Type": "application/json"}
-    items_url = f"{BASE_URL}/workspaces/{WORKSPACE_ID}/items?type=Eventhouse"
-    resp = requests.get(items_url, headers=headers)
-    if resp.status_code == 200:
-        for item in resp.json().get("value", []):
-            if "Healthcare" in item.get("displayName", ""):
-                eh_id = item["id"]
-                props_resp = requests.get(
-                    f"{BASE_URL}/workspaces/{WORKSPACE_ID}/eventhouses/{eh_id}",
-                    headers=headers
-                )
-                if props_resp.status_code == 200:
-                    props = props_resp.json().get("properties", props_resp.json())
-                    KUSTO_QUERY_URI = props.get("queryServiceUri", "")
-                    KUSTO_INGEST_URI = props.get("ingestionServiceUri", "")
-                    if not KUSTO_INGEST_URI and KUSTO_QUERY_URI:
-                        KUSTO_INGEST_URI = KUSTO_QUERY_URI.replace("https://", "https://ingest-")
-                    print(f"  Eventhouse: {item['displayName']}")
-                    break
-
-if KUSTO_QUERY_URI and KUSTO_INGEST_URI:
-    print(f"  Query URI:     {KUSTO_QUERY_URI}")
-    print(f"  Ingestion URI: {KUSTO_INGEST_URI}")
-else:
-    print("  WARN: Could not discover Kusto URIs -- KQL ingestion will be skipped")
-    print("  Delta tables will still be written to lh_gold_curated")
-
-# ── Optional: Eventstream Custom Endpoint (Approach 2) ──────────
 _es_producer = None
 if ES_CONNECTION_STRING:
     try:
         from azure.eventhub import EventHubProducerClient, EventData
         _es_producer = EventHubProducerClient.from_connection_string(ES_CONNECTION_STRING)
-        print("Eventstream: Connected to Custom Endpoint (dual-write enabled)")
+        print("Eventstream: Connected to Custom Endpoint")
+        print("  Events → Eventhouse + Lakehouse + Activator (all wired by Cell 12)")
     except Exception as _es_err:
-        print(f"Eventstream WARN: Could not connect -- {_es_err}")
-        print("  Falling back to direct Kusto only")
+        print(f"Eventstream ERROR: Could not connect -- {_es_err}")
+        print("  Check that the connection string is correct and the Eventstream is running")
 else:
-    print("Eventstream: Not configured (direct Kusto only -- Approach 1)")
-    print("  To enable dual-write: set ES_CONNECTION_STRING parameter")
+    print("="*60)
+    print("  ES_CONNECTION_STRING is empty — cannot stream events.")
+    print()
+    print("  To get the connection string:")
+    print("  1. Open Healthcare_RTI_Eventstream in the Fabric portal")
+    print("  2. Click the 'HealthcareCustomEndpoint' source node")
+    print("  3. Copy the Connection String")
+    print("  4. Paste it into the ES_CONNECTION_STRING parameter above")
+    print("  5. Re-run this notebook")
+    print("="*60)
 
 # METADATA **{"language":"python"}**
 
 # CELL **{"language":"python"}**
 
-# ---------- Kusto Managed Streaming Ingestion ----------
-# Per Microsoft best practice: ManagedStreamingIngestClient tries streaming
-# first (seconds latency), falls back to queued ingestion automatically
-# if the payload exceeds 10 MB or on transient failures (3 retries).
-# Ref: https://learn.microsoft.com/en-us/kusto/api/get-started/app-managed-streaming-ingest
-
-from azure.kusto.ingest import ManagedStreamingIngestClient, IngestionProperties
-from azure.kusto.data import KustoConnectionStringBuilder, KustoClient, DataFormat
-import io
-
-_kusto_client = None  # Reuse client across calls
-_ensured_tables = set()  # Track which tables have been ensured
-
-# Table schemas and mappings for self-healing creation
-_TABLE_SCHEMAS = {
-    "claims_events": {
-        "create": ".create-merge table claims_events (event_id:string,event_timestamp:datetime,event_type:string,claim_id:string,patient_id:string,provider_id:string,facility_id:string,payer_id:string,diagnosis_code:string,procedure_code:string,claim_type:string,claim_amount:real,latitude:real,longitude:real,injected_fraud_flags:string)",
-        "mapping": """.create-or-alter table claims_events ingestion json mapping 'claims_events_mapping' '[{"column":"event_id","path":"$.event_id","datatype":"string"},{"column":"event_timestamp","path":"$.event_timestamp","datatype":"datetime"},{"column":"event_type","path":"$.event_type","datatype":"string"},{"column":"claim_id","path":"$.claim_id","datatype":"string"},{"column":"patient_id","path":"$.patient_id","datatype":"string"},{"column":"provider_id","path":"$.provider_id","datatype":"string"},{"column":"facility_id","path":"$.facility_id","datatype":"string"},{"column":"payer_id","path":"$.payer_id","datatype":"string"},{"column":"diagnosis_code","path":"$.diagnosis_code","datatype":"string"},{"column":"procedure_code","path":"$.procedure_code","datatype":"string"},{"column":"claim_type","path":"$.claim_type","datatype":"string"},{"column":"claim_amount","path":"$.claim_amount","datatype":"real"},{"column":"latitude","path":"$.latitude","datatype":"real"},{"column":"longitude","path":"$.longitude","datatype":"real"},{"column":"injected_fraud_flags","path":"$.injected_fraud_flags","datatype":"string"}]'""",
-    },
-    "adt_events": {
-        "create": ".create-merge table adt_events (event_id:string,event_timestamp:datetime,event_type:string,patient_id:string,facility_id:string,facility_name:string,admission_type:string,primary_diagnosis:string,latitude:real,longitude:real,has_open_care_gaps:bool,open_gap_measures:string)",
-        "mapping": """.create-or-alter table adt_events ingestion json mapping 'adt_events_mapping' '[{"column":"event_id","path":"$.event_id","datatype":"string"},{"column":"event_timestamp","path":"$.event_timestamp","datatype":"datetime"},{"column":"event_type","path":"$.event_type","datatype":"string"},{"column":"patient_id","path":"$.patient_id","datatype":"string"},{"column":"facility_id","path":"$.facility_id","datatype":"string"},{"column":"facility_name","path":"$.facility_name","datatype":"string"},{"column":"admission_type","path":"$.admission_type","datatype":"string"},{"column":"primary_diagnosis","path":"$.primary_diagnosis","datatype":"string"},{"column":"latitude","path":"$.latitude","datatype":"real"},{"column":"longitude","path":"$.longitude","datatype":"real"},{"column":"has_open_care_gaps","path":"$.has_open_care_gaps","datatype":"bool"},{"column":"open_gap_measures","path":"$.open_gap_measures","datatype":"string"}]'""",
-    },
-    "rx_events": {
-        "create": ".create-merge table rx_events (event_id:string,event_timestamp:datetime,event_type:string,patient_id:string,provider_id:string,medication_code:string,medication_name:string,drug_class:string,quantity:int,days_supply:int,latitude:real,longitude:real)",
-        "mapping": """.create-or-alter table rx_events ingestion json mapping 'rx_events_mapping' '[{"column":"event_id","path":"$.event_id","datatype":"string"},{"column":"event_timestamp","path":"$.event_timestamp","datatype":"datetime"},{"column":"event_type","path":"$.event_type","datatype":"string"},{"column":"patient_id","path":"$.patient_id","datatype":"string"},{"column":"provider_id","path":"$.provider_id","datatype":"string"},{"column":"medication_code","path":"$.medication_code","datatype":"string"},{"column":"medication_name","path":"$.medication_name","datatype":"string"},{"column":"drug_class","path":"$.drug_class","datatype":"string"},{"column":"quantity","path":"$.quantity","datatype":"int"},{"column":"days_supply","path":"$.days_supply","datatype":"int"},{"column":"latitude","path":"$.latitude","datatype":"real"},{"column":"longitude","path":"$.longitude","datatype":"real"}]'""",
-    },
-}
-
-def _get_or_create_kusto_client():
-    """Create (or refresh) the ManagedStreamingIngestClient."""
-    global _kusto_client
-    if _kusto_client is None:
-        token = get_kusto_token()
-        engine_kcsb = KustoConnectionStringBuilder.with_aad_user_token_authentication(
-            KUSTO_QUERY_URI, token
-        )
-        dm_kcsb = KustoConnectionStringBuilder.with_aad_user_token_authentication(
-            KUSTO_INGEST_URI, token
-        )
-        _kusto_client = ManagedStreamingIngestClient(engine_kcsb, dm_kcsb)
-    return _kusto_client
-
-def _ensure_table_and_mapping(table_name):
-    """Ensure the KQL table, streaming policy, and mapping exist (idempotent)."""
-    if table_name in _ensured_tables or table_name not in _TABLE_SCHEMAS:
-        return
-    try:
-        token = get_kusto_token()
-        kcsb = KustoConnectionStringBuilder.with_aad_user_token_authentication(KUSTO_QUERY_URI, token)
-        mgmt = KustoClient(kcsb)
-        schema = _TABLE_SCHEMAS[table_name]
-        for cmd in [schema["create"], f".alter table {table_name} policy streamingingestion enable", schema["mapping"]]:
-            try:
-                mgmt.execute_mgmt(KQL_DB_NAME, cmd.strip())
-            except Exception:
-                pass
-        _ensured_tables.add(table_name)
-    except Exception as e:
-        print(f"  KQL WARN: ensure table {table_name} failed (non-fatal): {e}")
-
-def push_to_kql(df_pandas, table_name, mapping_name):
-    """Push a pandas DataFrame to a KQL table via managed streaming ingestion."""
-    if not KUSTO_QUERY_URI or not KUSTO_INGEST_URI:
-        return False
-    try:
-        _ensure_table_and_mapping(table_name)
-        client = _get_or_create_kusto_client()
-
-        ingestion_props = IngestionProperties(
-            database=KQL_DB_NAME,
-            table=table_name,
-            data_format=DataFormat.JSON,
-            ingestion_mapping_reference=mapping_name,
-        )
-
-        # Convert DataFrame to JSON lines
-        json_data = df_pandas.to_json(orient="records", lines=True, date_format="iso")
-        stream = io.StringIO(json_data)
-
-        client.ingest_from_stream(stream, ingestion_properties=ingestion_props)
-        print(f"  KQL: {len(df_pandas)} rows streamed -> {table_name}")
-        return True
-    except Exception as e:
-        print(f"  KQL WARN: {table_name} ingestion failed: {e}")
-        return False
-
+# ---------- Push Events to Eventstream ----------
 
 def push_to_eventstream(df_pandas, table_name):
-    """Push events to Eventstream Custom Endpoint (Approach 2).
+    """Push events to Eventstream Custom Endpoint.
     
     Each row is sent as a JSON event with a '_table' field for downstream routing.
-    Enables Fabric Data Activator / Reflex to trigger on live events.
+    The Eventstream fans out to Eventhouse, Lakehouse, and Activator.
     """
     if _es_producer is None:
         return False
@@ -340,14 +227,6 @@ def push_to_eventstream(df_pandas, table_name):
     except Exception as e:
         print(f"  Eventstream WARN: {table_name} push failed: {e}")
         return False
-
-
-def push_events(df_pandas, table_name, mapping_name):
-    """Push to KQL (always) + Eventstream (if configured). Approach 1+2 unified."""
-    kql_ok = push_to_kql(df_pandas, table_name, mapping_name)
-    if _es_producer:
-        push_to_eventstream(df_pandas, table_name)
-    return kql_ok
 
 # METADATA **{"language":"python"}**
 
@@ -561,56 +440,27 @@ print("Event generators ready.")
 # CELL **{"language":"python"}**
 
 # ============================================================================
-# Batch Mode -- Generate one batch, save as Delta tables + push to KQL
+# Stream Events — Eventstream is the ONLY ingestion path
 # ============================================================================
-if MODE == "batch":
-    print(f"Generating batch: {BATCH_SIZE} claims, {BATCH_SIZE // 2} ADT, {BATCH_SIZE // 3} Rx events...")
-
-    claims_pdf = generate_claims_events(BATCH_SIZE)
-    adt_pdf = generate_adt_events(BATCH_SIZE // 2)
-    rx_pdf = generate_rx_events(BATCH_SIZE // 3)
-
-    # Write to Delta tables in lakehouse
-    claims_sdf = spark.createDataFrame(claims_pdf)
-    adt_sdf = spark.createDataFrame(adt_pdf)
-    rx_sdf = spark.createDataFrame(rx_pdf)
-
-    claims_sdf.write.format("delta").mode("overwrite").saveAsTable("lh_gold_curated.rti_claims_events")
-    adt_sdf.write.format("delta").mode("overwrite").saveAsTable("lh_gold_curated.rti_adt_events")
-    rx_sdf.write.format("delta").mode("overwrite").saveAsTable("lh_gold_curated.rti_rx_events")
-
-    print(f"  Delta: rti_claims_events ({len(claims_pdf)}), rti_adt_events ({len(adt_pdf)}), rti_rx_events ({len(rx_pdf)})")
-
-    # Push to KQL (+ Eventstream if configured)
-    push_events(claims_pdf, "claims_events", "claims_events_mapping")
-    push_events(adt_pdf, "adt_events", "adt_events_mapping")
-    push_events(rx_pdf, "rx_events", "rx_events_mapping")
-
-    print("Batch mode complete -- Delta tables + KQL ingestion done.")
-    if _es_producer:
-        print("  Eventstream dual-write: events also sent to Custom Endpoint")
-
-# METADATA **{"language":"python"}**
-
-# CELL **{"language":"python"}**
-
+# Events flow through the Eventstream Custom Endpoint → fan out to:
+#   Eventhouse (KQL), Lakehouse (bronze), Activator (alerts)
+# No direct Kusto writes. No batch mode. One path in, three paths out.
 # ============================================================================
-# Stream Mode -- Continuously push events via direct Kusto ingestion
-# ============================================================================
-if MODE == "stream":
-    if not KUSTO_INGEST_URI:
-        raise ValueError(
-            "Could not discover Kusto ingestion URI.\n"
-            "Ensure NB_RTI_Setup_Eventhouse ran successfully and the Eventhouse exists."
-        )
 
-    import time
+if not _es_producer:
+    print("STOPPING: ES_CONNECTION_STRING is not set.")
+    print("Paste the Eventstream connection string into the Parameters cell and re-run.")
+else:
+    import time as _stream_time
 
     batch_num = 0
     max_batches = STREAM_BATCHES if STREAM_BATCHES > 0 else float("inf")
-    print(f"Streaming events every {STREAM_INTERVAL_SEC}s via direct Kusto ingestion...")
+    print(f"Streaming events every {STREAM_INTERVAL_SEC}s...")
+    print(f"  Eventstream → Eventhouse + Lakehouse + Activator")
     if STREAM_BATCHES > 0:
-        print(f"  Will stop after {STREAM_BATCHES} batches")
+        print(f"  Batches: {STREAM_BATCHES} (then stop)")
+    else:
+        print(f"  Batches: infinite (Ctrl+C to stop)")
 
     try:
         while batch_num < max_batches:
@@ -620,26 +470,21 @@ if MODE == "stream":
             adt_pdf = generate_adt_events(BATCH_SIZE // 2)
             rx_pdf = generate_rx_events(BATCH_SIZE // 3)
 
-            # Push to KQL (+ Eventstream if configured)
-            push_events(claims_pdf, "claims_events", "claims_events_mapping")
-            push_events(adt_pdf, "adt_events", "adt_events_mapping")
-            push_events(rx_pdf, "rx_events", "rx_events_mapping")
-
-            # Also append to Delta for historical tracking
-            spark.createDataFrame(claims_pdf).write.format("delta").mode("append").saveAsTable("lh_gold_curated.rti_claims_events")
-            spark.createDataFrame(adt_pdf).write.format("delta").mode("append").saveAsTable("lh_gold_curated.rti_adt_events")
-            spark.createDataFrame(rx_pdf).write.format("delta").mode("append").saveAsTable("lh_gold_curated.rti_rx_events")
+            # Push to Eventstream (single path — fans out to all destinations)
+            push_to_eventstream(claims_pdf, "claims_events")
+            push_to_eventstream(adt_pdf, "adt_events")
+            push_to_eventstream(rx_pdf, "rx_events")
 
             total = len(claims_pdf) + len(adt_pdf) + len(rx_pdf)
-            print(f"  Batch {batch_num}: {total} events -> KQL + Delta")
+            print(f"  Batch {batch_num}: {total} events → Eventstream")
 
             if batch_num < max_batches:
-                time.sleep(STREAM_INTERVAL_SEC)
+                _stream_time.sleep(STREAM_INTERVAL_SEC)
 
     except KeyboardInterrupt:
-        print(f"Streaming stopped after {batch_num} batches.")
+        print(f"\nStreaming stopped by user after {batch_num} batches.")
 
-    print(f"Stream mode complete -- {batch_num} batches pushed to KQL + Delta.")
+    print(f"\nStreaming complete — {batch_num} batches pushed.")
 
 # METADATA **{"language":"python"}**
 
@@ -649,29 +494,29 @@ if MODE == "stream":
 print("\n" + "=" * 60)
 print("NB_RTI_Event_Simulator: COMPLETE")
 print("=" * 60)
-if MODE == "batch":
-    print("Tables written to lh_gold_curated + KQL:")
-    print("  - rti_claims_events / claims_events  (claims + injected fraud patterns)")
-    print("  - rti_adt_events / adt_events         (ADT + open care gap flags)")
-    print("  - rti_rx_events / rx_events           (prescription fills)")
+if _es_producer:
+    print("All events streamed via Eventstream Custom Endpoint")
+    print()
+    print("Eventstream routes events to:")
+    print("  → Eventhouse / KQL DB   (real-time dashboards, scoring)")
+    print("  → Lakehouse (lh_bronze_raw)  (raw archival, medallion)")
+    print("  → Activator / Reflex    (fraud/care-gap/high-cost alerts)")
+    print()
+    print("Event types generated:")
+    print("  - claims_events  (claims + injected fraud patterns)")
+    print("  - adt_events     (ADT + open care gap flags)")
+    print("  - rx_events      (prescription fills)")
     print()
     print("Fraud pattern injection rates:")
     for k, v in FRAUD_PATTERNS.items():
         print(f"  - {k}: {v*100:.0f}%")
-elif MODE == "stream":
-    print("Events streamed to KQL via direct Kusto ingestion")
-    print("Delta tables also updated for batch analysis")
-print()
-print("Ingestion: KQL via Managed Streaming (azure-kusto-ingest)")
-print("  Tries streaming first (seconds latency), falls back to queued")
-if _es_producer:
-    print("Eventstream: Dual-write ACTIVE (azure-eventhub -> Custom Endpoint)")
-    print("  Data Activator / Reflex can trigger on live events")
     _es_producer.close()
-    print("  Eventstream producer closed")
+    print("\nEventstream producer closed")
 else:
-    print("Eventstream: Not configured (Approach 1 -- direct Kusto only)")
-    print("  To enable: set ES_CONNECTION_STRING in Parameters cell")
+    print("No events streamed (ES_CONNECTION_STRING was empty)")
+    print("Paste the connection string and re-run this notebook.")
+print()
+print("Re-run this notebook anytime to generate more streaming events.")
 print("=" * 60)
 
 # METADATA **{"language":"python"}**

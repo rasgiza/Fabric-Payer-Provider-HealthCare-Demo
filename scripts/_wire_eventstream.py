@@ -174,7 +174,7 @@ def build_topology(ws_id, kqldb_id, kqldb_name, lakehouse_id=None, activator_id=
                 "itemId": lakehouse_id,
                 "schema": "",
                 "deltaTable": "rti_raw_events",
-                "minimumRows": 100000,
+                "minimumRows": 1000,
                 "maximumDurationInSeconds": 120,
                 "inputSerialization": {"type": "Json", "properties": {"encoding": "UTF8"}}
             },

@@ -1045,6 +1045,20 @@ df_enc = df_encounters.alias("e") \
     .join(df_provider_lkp.alias("pr"), col("e.provider_id") == col("pr.provider_id"), "left") \
     .join(df_facility_lkp.alias("f"), col("e.facility_id") == col("f.facility_id"), "left")
 
+# Pre-compute readmission risk score expression (avoids deep nesting in select)
+_risk_fallback = (
+    when(coalesce(col("e.length_of_stay").cast("int"), lit(1)) >= 10, lit(0.80))
+    .when((coalesce(col("e.length_of_stay").cast("int"), lit(1)) >= 5) &
+          (lower(coalesce(col("e.encounter_type"), lit(""))) == "inpatient"), lit(0.65))
+    .when(lower(coalesce(col("e.encounter_type"), lit(""))) == "emergency", lit(0.55))
+    .when(coalesce(col("e.length_of_stay").cast("int"), lit(1)) >= 3, lit(0.35))
+    .otherwise(lit(0.15))
+)
+_risk_score = coalesce(
+    col("e.readmission_risk").cast("double") if has_encounter_risk else lit(None),
+    _risk_fallback
+)
+
 df_fact_encounter = df_enc.select(
     col("e.encounter_id"),
     (year("e.encounter_date") * 10000 + month("e.encounter_date") * 100 + dayofmonth("e.encounter_date")).alias("encounter_date_key"),
@@ -1060,40 +1074,11 @@ df_fact_encounter = df_enc.select(
     coalesce(col("e.length_of_stay").cast("int"), lit(1)).alias("length_of_stay"),
     coalesce(col("e.total_charges").cast("double"), lit(0.0)).alias("total_charges"),
     (coalesce(col("e.total_charges").cast("double"), lit(0.0)) * 0.7).alias("total_cost"),
-    when(coalesce(col("e.readmission_risk").cast("double") if has_encounter_risk else lit(None),
-             # Rule-based risk score when no ML: derive from encounter attributes
-             when(coalesce(col("e.length_of_stay").cast("int"), lit(1)) >= 10, lit(0.80))
-             .when((coalesce(col("e.length_of_stay").cast("int"), lit(1)) >= 5) &
-                   (lower(coalesce(col("e.encounter_type"), lit(""))) == "inpatient"), lit(0.65))
-             .when(lower(coalesce(col("e.encounter_type"), lit(""))) == "emergency", lit(0.55))
-             .when(coalesce(col("e.length_of_stay").cast("int"), lit(1)) >= 3, lit(0.35))
-             .otherwise(lit(0.15))
-             ), lit(0.0)) >= 0.5, lit(1)).otherwise(lit(0)).alias("readmission_flag"),
-    coalesce(col("e.readmission_risk").cast("double") if has_encounter_risk else lit(None),
-             when(coalesce(col("e.length_of_stay").cast("int"), lit(1)) >= 10, lit(0.80))
-             .when((coalesce(col("e.length_of_stay").cast("int"), lit(1)) >= 5) &
-                   (lower(coalesce(col("e.encounter_type"), lit(""))) == "inpatient"), lit(0.65))
-             .when(lower(coalesce(col("e.encounter_type"), lit(""))) == "emergency", lit(0.55))
-             .when(coalesce(col("e.length_of_stay").cast("int"), lit(1)) >= 3, lit(0.35))
-             .otherwise(lit(0.15))
-             ).alias("readmission_risk_score"),
-    when(coalesce(col("e.readmission_risk").cast("double") if has_encounter_risk else lit(None),
-             when(coalesce(col("e.length_of_stay").cast("int"), lit(1)) >= 10, lit(0.80))
-             .when((coalesce(col("e.length_of_stay").cast("int"), lit(1)) >= 5) &
-                   (lower(coalesce(col("e.encounter_type"), lit(""))) == "inpatient"), lit(0.65))
-             .when(lower(coalesce(col("e.encounter_type"), lit(""))) == "emergency", lit(0.55))
-             .when(coalesce(col("e.length_of_stay").cast("int"), lit(1)) >= 3, lit(0.35))
-             .otherwise(lit(0.15))
-             ) >= 0.7, "High")
-    .when(coalesce(col("e.readmission_risk").cast("double") if has_encounter_risk else lit(None),
-             when(coalesce(col("e.length_of_stay").cast("int"), lit(1)) >= 10, lit(0.80))
-             .when((coalesce(col("e.length_of_stay").cast("int"), lit(1)) >= 5) &
-                   (lower(coalesce(col("e.encounter_type"), lit(""))) == "inpatient"), lit(0.65))
-             .when(lower(coalesce(col("e.encounter_type"), lit(""))) == "emergency", lit(0.55))
-             .when(coalesce(col("e.length_of_stay").cast("int"), lit(1)) >= 3, lit(0.35))
-             .otherwise(lit(0.15))
-             ) >= 0.3, "Medium")
-    .otherwise("Low").alias("readmission_risk_category"),
+    when(coalesce(_risk_score, lit(0.0)) >= 0.5, lit(1)).otherwise(lit(0)).alias("readmission_flag"),
+    _risk_score.alias("readmission_risk_score"),
+    (when(_risk_score >= 0.7, "High")
+     .when(_risk_score >= 0.3, "Medium")
+     .otherwise("Low")).alias("readmission_risk_category"),
     current_timestamp().alias("_load_timestamp")
 ).dropDuplicates(["encounter_id"])
 

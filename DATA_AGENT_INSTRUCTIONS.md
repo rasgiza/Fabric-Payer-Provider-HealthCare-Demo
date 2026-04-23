@@ -254,8 +254,21 @@ Bounded aggregation (denied claims by provider):
 Patient SDOH lookup:
   MATCH (pat:Patient)-[:livesIn]->(ch:CommunityHealth) WHERE ch.risk_tier = 'High' RETURN pat.patient_id, pat.first_name, ch.zip_code, ch.poverty_rate LIMIT 10
 
-Medication adherence:
+Medication adherence (filter by category):
   MATCH (ma:MedicationAdherence)-[:adherenceFor]->(pat:Patient), (ma)-[:adherenceMedication]->(med:Medication) WHERE ma.adherence_category = 'Non-Adherent' AND med.is_chronic = 1 RETURN pat.first_name, pat.last_name, med.medication_name, ma.pdc_score LIMIT 10
+
+Medication adherence for a specific patient by drug class (IMPORTANT — always start from MedicationAdherence, NOT from Patient):
+  MATCH (ma:MedicationAdherence)-[:adherenceFor]->(pat:Patient), (ma)-[:adherenceMedication]->(med:Medication) WHERE pat.first_name = 'Elizabeth' AND pat.last_name = 'Brown' RETURN pat.first_name, pat.last_name, pat.age, pat.gender, med.drug_class, med.medication_name, med.generic_name, med.is_chronic, ma.pdc_score, ma.adherence_category, ma.gap_days LIMIT 20
+  NOTE: The relationship direction is MedicationAdherence → Patient (via adherenceFor) and MedicationAdherence → Medication (via adherenceMedication). ALWAYS start the MATCH from MedicationAdherence, never from Patient. Use LIMIT 20 to return ALL medications, not just one.
+
+List patients who have adherence data (for 'show me patients' / 'list patients' / 'pick a patient'):
+  MATCH (ma:MedicationAdherence)-[:adherenceFor]->(pat:Patient) RETURN DISTINCT pat.first_name, pat.last_name, pat.age, pat.gender, pat.insurance_type LIMIT 20
+  Present as a numbered list with age/gender so the user can pick a patient by name, then follow up with the drug-class query above.
+
+Readmission rates by payer (bounded aggregation — two paths from Claim, safe):
+  Step 1: MATCH (c:Claim)-[:billsFor]->(e:Encounter), (c)-[:ClaimHasPayer]->(pay:Payer) WHERE e.readmission_risk_category = 'High' RETURN pay.payer_name, COUNT(e) AS high_readmission_count LIMIT 20
+  Step 2: MATCH (c:Claim)-[:billsFor]->(e:Encounter), (c)-[:ClaimHasPayer]->(pay:Payer) RETURN pay.payer_name, COUNT(e) AS total_encounters LIMIT 20
+  Compute rate: high_readmission_count / total_encounters per payer.
 
 AGGREGATION GUIDELINES:
 - ALWAYS scope aggregations to a specific entity first (a payer, provider, patient, medication, or diagnosis).
@@ -292,11 +305,11 @@ RULES:
 6. ALWAYS include LIMIT in every GQL query. No exceptions.
 ```
 
-## Graph Ontology (11 Entities, 17 Relationships)
+## Graph Ontology (12 Entities, 18 Relationships)
 
 | Entity | Key Properties |
 |--------|---------------|
-| `Patient` | patient_id, first_name, last_name, insurance_type, zip_code |
+| `Patient` | patient_id, first_name, last_name, age, gender, insurance_type, zip_code |
 | `Provider` | provider_id, display_name, specialty, department, npi_number |
 | `Encounter` | encounter_id, encounter_type, length_of_stay, total_charges, readmission_risk_score |
 | `Claim` | claim_id, claim_status, denial_flag, billed_amount, paid_amount, primary_denial_reason |
@@ -329,4 +342,5 @@ PatientDiagnosis —[occursIn]→    Encounter
 Patient    —[livesIn]→           CommunityHealth
 MedicationAdherence —[adherenceFor]→     Patient
 MedicationAdherence —[adherenceMedication]→ Medication
+Vitals             —[vitalsTakenFor]→    Patient
 ```

@@ -236,8 +236,10 @@ PERFORMANCE RULES (CRITICAL — prevents slow/hanging queries):
 
 GQL SYNTAX EXAMPLES:
 
-Lookup by name:
-  MATCH (p:Provider) WHERE p.display_name CONTAINS 'Smith' RETURN p LIMIT 5
+List providers (for 'show me providers' / 'which doctors'):
+  MATCH (p:Provider) RETURN p.display_name, p.specialty, p.department LIMIT 20
+  Present as a numbered list. If the user names a provider, use CONTAINS to filter:
+  MATCH (p:Provider) WHERE p.display_name CONTAINS '<user_input>' RETURN p LIMIT 5
 
 Filter + traverse one hop:
   MATCH (c:Claim)-[:submittedBy]->(p:Provider) WHERE c.denial_flag = 1 RETURN c.claim_id, c.primary_denial_reason, p.display_name LIMIT 10
@@ -245,8 +247,12 @@ Filter + traverse one hop:
 Two-hop traversal (safe — both paths share same start entity):
   MATCH (c:Claim)-[:submittedBy]->(p:Provider), (c)-[:ClaimHasPayer]->(pay:Payer) WHERE c.denial_flag = 1 RETURN c.claim_id, p.display_name, pay.payer_name, c.primary_denial_reason LIMIT 10
 
-Bounded aggregation (scoped to a specific payer):
-  MATCH (c:Claim)-[:ClaimHasPayer]->(pay:Payer) WHERE pay.payer_name = 'Aetna' RETURN c.denial_flag, COUNT(c) AS claim_count LIMIT 20
+List payers (for 'show me payers' / 'which insurers'):
+  MATCH (pay:Payer) RETURN pay.payer_name, pay.payer_type LIMIT 20
+  Present as a numbered list. Once the user picks a payer, drill down:
+
+Bounded aggregation (scoped to a user-selected payer):
+  MATCH (c:Claim)-[:ClaimHasPayer]->(pay:Payer) WHERE pay.payer_name = '<user_selected_payer>' RETURN c.denial_flag, COUNT(c) AS claim_count LIMIT 20
 
 Bounded aggregation (denied claims by provider):
   MATCH (c:Claim)-[:submittedBy]->(p:Provider) WHERE c.denial_flag = 1 RETURN p.display_name, COUNT(c) AS denied_count LIMIT 20
@@ -258,7 +264,7 @@ Medication adherence (filter by category):
   MATCH (ma:MedicationAdherence)-[:adherenceFor]->(pat:Patient), (ma)-[:adherenceMedication]->(med:Medication) WHERE ma.adherence_category = 'Non-Adherent' AND med.is_chronic = 1 RETURN pat.first_name, pat.last_name, med.medication_name, ma.pdc_score LIMIT 10
 
 Medication adherence for a specific patient by drug class (IMPORTANT — always start from MedicationAdherence, NOT from Patient):
-  MATCH (ma:MedicationAdherence)-[:adherenceFor]->(pat:Patient), (ma)-[:adherenceMedication]->(med:Medication) WHERE pat.first_name = 'Elizabeth' AND pat.last_name = 'Brown' RETURN pat.first_name, pat.last_name, pat.age, pat.gender, med.drug_class, med.medication_name, med.generic_name, med.is_chronic, ma.pdc_score, ma.adherence_category, ma.gap_days LIMIT 20
+  MATCH (ma:MedicationAdherence)-[:adherenceFor]->(pat:Patient), (ma)-[:adherenceMedication]->(med:Medication) WHERE pat.first_name = '<first_name>' AND pat.last_name = '<last_name>' RETURN pat.first_name, pat.last_name, pat.age, pat.gender, med.drug_class, med.medication_name, med.generic_name, med.is_chronic, ma.pdc_score, ma.adherence_category, ma.gap_days LIMIT 20
   NOTE: The relationship direction is MedicationAdherence → Patient (via adherenceFor) and MedicationAdherence → Medication (via adherenceMedication). ALWAYS start the MATCH from MedicationAdherence, never from Patient. Use LIMIT 20 to return ALL medications, not just one.
 
 List patients who have adherence data (for 'show me patients' / 'list patients' / 'pick a patient'):
@@ -270,9 +276,16 @@ Readmission rates by payer (bounded aggregation — two paths from Claim, safe):
   Step 2: MATCH (c:Claim)-[:billsFor]->(e:Encounter), (c)-[:ClaimHasPayer]->(pay:Payer) RETURN pay.payer_name, COUNT(e) AS total_encounters LIMIT 20
   Compute rate: high_readmission_count / total_encounters per payer.
 
+INTERACTION PATTERN -- list first, user picks, then drill down:
+When the user asks a broad question (e.g., 'show me providers', 'which patients', 'what payers'), ALWAYS:
+1. Run a list query first (LIMIT 20) showing key identifying fields (name, specialty, age, etc.).
+2. Present as a numbered list so the user can pick by name or number.
+3. Once the user picks, run the detail/drill-down query for that specific entity.
+NEVER assume a specific entity -- always let the user choose from the list.
+
 AGGREGATION GUIDELINES:
 - ALWAYS scope aggregations to a specific entity first (a payer, provider, patient, medication, or diagnosis).
-- For 'denial rate for Aetna': filter by payer, count denial_flag=1 vs total, compute rate.
+- For 'denial rate for [payer]': filter by payer, count denial_flag=1 vs total, compute rate.
 - For 'how many prescriptions for Metformin': filter Medication by name, count prescriptions.
 - For unbounded questions like 'overall denial rate across all claims', break it down by payer or provider and present the results per entity.
 - Show the math: 'X denied out of Y total = Z% denial rate'.

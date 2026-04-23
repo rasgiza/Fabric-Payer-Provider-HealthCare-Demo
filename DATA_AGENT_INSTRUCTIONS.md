@@ -207,7 +207,7 @@ MedicationAdherence —[adherenceFor]→ Patient, —[adherenceMedication]→ Me
 Vitals —[vitalsTakenFor]→ Patient
 
 KEY PROPERTIES:
-Patient: patient_id, first_name, last_name, insurance_type, zip_code
+Patient: patient_id, first_name, last_name, age, gender, insurance_type, zip_code
 Provider: provider_id, display_name, first_name, last_name, specialty, department, npi_number
 Encounter: encounter_id, encounter_type, length_of_stay, total_charges, total_cost, readmission_risk_score, readmission_risk_category, encounter_key
 Claim: claim_id, claim_status, billed_amount, allowed_amount, paid_amount, denial_flag (1=denied), denial_risk_score, denial_risk_category, primary_denial_reason, recommended_action, claim_key
@@ -292,7 +292,7 @@ RULES:
 6. ALWAYS include LIMIT in every GQL query. No exceptions.
 ```
 
-## Graph Ontology (12 Entities, 18 Relationships)
+## Graph Ontology (11 Entities, 17 Relationships)
 
 | Entity | Key Properties |
 |--------|---------------|
@@ -329,5 +329,4 @@ PatientDiagnosis —[occursIn]→    Encounter
 Patient    —[livesIn]→           CommunityHealth
 MedicationAdherence —[adherenceFor]→     Patient
 MedicationAdherence —[adherenceMedication]→ Medication
-Vitals     —[vitalsTakenFor]→    Patient
 ```

@@ -4,8 +4,8 @@
   "workspaceId": "00000000-0000-0000-0000-000000000000",
   "displayName": "Healthcare_Demo_Graph",
   "type": "graph",
-  "dataSourceInstructions": "Healthcare ontology graph for entity lookups and relationship traversals. 11 entity types, 17 relationships.\n\nENTITY TYPES:\n  Provider — healthcare provider with specialty, department, NPI (PK: provider_key, Display: display_name). SPECIALTY VALUES: Cardiology, Internal Medicine, Family Practice, Orthopedics, Neurology, Oncology, Pediatrics, etc.\n  Patient — patient demographics with age, gender, insurance (PK: patient_key, Display: patient_id)\n  Prescription — medication prescription (PK: prescription_key, Display: prescription_id)\n  Medication — drug with class, therapeutic area (PK: medication_key, Display: medication_name)\n  Claim — billing claim with status, denial info (PK: claim_key, Display: claim_id)\n  Payer — insurance payer (PK: payer_key, Display: payer_name)\n  Encounter — patient visit with type, LOS, charges (PK: encounter_key, Display: encounter_id)\n  Diagnosis — ICD diagnosis code (PK: diagnosis_key, Display: icd_description)\n  PatientDiagnosis — links patient to diagnosis (PK: fact_diagnosis_key)\n  CommunityHealth — SDOH by zip code (PK: sdoh_key, Display: zip_code). IMPORTANT: social_vulnerability_index ranges 0.05-0.53 (NOT 0-1). ALWAYS filter by risk_tier (High/Medium/Low) instead of raw SVI values. High = SVI >= 0.30, Medium = 0.15-0.30, Low < 0.15\n  MedicationAdherence — patient medication adherence (PK: patient_key + medication_key)\n\nRELATIONSHIPS:\n  Prescription → Provider (prescribedBy, provider_key) — which provider wrote the prescription\n  Prescription → Medication (dispenses, medication_key) — which medication was prescribed\n  Prescription → Payer (PrescriptionHasPayer, payer_key) — which payer covers the prescription\n  Claim → Provider (submittedBy, provider_key) — which provider submitted the claim\n  Claim → Payer (ClaimHasPayer, payer_key) — which payer received the claim\n  Claim → Encounter (originatesFrom/billsFor, encounter_key) — which encounter generated the claim\n  Encounter → Patient (involves, patient_key) — which patient had the encounter\n  Encounter → Provider (serves, provider_key) — which provider conducted the encounter\n  PatientDiagnosis → Diagnosis (affects/references, diagnosis_key) — which diagnosis\n  PatientDiagnosis → Patient (involves, patient_key) — which patient\n  Patient → CommunityHealth (livesIn, zip_code) — patient's community health profile\n  MedicationAdherence → Patient (adherenceFor, patient_key) — adherence for which patient\n  MedicationAdherence → Medication (adherenceMedication, medication_key) — adherence for which medication\n  Payer → Patient (covers, patient_key) — which patients the payer covers\n\nSPECIALTY-BASED QUERIES:\n  To find prescribing patterns for a specialty:\n  1. Query Provider entities WHERE specialty = '<specialty_name>' (e.g., 'Internal Medicine', 'Cardiology')\n  2. For each provider, traverse BACKWARDS via prescribedBy to find Prescriptions\n  3. From Prescriptions, traverse to Medication (dispenses), Patient (involves via Encounter), and Payer (PrescriptionHasPayer)\n  4. Return: Provider name/specialty, Medication names, Patient counts, Payer names\n\n  Example: 'Prescribing patterns for Internal Medicine providers'\n  → Filter Provider WHERE specialty='Internal Medicine'\n  → Traverse Prescription ← prescribedBy → Provider\n  → For each Prescription, get Medication via dispenses, Patient via encounter, Payer via PrescriptionHasPayer\n\nWHEN TO USE THIS SOURCE:\n  ✓ 'Show me providers in Cardiology' → filter Provider by specialty\n  ✓ 'What medications does Dr. Smith prescribe?' → Provider → Prescription → Medication\n  ✓ 'Which payers cover prescriptions from Internal Medicine?' → Provider(specialty) → Prescription → Payer\n  ✓ 'Show me a provider's patient panel' → Provider → Encounter → Patient\n  ✓ 'Trace a claim end-to-end' → Claim → Provider, Payer, Encounter → Patient\n  ✓ 'Which providers treat high-risk patients?' → Patient(high risk) → Encounter → Provider\n\nWHEN NOT TO USE (use lakehouse SQL instead):\n  ✗ 'Top 10 providers by volume' → large-scale ranking\n  ✗ 'Average length of stay across all encounters' → unbounded aggregation with no entity filter\n  NOTE: Bounded aggregations scoped to a specific entity (e.g., 'denial rate by payer', 'readmission rate by payer') ARE supported — use separate queries per entity and compute rates from the results.\n\nPERFORMANCE GUARDRAILS:\n  EVERY query MUST have LIMIT. Default LIMIT 10, max LIMIT 20.\n  NEVER combine 3+ independent paths in one MATCH — causes Cartesian explosion.\n  BAD:  MATCH (e:Encounter)-[:serves]->(p:Provider), (c:Claim)-[:submittedBy]->(p), (rx:Prescription)-[:prescribedBy]->(p) — this creates encounters x claims x prescriptions rows!\n  GOOD: Run 3 separate queries each with LIMIT 10, then combine results in the narrative.\n  For 'full profile' or 'everything about X' questions, split into one query per relationship type.\n  Always filter by specific ID/name BEFORE traversing outward.",
-  "userDescription": "Healthcare ontology graph with 11 entity types and 17 relationships. Use for: (1) Entity lookups by ID, name, or SPECIALTY (e.g., 'providers in Internal Medicine'), (2) Relationship traversals — trace claims to providers/payers/patients, follow prescriptions to medications, map provider-payer networks, (3) Care pathway exploration — patient encounters, diagnoses, prescriptions, adherence, SDOH, (4) Pattern discovery — prescribing patterns by specialty, denied claims with reasons, non-adherent patients. Provider entities have a SPECIALTY property for filtering (Cardiology, Internal Medicine, etc.). Start with the entity closest to what the user asks about, then traverse outward.",
+  "dataSourceInstructions": "Healthcare ontology graph for entity lookups and relationship traversals. 12 entity types, 18 relationships.\n\nENTITY TYPES:\n  Provider \u2014 healthcare provider with specialty, department, NPI (PK: provider_key, Display: display_name). SPECIALTY VALUES: Cardiology, Internal Medicine, Family Practice, Orthopedics, Neurology, Oncology, Pediatrics, etc.\n  Patient \u2014 patient demographics with age, gender, insurance (PK: patient_key, Display: patient_id)\n  Prescription \u2014 medication prescription (PK: prescription_key, Display: prescription_id)\n  Medication \u2014 drug with class, therapeutic area (PK: medication_key, Display: medication_name)\n  Claim \u2014 billing claim with status, denial info (PK: claim_key, Display: claim_id)\n  Payer \u2014 insurance payer (PK: payer_key, Display: payer_name)\n  Encounter \u2014 patient visit with type, LOS, charges (PK: encounter_key, Display: encounter_id)\n  Diagnosis \u2014 ICD diagnosis code (PK: diagnosis_key, Display: icd_description)\n  PatientDiagnosis \u2014 links patient to diagnosis (PK: fact_diagnosis_key)\n  CommunityHealth \u2014 SDOH by zip code (PK: sdoh_key, Display: zip_code). IMPORTANT: social_vulnerability_index ranges 0.05-0.53 (NOT 0-1). ALWAYS filter by risk_tier (High/Medium/Low) instead of raw SVI values. High = SVI >= 0.30, Medium = 0.15-0.30, Low < 0.15\n  MedicationAdherence \u2014 patient medication adherence (PK: patient_key + medication_key)\n  Vitals \u2014 patient vital signs: avg_heart_rate, avg_bp_systolic, avg_spo2, avg_temperature, risk_flag (PK: patient_key)\n\nRELATIONSHIPS:\n  Prescription \u2192 Provider (prescribedBy, provider_key) \u2014 which provider wrote the prescription\n  Prescription \u2192 Medication (dispenses, medication_key) \u2014 which medication was prescribed\n  Prescription \u2192 Payer (PrescriptionHasPayer, payer_key) \u2014 which payer covers the prescription\n  Claim \u2192 Provider (submittedBy, provider_key) \u2014 which provider submitted the claim\n  Claim \u2192 Payer (ClaimHasPayer, payer_key) \u2014 which payer received the claim\n  Claim \u2192 Encounter (originatesFrom/billsFor, encounter_key) \u2014 which encounter generated the claim\n  Encounter \u2192 Patient (involves, patient_key) \u2014 which patient had the encounter\n  Encounter \u2192 Provider (serves, provider_key) \u2014 which provider conducted the encounter\n  PatientDiagnosis \u2192 Diagnosis (affects/references, diagnosis_key) \u2014 which diagnosis\n  PatientDiagnosis \u2192 Patient (involves, patient_key) \u2014 which patient\n  Patient \u2192 CommunityHealth (livesIn, zip_code) \u2014 patient's community health profile\n  MedicationAdherence \u2192 Patient (adherenceFor, patient_key) \u2014 adherence for which patient\n  MedicationAdherence \u2192 Medication (adherenceMedication, medication_key) \u2014 adherence for which medication\n  Vitals \u2192 Patient (vitalsTakenFor, patient_key) \u2014 vital signs for which patient\n  Payer \u2192 Patient (covers, patient_key) \u2014 which patients the payer covers\n\nSPECIALTY-BASED QUERIES:\n  To find prescribing patterns for a specialty:\n  1. Query Provider entities WHERE specialty = '<specialty_name>' (e.g., 'Internal Medicine', 'Cardiology')\n  2. For each provider, traverse BACKWARDS via prescribedBy to find Prescriptions\n  3. From Prescriptions, traverse to Medication (dispenses), Patient (involves via Encounter), and Payer (PrescriptionHasPayer)\n  4. Return: Provider name/specialty, Medication names, Patient counts, Payer names\n\n  Example: 'Prescribing patterns for Internal Medicine providers'\n  \u2192 Filter Provider WHERE specialty='Internal Medicine'\n  \u2192 Traverse Prescription \u2190 prescribedBy \u2192 Provider\n  \u2192 For each Prescription, get Medication via dispenses, Patient via encounter, Payer via PrescriptionHasPayer\n\nWHEN TO USE THIS SOURCE:\n  \u2713 'Show me providers in Cardiology' \u2192 filter Provider by specialty\n  \u2713 'What medications does [provider] prescribe?' \u2192 Provider \u2192 Prescription \u2192 Medication\n  \u2713 'Which payers cover prescriptions from Internal Medicine?' \u2192 Provider(specialty) \u2192 Prescription \u2192 Payer\n  \u2713 'Show me a provider's patient panel' \u2192 Provider \u2192 Encounter \u2192 Patient\n  \u2713 'Trace a claim end-to-end' \u2192 Claim \u2192 Provider, Payer, Encounter \u2192 Patient\n  \u2713 'Which providers treat high-risk patients?' \u2192 Patient(high risk) \u2192 Encounter \u2192 Provider\n\nWHEN NOT TO USE (use lakehouse SQL instead):\n  \u2717 'Top 10 providers by volume' \u2192 large-scale ranking\n  \u2717 'Average length of stay across all encounters' \u2192 unbounded aggregation with no entity filter\n  NOTE: Bounded aggregations scoped to a specific entity (e.g., 'denial rate by payer', 'readmission rate by payer') ARE supported \u2014 use separate queries per entity and compute rates from the results.\n\nPERFORMANCE GUARDRAILS:\n  EVERY query MUST have LIMIT. Default LIMIT 10, max LIMIT 20.\n  NEVER combine 3+ independent paths in one MATCH \u2014 causes Cartesian explosion.\n  BAD:  MATCH (e:Encounter)-[:serves]->(p:Provider), (c:Claim)-[:submittedBy]->(p), (rx:Prescription)-[:prescribedBy]->(p) \u2014 this creates encounters x claims x prescriptions rows!\n  GOOD: Run 3 separate queries each with LIMIT 10, then combine results in the narrative.\n  For 'full profile' or 'everything about X' questions, split into one query per relationship type.\n  Always filter by specific ID/name BEFORE traversing outward.",
+  "userDescription": "Healthcare ontology graph with 12 entity types and 18 relationships. Use for: (1) Entity lookups by ID, name, or SPECIALTY (e.g., 'providers in Internal Medicine'), (2) Relationship traversals \u2014 trace claims to providers/payers/patients, follow prescriptions to medications, map provider-payer networks, (3) Care pathway exploration \u2014 patient encounters, diagnoses, prescriptions, adherence, SDOH, (4) Pattern discovery \u2014 prescribing patterns by specialty, denied claims with reasons, non-adherent patients. Provider entities have a SPECIALTY property for filtering (Cardiology, Internal Medicine, etc.). Start with the entity closest to what the user asks about, then traverse outward.",
   "metadata": {},
   "elements": [
     {
@@ -85,7 +85,7 @@
       "is_selected": true,
       "display_name": "CommunityHealth",
       "type": "graph.nodeType",
-      "description": "SDOH profile by zip code: risk_tier (High/Medium/Low — use this for filtering, NOT raw SVI), poverty_rate, food_desert_flag, transportation_score, uninsured_rate. SVI ranges 0.05-0.53, so risk_tier=High means SVI>=0.30",
+      "description": "SDOH profile by zip code: risk_tier (High/Medium/Low \u2014 use this for filtering, NOT raw SVI), poverty_rate, food_desert_flag, transportation_score, uninsured_rate. SVI ranges 0.05-0.53, so risk_tier=High means SVI>=0.30",
       "children": []
     },
     {
@@ -101,7 +101,7 @@
       "is_selected": true,
       "display_name": "prescribedBy",
       "type": "graph.edgeType",
-      "description": "Prescription → Provider (which provider wrote the prescription)",
+      "description": "Prescription \u2192 Provider (which provider wrote the prescription)",
       "children": []
     },
     {
@@ -109,7 +109,7 @@
       "is_selected": true,
       "display_name": "dispenses",
       "type": "graph.edgeType",
-      "description": "Prescription → Medication (which medication was prescribed)",
+      "description": "Prescription \u2192 Medication (which medication was prescribed)",
       "children": []
     },
     {
@@ -117,7 +117,7 @@
       "is_selected": true,
       "display_name": "PrescriptionHasPayer",
       "type": "graph.edgeType",
-      "description": "Prescription → Payer (which payer covers the prescription)",
+      "description": "Prescription \u2192 Payer (which payer covers the prescription)",
       "children": []
     },
     {
@@ -125,7 +125,7 @@
       "is_selected": true,
       "display_name": "submittedBy",
       "type": "graph.edgeType",
-      "description": "Claim → Provider (which provider submitted the claim)",
+      "description": "Claim \u2192 Provider (which provider submitted the claim)",
       "children": []
     },
     {
@@ -133,7 +133,7 @@
       "is_selected": true,
       "display_name": "ClaimHasPayer",
       "type": "graph.edgeType",
-      "description": "Claim → Payer (which payer received the claim)",
+      "description": "Claim \u2192 Payer (which payer received the claim)",
       "children": []
     },
     {
@@ -141,7 +141,7 @@
       "is_selected": true,
       "display_name": "originatesFrom",
       "type": "graph.edgeType",
-      "description": "Claim → Encounter (which encounter generated the claim)",
+      "description": "Claim \u2192 Encounter (which encounter generated the claim)",
       "children": []
     },
     {
@@ -149,7 +149,7 @@
       "is_selected": true,
       "display_name": "billsFor",
       "type": "graph.edgeType",
-      "description": "Claim → Encounter (billing relationship)",
+      "description": "Claim \u2192 Encounter (billing relationship)",
       "children": []
     },
     {
@@ -157,7 +157,7 @@
       "is_selected": true,
       "display_name": "involves",
       "type": "graph.edgeType",
-      "description": "Encounter → Patient (which patient had the encounter)",
+      "description": "Encounter \u2192 Patient (which patient had the encounter)",
       "children": []
     },
     {
@@ -165,7 +165,7 @@
       "is_selected": true,
       "display_name": "serves",
       "type": "graph.edgeType",
-      "description": "Encounter → Provider (which provider conducted the encounter)",
+      "description": "Encounter \u2192 Provider (which provider conducted the encounter)",
       "children": []
     },
     {
@@ -173,7 +173,7 @@
       "is_selected": true,
       "display_name": "affects",
       "type": "graph.edgeType",
-      "description": "PatientDiagnosis → Diagnosis (which diagnosis)",
+      "description": "PatientDiagnosis \u2192 Diagnosis (which diagnosis)",
       "children": []
     },
     {
@@ -181,7 +181,7 @@
       "is_selected": true,
       "display_name": "references",
       "type": "graph.edgeType",
-      "description": "PatientDiagnosis → Diagnosis (diagnosis reference)",
+      "description": "PatientDiagnosis \u2192 Diagnosis (diagnosis reference)",
       "children": []
     },
     {
@@ -189,7 +189,7 @@
       "is_selected": true,
       "display_name": "livesIn",
       "type": "graph.edgeType",
-      "description": "Patient → CommunityHealth (patient's community by zip code)",
+      "description": "Patient \u2192 CommunityHealth (patient's community by zip code)",
       "children": []
     },
     {
@@ -197,7 +197,7 @@
       "is_selected": true,
       "display_name": "covers",
       "type": "graph.edgeType",
-      "description": "Payer → Patient (which patients the payer covers)",
+      "description": "Payer \u2192 Patient (which patients the payer covers)",
       "children": []
     },
     {
@@ -205,7 +205,7 @@
       "is_selected": true,
       "display_name": "adherenceFor",
       "type": "graph.edgeType",
-      "description": "MedicationAdherence → Patient (adherence for which patient)",
+      "description": "MedicationAdherence \u2192 Patient (adherence for which patient)",
       "children": []
     },
     {
@@ -213,7 +213,7 @@
       "is_selected": true,
       "display_name": "adherenceMedication",
       "type": "graph.edgeType",
-      "description": "MedicationAdherence → Medication (adherence for which medication)",
+      "description": "MedicationAdherence \u2192 Medication (adherence for which medication)",
       "children": []
     },
     {
@@ -222,6 +222,22 @@
       "display_name": "occursIn",
       "type": "graph.edgeType",
       "description": "Encounter time/location relationship",
+      "children": []
+    },
+    {
+      "id": "e0000012-0012-0012-0012-000000000012",
+      "is_selected": true,
+      "display_name": "Vitals",
+      "type": "graph.nodeType",
+      "description": "Patient vital signs with avg heart rate, BP systolic, SpO2, temperature, and risk flag",
+      "children": []
+    },
+    {
+      "id": "r0000018-0018-0018-0018-000000000018",
+      "is_selected": true,
+      "display_name": "vitalsTakenFor",
+      "type": "graph.edgeType",
+      "description": "Vitals taken for which patient",
       "children": []
     }
   ]

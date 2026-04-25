@@ -1,0 +1,473 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1.0"/>
+<title>Healthcare Ontology — 3D Knowledge Graph</title>
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+body{background:#06060C;overflow:hidden;font-family:'Segoe UI',system-ui,sans-serif;color:#fff}
+canvas{display:block}
+#overlay{position:fixed;top:0;left:0;width:100%;pointer-events:none;z-index:10}
+#title-bar{text-align:center;padding:28px 20px 12px;background:linear-gradient(180deg,rgba(6,6,12,.95) 0%,rgba(6,6,12,.6) 70%,transparent 100%)}
+#title-bar h1{font-size:28px;font-weight:300;letter-spacing:6px;text-transform:uppercase;background:linear-gradient(90deg,#0078D4,#00B7C3,#8661C5,#FFB900);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text}
+#title-bar p{font-size:13px;color:rgba(255,255,255,.5);margin-top:6px;letter-spacing:2px}
+#legend{position:fixed;bottom:24px;left:24px;pointer-events:none;z-index:10}
+.leg-item{display:flex;align-items:center;margin-bottom:6px;font-size:12px;color:rgba(255,255,255,.7);letter-spacing:1px}
+.leg-dot{width:12px;height:12px;border-radius:50%;margin-right:10px;box-shadow:0 0 8px currentColor}
+#stats{position:fixed;bottom:24px;right:24px;pointer-events:none;z-index:10;text-align:right;font-size:12px;color:rgba(255,255,255,.4);letter-spacing:1px}
+#tooltip{position:fixed;display:none;pointer-events:none;z-index:20;background:rgba(6,6,12,.92);border:1px solid rgba(255,255,255,.15);border-radius:8px;padding:14px 18px;max-width:320px;backdrop-filter:blur(12px);box-shadow:0 8px 32px rgba(0,0,0,.6)}
+#tooltip h3{font-size:14px;font-weight:600;margin-bottom:6px;letter-spacing:1px}
+#tooltip .props{font-size:11px;color:rgba(255,255,255,.55);line-height:1.6}
+#tooltip .props span{color:rgba(255,255,255,.8)}
+#controls-hint{position:fixed;top:50%;right:20px;transform:translateY(-50%);pointer-events:none;z-index:10;font-size:11px;color:rgba(255,255,255,.25);text-align:right;line-height:2;letter-spacing:1px;opacity:1;transition:opacity 2s}
+.fade-out{opacity:0!important}
+#watermark{position:fixed;bottom:24px;left:50%;transform:translateX(-50%);pointer-events:none;z-index:10;font-size:11px;color:rgba(255,255,255,.15);letter-spacing:3px;text-transform:uppercase}
+</style>
+</head>
+<body>
+<div id="overlay">
+  <div id="title-bar">
+    <h1>Healthcare Ontology Knowledge Graph</h1>
+    <p>Microsoft Fabric &bull; Payer-Provider Healthcare Demo &bull; 11 Entities &bull; 17 Relationships</p>
+  </div>
+</div>
+
+<div id="legend">
+  <div class="leg-item"><div class="leg-dot" style="color:#0078D4;background:#0078D4"></div>Clinical Core</div>
+  <div class="leg-item"><div class="leg-dot" style="color:#FFB900;background:#FFB900"></div>Financial</div>
+  <div class="leg-item"><div class="leg-dot" style="color:#8661C5;background:#8661C5"></div>Pharmacy</div>
+  <div class="leg-item"><div class="leg-dot" style="color:#00B7C3;background:#00B7C3"></div>Diagnostic</div>
+  <div class="leg-item"><div class="leg-dot" style="color:#107C10;background:#107C10"></div>Community / SDOH</div>
+</div>
+
+<div id="stats">
+  <div>11 Entity Types</div>
+  <div>17 Relationships</div>
+  <div style="margin-top:6px;color:rgba(255,255,255,.25)">Fabric Ontology v1.0</div>
+</div>
+
+<div id="controls-hint">
+  DRAG to rotate<br/>
+  SCROLL to zoom<br/>
+  HOVER for details
+</div>
+
+<div id="watermark">Microsoft Fabric Healthcare</div>
+
+<div id="tooltip"><h3 id="tt-name"></h3><div class="props" id="tt-props"></div></div>
+
+<!-- Three.js r138 CDN (UMD) -->
+<script src="https://cdn.jsdelivr.net/npm/three@0.138.0/build/three.min.js" crossorigin="anonymous"></script>
+<script src="https://cdn.jsdelivr.net/npm/three@0.138.0/examples/js/controls/OrbitControls.js" crossorigin="anonymous"></script>
+<script src="https://cdn.jsdelivr.net/npm/three@0.138.0/examples/js/shaders/CopyShader.js" crossorigin="anonymous"></script>
+<script src="https://cdn.jsdelivr.net/npm/three@0.138.0/examples/js/shaders/LuminosityHighPassShader.js" crossorigin="anonymous"></script>
+<script src="https://cdn.jsdelivr.net/npm/three@0.138.0/examples/js/postprocessing/EffectComposer.js" crossorigin="anonymous"></script>
+<script src="https://cdn.jsdelivr.net/npm/three@0.138.0/examples/js/postprocessing/ShaderPass.js" crossorigin="anonymous"></script>
+<script src="https://cdn.jsdelivr.net/npm/three@0.138.0/examples/js/postprocessing/RenderPass.js" crossorigin="anonymous"></script>
+<script src="https://cdn.jsdelivr.net/npm/three@0.138.0/examples/js/postprocessing/UnrealBloomPass.js" crossorigin="anonymous"></script>
+
+<script>
+try {
+
+/* ── COLOR PALETTE ── */
+const C = {
+  fabric: 0x0078D4, iq: 0x00B7C3, foundry: 0x8661C5,
+  rti: 0xFFB900, ok: 0x107C10, bad: 0xD13438, bg: 0x06060C,
+  clinical: 0x0078D4, financial: 0xFFB900, pharmacy: 0x8661C5,
+  diagnostic: 0x00B7C3, community: 0x107C10
+};
+
+/* ── ENTITY DATA ── */
+const entities = [
+  { name:'Patient', cat:'clinical', pos:[0,0,0], size:1.8,
+    props:['patient_id','first_name','last_name','date_of_birth','gender','city','state','zip_code','insurance_type','insurance_provider','age_group','Total_Patients'] },
+  { name:'Provider', cat:'clinical', pos:[8,4,-2], size:1.2,
+    props:['provider_id','display_name','npi_number','specialty','department','facility_id'] },
+  { name:'Encounter', cat:'clinical', pos:[7,-2,5], size:1.3,
+    props:['encounter_id','encounter_type','admission_type','discharge_disposition','length_of_stay','total_charges','readmission_flag','readmission_risk_score','readmission_risk_category'] },
+  { name:'Diagnosis', cat:'diagnostic', pos:[-4,6,6], size:1.0,
+    props:['diagnosis_key','icd_code','icd_description','icd_category','is_chronic'] },
+  { name:'PatientDiagnosis', cat:'diagnostic', pos:[-1,4,7], size:0.9,
+    props:['diagnosis_id','icd_code','diagnosis_sequence','diagnosis_type','present_on_admission'] },
+  { name:'Medication', cat:'pharmacy', pos:[-9,2,-4], size:1.1,
+    props:['rxnorm_code','medication_name','generic_name','drug_class','therapeutic_area','route','form','strength'] },
+  { name:'Prescription', cat:'pharmacy', pos:[-6,-3,-6], size:1.0,
+    props:['prescription_id','fill_number','days_supply','quantity_dispensed','is_generic','pharmacy_type','total_cost','payer_paid','patient_copay'] },
+  { name:'MedicationAdherence', cat:'pharmacy', pos:[-8,-2,2], size:0.9,
+    props:['adherence_category','pdc_score','gap_days','total_fills','is_chronic'] },
+  { name:'Claim', cat:'financial', pos:[6,-5,-6], size:1.2,
+    props:['claim_id','claim_type','claim_status','billed_amount','allowed_amount','paid_amount','denial_flag','denial_risk_score','denial_risk_category','primary_denial_reason','recommended_action'] },
+  { name:'Payer', cat:'financial', pos:[9,-3,-9], size:1.1,
+    props:['payer_id','payer_name','payer_type'] },
+  { name:'CommunityHealth', cat:'community', pos:[3,7,3], size:1.0,
+    props:['zip_code','poverty_rate','food_desert_flag','transportation_score','housing_instability_rate','uninsured_rate','broadband_access_pct','median_household_income','social_vulnerability_index','risk_tier'] }
+];
+
+const relationships = [
+  { name:'livesIn', from:'Patient', to:'CommunityHealth' },
+  { name:'references', from:'PatientDiagnosis', to:'Diagnosis' },
+  { name:'affects', from:'PatientDiagnosis', to:'Patient' },
+  { name:'dispenses', from:'Prescription', to:'Medication' },
+  { name:'PrescriptionHasPayer', from:'Prescription', to:'Payer' },
+  { name:'prescribedBy', from:'Prescription', to:'Provider' },
+  { name:'serves', from:'Prescription', to:'Patient' },
+  { name:'ClaimHasPayer', from:'Claim', to:'Payer' },
+  { name:'submittedBy', from:'Claim', to:'Provider' },
+  { name:'covers', from:'Claim', to:'Patient' },
+  { name:'involves', from:'Encounter', to:'Patient' },
+  { name:'treatedBy', from:'Encounter', to:'Provider' },
+  { name:'billsFor', from:'Claim', to:'Encounter' },
+  { name:'originatesFrom', from:'Prescription', to:'Encounter' },
+  { name:'occursIn', from:'PatientDiagnosis', to:'Encounter' },
+  { name:'adherenceFor', from:'MedicationAdherence', to:'Patient' },
+  { name:'adherenceMedication', from:'MedicationAdherence', to:'Medication' }
+];
+
+/* ── RENDERER ── */
+const W = window.innerWidth, H = window.innerHeight;
+const renderer = new THREE.WebGLRenderer({ antialias:true, alpha:false });
+renderer.setSize(W, H);
+renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+renderer.outputEncoding = THREE.sRGBEncoding;
+renderer.toneMapping = THREE.ACESFilmicToneMapping;
+renderer.toneMappingExposure = 1.1;
+document.body.appendChild(renderer.domElement);
+
+const scene = new THREE.Scene();
+scene.background = new THREE.Color(C.bg);
+scene.fog = new THREE.FogExp2(C.bg, 0.012);
+
+const camera = new THREE.PerspectiveCamera(55, W/H, 0.1, 500);
+camera.position.set(18, 12, 20);
+
+const controls = new THREE.OrbitControls(camera, renderer.domElement);
+controls.enableDamping = true;
+controls.dampingFactor = 0.05;
+controls.autoRotate = true;
+controls.autoRotateSpeed = 0.4;
+controls.maxDistance = 60;
+controls.minDistance = 8;
+
+/* ── BLOOM ── */
+const composer = new THREE.EffectComposer(renderer);
+composer.addPass(new THREE.RenderPass(scene, camera));
+const bloom = new THREE.UnrealBloomPass(new THREE.Vector2(W, H), 1.2, 0.6, 0.3);
+composer.addPass(bloom);
+
+/* ── STARFIELD ── */
+(function(){
+  const g = new THREE.BufferGeometry();
+  const v = new Float32Array(6000);
+  for(let i=0;i<6000;i++) v[i]=(Math.random()-0.5)*200;
+  g.setAttribute('position',new THREE.BufferAttribute(v,3));
+  scene.add(new THREE.Points(g, new THREE.PointsMaterial({color:0xffffff,size:0.08,transparent:true,opacity:0.4})));
+})();
+
+/* ── LIGHTS ── */
+scene.add(new THREE.AmbientLight(0x334466, 0.4));
+const dl = new THREE.DirectionalLight(0xffffff, 0.6);
+dl.position.set(10, 15, 10);
+scene.add(dl);
+const pl1 = new THREE.PointLight(0x0078D4, 0.8, 40);
+pl1.position.set(-8, 8, -8);
+scene.add(pl1);
+const pl2 = new THREE.PointLight(0x8661C5, 0.6, 40);
+pl2.position.set(8, -5, 8);
+scene.add(pl2);
+
+/* ── HELPERS ── */
+const catColor = e => C[e.cat] || 0xffffff;
+const catHex = e => '#'+new THREE.Color(catColor(e)).getHexString();
+
+function makeGlowMat(color, opacity){
+  return new THREE.MeshStandardMaterial({
+    color, emissive:color, emissiveIntensity:0.6,
+    transparent:true, opacity:opacity||0.9,
+    metalness:0.3, roughness:0.4
+  });
+}
+
+function makeTextSprite(text, color, fontSize){
+  const c = document.createElement('canvas');
+  const sz = fontSize || 48;
+  const ctx = c.getContext('2d');
+  ctx.font = `bold ${sz}px Segoe UI, system-ui, sans-serif`;
+  const m = ctx.measureText(text);
+  c.width = m.width + 20;
+  c.height = sz + 20;
+  ctx.font = `bold ${sz}px Segoe UI, system-ui, sans-serif`;
+  ctx.fillStyle = color || '#ffffff';
+  ctx.textAlign = 'center';
+  ctx.textBaseline = 'middle';
+  ctx.fillText(text, c.width/2, c.height/2);
+  const tex = new THREE.CanvasTexture(c);
+  tex.encoding = THREE.sRGBEncoding;
+  const sp = new THREE.Sprite(new THREE.SpriteMaterial({map:tex, transparent:true, depthTest:false}));
+  const aspect = c.width / c.height;
+  sp.scale.set(aspect * 1.6, 1.6, 1);
+  return sp;
+}
+
+function makeSmallLabel(text, color){
+  const c = document.createElement('canvas');
+  const sz = 28;
+  const ctx = c.getContext('2d');
+  ctx.font = `${sz}px Segoe UI, system-ui, sans-serif`;
+  const m = ctx.measureText(text);
+  c.width = m.width + 12;
+  c.height = sz + 10;
+  ctx.font = `${sz}px Segoe UI, system-ui, sans-serif`;
+  ctx.fillStyle = color || 'rgba(255,255,255,0.5)';
+  ctx.textAlign = 'center';
+  ctx.textBaseline = 'middle';
+  ctx.fillText(text, c.width/2, c.height/2);
+  const tex = new THREE.CanvasTexture(c);
+  tex.encoding = THREE.sRGBEncoding;
+  const sp = new THREE.Sprite(new THREE.SpriteMaterial({map:tex, transparent:true, depthTest:false, opacity:0.7}));
+  const aspect = c.width / c.height;
+  sp.scale.set(aspect * 0.9, 0.9, 1);
+  return sp;
+}
+
+/* ── BUILD NODES ── */
+const nodeMeshes = {};
+const nodeGroups = {};
+const nodeData = {};
+const raycasterTargets = [];
+
+entities.forEach(e => {
+  const g = new THREE.Group();
+  const color = catColor(e);
+
+  // Main sphere (icosahedron for faceted look)
+  const geo = new THREE.IcosahedronGeometry(e.size * 0.7, 2);
+  const mesh = new THREE.Mesh(geo, makeGlowMat(color));
+  mesh.userData = { entity: e };
+  g.add(mesh);
+  raycasterTargets.push(mesh);
+  nodeMeshes[e.name] = mesh;
+
+  // Outer glow shell
+  const glowGeo = new THREE.IcosahedronGeometry(e.size * 1.0, 2);
+  const glowMat = new THREE.MeshBasicMaterial({
+    color, transparent:true, opacity:0.08, side:THREE.BackSide
+  });
+  g.add(new THREE.Mesh(glowGeo, glowMat));
+
+  // Orbit ring
+  const ringGeo = new THREE.RingGeometry(e.size * 1.1, e.size * 1.15, 64);
+  const ringMat = new THREE.MeshBasicMaterial({color, transparent:true, opacity:0.25, side:THREE.DoubleSide});
+  const ring = new THREE.Mesh(ringGeo, ringMat);
+  ring.rotation.x = Math.PI * 0.5;
+  g.add(ring);
+
+  // Second ring (tilted)
+  const ring2 = ring.clone();
+  ring2.rotation.x = Math.PI * 0.35;
+  ring2.rotation.z = Math.PI * 0.3;
+  ring2.material = ringMat.clone();
+  ring2.material.opacity = 0.12;
+  g.add(ring2);
+
+  // Name label
+  const label = makeTextSprite(e.name, catHex(e));
+  label.position.y = e.size * 1.4;
+  g.add(label);
+
+  // Property count badge
+  const badge = makeSmallLabel(`${e.props.length} properties`, 'rgba(255,255,255,0.35)');
+  badge.position.y = e.size * 1.4 - 1.6;
+  g.add(badge);
+
+  g.position.set(...e.pos);
+  scene.add(g);
+  nodeGroups[e.name] = g;
+  nodeData[e.name] = e;
+});
+
+/* ── BUILD EDGES (Curved Lines + Flowing Particles) ── */
+const edgeParticles = [];
+const edgeLabels = [];
+
+relationships.forEach(r => {
+  const fromE = nodeData[r.from];
+  const toE = nodeData[r.to];
+  if(!fromE || !toE) return;
+
+  const p0 = new THREE.Vector3(...fromE.pos);
+  const p3 = new THREE.Vector3(...toE.pos);
+  const mid = new THREE.Vector3().addVectors(p0, p3).multiplyScalar(0.5);
+
+  // Curve control points — lift outward for nice arcs
+  const dir = new THREE.Vector3().subVectors(p3, p0);
+  const perp = new THREE.Vector3(-dir.z, Math.abs(dir.x)*0.3+1.5, dir.x).normalize().multiplyScalar(dir.length()*0.2);
+  const p1 = new THREE.Vector3().addVectors(p0, dir.clone().multiplyScalar(0.33)).add(perp);
+  const p2 = new THREE.Vector3().addVectors(p0, dir.clone().multiplyScalar(0.66)).add(perp);
+
+  const curve = new THREE.CubicBezierCurve3(p0, p1, p2, p3);
+
+  // Edge line
+  const pts = curve.getPoints(60);
+  const lineGeo = new THREE.BufferGeometry().setFromPoints(pts);
+
+  // Color gradient from source to target
+  const fromColor = new THREE.Color(catColor(fromE));
+  const toColor = new THREE.Color(catColor(toE));
+  const colors = new Float32Array(pts.length * 3);
+  for(let i=0;i<pts.length;i++){
+    const t = i / (pts.length-1);
+    const c = fromColor.clone().lerp(toColor, t);
+    colors[i*3] = c.r; colors[i*3+1] = c.g; colors[i*3+2] = c.b;
+  }
+  lineGeo.setAttribute('color', new THREE.BufferAttribute(colors, 3));
+
+  const lineMat = new THREE.LineBasicMaterial({
+    vertexColors:true, transparent:true, opacity:0.35, linewidth:1
+  });
+  scene.add(new THREE.Line(lineGeo, lineMat));
+
+  // Flowing particles along the edge
+  const particleCount = 4;
+  const particleGeo = new THREE.BufferGeometry();
+  const particlePositions = new Float32Array(particleCount * 3);
+  particleGeo.setAttribute('position', new THREE.BufferAttribute(particlePositions, 3));
+  const blendColor = fromColor.clone().lerp(toColor, 0.5);
+  const particleMat = new THREE.PointsMaterial({
+    color:blendColor, size:0.18, transparent:true, opacity:0.8,
+    blending:THREE.AdditiveBlending, depthWrite:false
+  });
+  const particleMesh = new THREE.Points(particleGeo, particleMat);
+  scene.add(particleMesh);
+
+  edgeParticles.push({ curve, mesh:particleMesh, count:particleCount, offsets: Array.from({length:particleCount}, (_,i)=>i/particleCount) });
+
+  // Relationship label at midpoint
+  const midPt = curve.getPoint(0.5);
+  const edgeLabel = makeSmallLabel(r.name, 'rgba(255,255,255,0.35)');
+  edgeLabel.position.copy(midPt);
+  edgeLabel.position.y += 0.4;
+  scene.add(edgeLabel);
+  edgeLabels.push(edgeLabel);
+});
+
+/* ── GROUND GRID ── */
+(function(){
+  const gridGeo = new THREE.BufferGeometry();
+  const verts = [];
+  const gridSize = 30, step = 2;
+  for(let i=-gridSize;i<=gridSize;i+=step){
+    verts.push(-gridSize,-8,i, gridSize,-8,i);
+    verts.push(i,-8,-gridSize, i,-8,gridSize);
+  }
+  gridGeo.setAttribute('position', new THREE.Float32BufferAttribute(verts, 3));
+  scene.add(new THREE.LineSegments(gridGeo, new THREE.LineBasicMaterial({color:0x111122, transparent:true, opacity:0.3})));
+})();
+
+/* ── RAYCASTER FOR TOOLTIPS ── */
+const raycaster = new THREE.Raycaster();
+const mouse = new THREE.Vector2(-999,-999);
+const tooltip = document.getElementById('tooltip');
+const ttName = document.getElementById('tt-name');
+const ttProps = document.getElementById('tt-props');
+let hoveredEntity = null;
+
+renderer.domElement.addEventListener('mousemove', e => {
+  mouse.x = (e.clientX / W) * 2 - 1;
+  mouse.y = -(e.clientY / H) * 2 + 1;
+  tooltip.style.left = (e.clientX + 16) + 'px';
+  tooltip.style.top = (e.clientY + 16) + 'px';
+});
+
+function updateTooltip(){
+  raycaster.setFromCamera(mouse, camera);
+  const hits = raycaster.intersectObjects(raycasterTargets);
+  if(hits.length > 0){
+    const e = hits[0].object.userData.entity;
+    if(hoveredEntity !== e.name){
+      hoveredEntity = e.name;
+      ttName.style.color = catHex(e);
+      ttName.textContent = e.name;
+
+      // Find relationships for this entity
+      const rels = relationships.filter(r => r.from === e.name || r.to === e.name);
+      let html = '<div style="margin-bottom:6px"><span style="color:rgba(255,255,255,.3)">Properties:</span></div>';
+      html += e.props.map(p => `<span>${p}</span>`).join(' · ');
+      html += `<div style="margin-top:8px;border-top:1px solid rgba(255,255,255,.1);padding-top:6px"><span style="color:rgba(255,255,255,.3)">Relationships (${rels.length}):</span></div>`;
+      rels.forEach(r => {
+        const arrow = r.from === e.name ? '→' : '←';
+        const other = r.from === e.name ? r.to : r.from;
+        html += `<div>${arrow} <span>${r.name}</span> ${arrow==='→'?'to':'from'} <span style="color:${catHex(nodeData[other])}">${other}</span></div>`;
+      });
+      ttProps.innerHTML = html;
+    }
+    tooltip.style.display = 'block';
+    controls.autoRotate = false;
+  } else {
+    tooltip.style.display = 'none';
+    hoveredEntity = null;
+    controls.autoRotate = true;
+  }
+}
+
+/* ── ANIMATION ── */
+const clock = new THREE.Clock();
+let elapsed = 0;
+
+// Fade out controls hint after 5s
+setTimeout(() => document.getElementById('controls-hint').classList.add('fade-out'), 5000);
+
+function animate(){
+  requestAnimationFrame(animate);
+  const dt = clock.getDelta();
+  elapsed += dt;
+
+  // Animate node breathing
+  entities.forEach(e => {
+    const g = nodeGroups[e.name];
+    const s = 1 + Math.sin(elapsed * 1.2 + e.pos[0]) * 0.03;
+    g.scale.set(s, s, s);
+    // Subtle float
+    g.position.y = e.pos[1] + Math.sin(elapsed * 0.8 + e.pos[2]) * 0.15;
+  });
+
+  // Animate edge particles
+  edgeParticles.forEach(ep => {
+    const pos = ep.mesh.geometry.attributes.position.array;
+    for(let i=0;i<ep.count;i++){
+      ep.offsets[i] = (ep.offsets[i] + dt * 0.15) % 1;
+      const p = ep.curve.getPoint(ep.offsets[i]);
+      pos[i*3] = p.x; pos[i*3+1] = p.y; pos[i*3+2] = p.z;
+    }
+    ep.mesh.geometry.attributes.position.needsUpdate = true;
+  });
+
+  // Animate edge labels fade based on camera distance
+  edgeLabels.forEach(lbl => {
+    const d = camera.position.distanceTo(lbl.position);
+    lbl.material.opacity = THREE.MathUtils.clamp(1 - d/35, 0.1, 0.6);
+  });
+
+  updateTooltip();
+  controls.update();
+  composer.render();
+}
+
+animate();
+
+/* ── RESIZE ── */
+window.addEventListener('resize', () => {
+  const w = window.innerWidth, h = window.innerHeight;
+  camera.aspect = w/h;
+  camera.updateProjectionMatrix();
+  renderer.setSize(w, h);
+  composer.setSize(w, h);
+});
+
+} catch(err) {
+  console.error('Ontology Graph Error:', err);
+  document.body.innerHTML += '<div style="position:fixed;top:50%;left:50%;transform:translate(-50%,-50%);color:#D13438;font:16px Segoe UI;text-align:center;z-index:999">Error: '+err.message+'</div>';
+}
+</script>
+</body>
+</html>

@@ -153,6 +153,18 @@ Dual-path design: **Batch ETL** (authoritative, historical) + **Real-Time Intell
 
 > *Open the [interactive Draw.io diagram](diagrams/healthcare-ontology-erd.drawio) for entity-level detail.*
 
+### 🔬 Interactive 3D Ontology Knowledge Graph
+
+**[▶ Launch Interactive 3D Graph](https://rasgiza.github.io/Fabric-Payer-Provider-HealthCare-Demo/docs/ontology_graph_3d.html)** — Explore the full ontology in a cinematic Three.js visualization with bloom lighting, animated data-flow particles, and hover tooltips showing every property and relationship.
+
+| Entities | Relationships | Domains |
+|----------|---------------|---------|
+| Patient · Provider · Encounter · Diagnosis · PatientDiagnosis · Medication · Prescription · MedicationAdherence · Claim · Payer · CommunityHealth | livesIn · treatedBy · involves · covers · billsFor · submittedBy · prescribedBy · serves · dispenses · originatesFrom · occursIn · references · affects · adherenceFor · adherenceMedication · ClaimHasPayer · PrescriptionHasPayer | Clinical · Financial · Pharmacy · Diagnostic · SDOH |
+
+> *Drag to rotate · Scroll to zoom · Hover nodes for property details*
+>
+> To run locally: download [`docs/ontology_graph_3d.html`](docs/ontology_graph_3d.html) and open in any browser.
+
 ### Detailed Data Flow
 
 ```

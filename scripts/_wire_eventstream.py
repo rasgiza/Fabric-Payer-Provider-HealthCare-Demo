@@ -130,18 +130,32 @@ def discover(token):
 
 # ── Step 2: Build Eventstream topology ────────────────────────────
 def build_topology(ws_id, kqldb_id, kqldb_name, lakehouse_id=None, activator_id=None):
-    """Build the eventstream.json with all destinations."""
+    """Build the eventstream.json — simple single-destination topology.
 
-    # Source: Custom Endpoint (EventHub-compatible ingress)
+    All events land in a single KQL landing table (rti_all_events).
+    KQL update policies then split events by _table field into:
+        - rti_claims_events
+        - rti_adt_events
+        - rti_rx_events
+    This is the recommended Eventhouse pattern: Eventstream stays simple,
+    KQL handles server-side routing via update policies.
+
+    Topology:
+        CustomEndpoint
+            │
+            ▼
+        DefaultStream
+            ├─ Eventhouse   → rti_all_events  (KQL update policies split from here)
+            ├─ Lakehouse    → rti_raw_events   (raw archival)
+            └─ Activator    → alerts
+    """
+
     sources = [{
         "name": "HealthcareCustomEndpoint",
         "type": "CustomEndpoint",
-        "properties": {
-            "inputSerialization": {"type": "Json", "properties": {"encoding": "UTF8"}}
-        }
+        "properties": {}
     }]
 
-    # Default stream: source → fan-out
     streams = [{
         "name": "HealthcareRTI-stream",
         "type": "DefaultStream",
@@ -149,7 +163,6 @@ def build_topology(ws_id, kqldb_id, kqldb_name, lakehouse_id=None, activator_id=
         "inputNodes": [{"name": "HealthcareCustomEndpoint"}]
     }]
 
-    # Destination 1: Eventhouse / KQL DB (real-time)
     destinations = [{
         "name": "HealthcareEventhouse",
         "type": "Eventhouse",
@@ -158,13 +171,12 @@ def build_topology(ws_id, kqldb_id, kqldb_name, lakehouse_id=None, activator_id=
             "workspaceId": ws_id,
             "itemId": kqldb_id,
             "databaseName": kqldb_name,
-            "tableName": "rti_claims_events",
+            "tableName": "rti_all_events",
             "inputSerialization": {"type": "Json", "properties": {"encoding": "UTF8"}}
         },
         "inputNodes": [{"name": "HealthcareRTI-stream"}]
     }]
 
-    # Destination 2: Lakehouse (raw archival → medallion)
     if lakehouse_id:
         destinations.append({
             "name": "BronzeLakehouse",
@@ -181,7 +193,6 @@ def build_topology(ws_id, kqldb_id, kqldb_name, lakehouse_id=None, activator_id=
             "inputNodes": [{"name": "HealthcareRTI-stream"}]
         })
 
-    # Destination 3: Activator / Reflex (alerts)
     if activator_id:
         destinations.append({
             "name": "HealthcareActivator",

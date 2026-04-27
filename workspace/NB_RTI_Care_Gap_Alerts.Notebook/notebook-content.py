@@ -15,8 +15,8 @@
 # but the highest-value moment is when the patient is *already in front of a provider*.
 # Real-time alerting at the point of care drives gap closure rates from ~30% to 60%+.
 # 
-# **Input:** `rti_adt_events` (Delta) + `care_gaps` + `hedis_measures`
-# **Output:** `rti_care_gap_alerts` (Delta)
+# **Input:** `adt_events` (KQL direct query) + `care_gaps` + `hedis_measures`
+# **Output:** `rti_care_gap_alerts` (Delta) + `care_gap_alerts` (KQL)
 # 
 # **Default lakehouse:** `lh_gold_curated`
 
@@ -127,36 +127,68 @@ from pyspark.sql.types import StringType
 # CELL **{"language":"python"}**
 
 # ---------- Load data ----------
-print("Loading ADT events and care gap data...")
+print("Loading ADT events from KQL Eventhouse (direct query)...")
 
-# Wait for rti_adt_events (OneLake shortcut from KQL) to have data.
-# After the simulator streams to Eventhouse, OneLake mirroring flushes
-# delta files every ~5 minutes. Retry until data is available.
 import time as _wait_time
+import requests as _kql_req
 
+# Discover KQL Database
+_ws_id = notebookutils.runtime.context.get("currentWorkspaceId", "")
+_kql_tok = notebookutils.credentials.getToken("pbi")
+_kql_hdr = {"Authorization": f"Bearer {_kql_tok}", "Content-Type": "application/json"}
+_kql_db_id = None
+_r = _kql_req.get(f"https://api.fabric.microsoft.com/v1/workspaces/{_ws_id}/items?type=KQLDatabase", headers=_kql_hdr)
+if _r.status_code == 200:
+    _kql_db_id = next((i["id"] for i in _r.json().get("value", [])
+                       if i["displayName"] == "Healthcare_RTI_DB"), None)
+if not _kql_db_id:
+    raise RuntimeError("Healthcare_RTI_DB not found in workspace. Run NB_RTI_Setup_Eventhouse first.")
+
+_query_url = f"https://api.fabric.microsoft.com/v1/workspaces/{_ws_id}/kqlDatabases/{_kql_db_id}/queryRun"
+
+def _kql_query(query, query_url=_query_url):
+    """Execute a KQL query and return rows as list of dicts."""
+    _tok = notebookutils.credentials.getToken("pbi")
+    _h = {"Authorization": f"Bearer {_tok}", "Content-Type": "application/json"}
+    resp = _kql_req.post(query_url, headers=_h, json={"query": query, "queryKind": "kql"})
+    if resp.status_code != 200:
+        raise RuntimeError(f"KQL query failed (HTTP {resp.status_code}): {resp.text[:500]}")
+    frames = resp.json().get("results", [])
+    if not frames:
+        return [], []
+    cols = [c["name"] for c in frames[0].get("columns", [])]
+    rows = frames[0].get("rows", [])
+    return cols, rows
+
+# Poll KQL until adt_events has data
 df_adt = None
-_max_wait = 12   # 12 × 30s = 6 minutes max
+_max_wait = 6   # 6 × 10s = 60 seconds max
 for _attempt in range(1, _max_wait + 1):
-    try:
-        _df = spark.table("lh_gold_curated.rti_adt_events")
-        _cnt = _df.count()
-        if _cnt > 0:
-            df_adt = _df
-            print(f"  rti_adt_events: {_cnt} rows")
-            break
-        else:
-            print(f"  [{_attempt}/{_max_wait}] rti_adt_events is empty — waiting for OneLake sync...")
-    except Exception as _e:
-        print(f"  [{_attempt}/{_max_wait}] rti_adt_events not ready — {_e}")
+    _cols, _rows = _kql_query("adt_events | count")
+    _cnt = int(_rows[0][0]) if _rows and _rows[0] else 0
+    if _cnt > 0:
+        print(f"  adt_events in KQL: {_cnt} rows")
+        # Fetch all ADT events
+        _cols, _rows = _kql_query("adt_events | project event_id, event_timestamp, event_type, patient_id, facility_id, facility_name, admission_type, primary_diagnosis, latitude, longitude, has_open_care_gaps, open_gap_measures")
+        _records = [dict(zip(_cols, row)) for row in _rows]
+        df_adt = spark.createDataFrame(_records)
+        # Cast types
+        df_adt = (df_adt
+            .withColumn("event_timestamp", F.to_timestamp("event_timestamp"))
+            .withColumn("latitude", F.col("latitude").cast("double"))
+            .withColumn("longitude", F.col("longitude").cast("double"))
+        )
+        break
+    else:
+        print(f"  [{_attempt}/{_max_wait}] adt_events is empty — waiting for KQL ingestion...")
     if _attempt < _max_wait:
-        _wait_time.sleep(30)
+        _wait_time.sleep(10)
 
 if df_adt is None:
     raise RuntimeError(
-        "rti_adt_events has no data after waiting 6 minutes.\n"
-        "Check: (1) OneLake Availability is enabled on Healthcare_RTI_DB,\n"
-        "       (2) The simulator ran and pushed events to Eventstream,\n"
-        "       (3) The OneLake shortcut exists in lh_gold_curated."
+        "adt_events has no data in KQL after waiting 60 seconds.\n"
+        "Check: (1) The simulator ran and pushed events,\n"
+        "       (2) Healthcare_RTI_DB has streaming ingestion policies enabled."
     )
 
 df_patients = spark.sql("""

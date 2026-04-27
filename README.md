@@ -402,12 +402,26 @@ NB_RTI_Event_Simulator
     ▼
 Healthcare_RTI_Eventstream (Custom Endpoint — EventHub protocol)
     │
-    ├──► Eventhouse / KQL DB          (real-time dashboards, scoring, Operations Agent)
-    ├──► Lakehouse (lh_bronze_raw)    (raw archival, medallion pattern)
+    ├──► Eventhouse / KQL DB          (real-time hot path: dashboards, scoring, Operations Agent)
     └──► Activator / Reflex           (fraud/care-gap/high-cost alerts)
 ```
 
-One path in, three paths out. No direct Kusto writes, no batch mode.
+**Lakehouse** (`lh_gold_curated`) serves as the **batch archive** — populated by the medallion ETL pipeline, not by streaming. The KQL Eventhouse is the real-time query engine; the Lakehouse gold layer is the historical analytics engine. Each serves its optimal workload.
+
+#### Best Practice vs Demo Approach
+
+| Aspect | Production Best Practice | This Demo |
+|--------|--------------------------|-----------|
+| **Unified access** | Enable OneLake Availability on KQL DB → create OneLake shortcuts in Lakehouse pointing to KQL tables → query both stores via one semantic model | KQL Eventhouse for real-time; Lakehouse for batch — queried separately |
+| **Why the difference** | OneLake shortcuts require manual "Enable OneLake Availability" in the portal, propagation delays (30-60s), and specific table format requirements that don't lend themselves to one-click automation | Demo prioritizes reliability and zero manual portal steps over unified access |
+| **Trade-off** | Unified lakehouse view of both batch + streaming tables | Two query surfaces: KQL for streaming, Spark SQL for batch — both are fully functional |
+
+> **To enable shortcuts in your own environment (recommended for production):**
+> 1. Open your **KQL Database** in the Fabric portal
+> 2. Click **Database details** → toggle **OneLake availability** to **Active**
+> 3. Wait ~60 seconds for propagation
+> 4. In your Lakehouse → **New shortcut** → **Microsoft OneLake** → select the KQL database → choose tables
+> 5. Streaming tables now appear as Delta tables in the Lakehouse alongside batch gold tables
 
 **How to start streaming (1 manual step):**
 

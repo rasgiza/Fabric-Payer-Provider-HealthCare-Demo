@@ -26,8 +26,9 @@ One-click deployment of a complete **Healthcare Payer/Provider Analytics** solut
    - [RTI Data Tables](#rti-data-tables)
    - [RTI Ingestion — Two Approaches](#rti-ingestion--two-approaches)
    - [Operations Agent](#use-case-4--operations-agent-healthcareopsagent)
-8. [Ontology & Graph Model Setup](#create-the-ontology--graph-model-manual--10-min)
-9. [Data Activator / Reflex Setup](#set-up-data-activator-alerts-manual--15-min)
+8. [Ontology & Graph Model (Automated)](#ontology--graph-model-automated)
+9. [Set Up the Data Agent](#set-up-the-data-agent-manual--fabric-ui)
+10. [Data Activator / Reflex Setup](#set-up-data-activator-alerts-manual--15-min)
 10. [Run Incremental Loads](#run-incremental-loads)
 11. [Configuration Options](#configuration-options)
 12. [Prerequisites](#prerequisites)
@@ -114,7 +115,7 @@ The launcher creates a deploy lakehouse, downloads the repo, deploys all artifac
 | **Semantic Model** | `HealthcareDemoHLS` | Star schema for Power BI (facts + dimensions) |
 | **Data Agent** | `HealthcareHLSAgent` | Copilot AI agent — lakehouse + semantic model (SQL aggregations) |
 | **Graph Agent** | `Healthcare Ontology Agent` | Copilot AI agent — ontology graph traversal (entity lookups, care pathways) |
-| **Ontology** | `Healthcare_Demo_Ontology_HLS` | GraphQL entity model — **manual UI setup** (see guide below) |
+| **Ontology** | `Healthcare_Demo_Ontology_HLS` | GraphQL entity model — **auto-deployed** by Cell 10a (API) |
 | **Power BI Report** | `Healthcare Analytics Dashboard` | 6 pages, 60+ visuals — auto-deployed by fabric-cicd |
 | **Eventhouse** ⚡ | `Healthcare_RTI_Eventhouse` | Git-tracked RTI compute engine (`DEPLOY_STREAMING` only) |
 | **KQL Database** ⚡ | `Healthcare_RTI_DB` | Git-tracked with schema (6 tables + streaming policies) (`DEPLOY_STREAMING` only) |
@@ -505,21 +506,58 @@ After `Healthcare_Launcher` completes, the Operations Agent is created with goal
 
 ---
 
-### Create the Ontology & Graph Model (Manual — ~10 min)
+### Ontology & Graph Model (Automated)
 
-The ontology **cannot** be fully deployed via API — the Fabric Preview API creates unlinked ontology and graph items, which breaks Fabric IQ graph traversal and Copilot integration. You must create it from the semantic model in the UI.
+The ontology and graph model are now **deployed automatically** by Cell 10a of the launcher notebook (or via `deploy_all.py`). No manual setup is required.
 
-Follow the step-by-step guide: **[ONTOLOGY_GRAPH_SETUP_GUIDE.md](ONTOLOGY_GRAPH_SETUP_GUIDE.md)**
+- **Cell 10a** creates the ontology from the `ontology/Healthcare_Demo_Ontology_HLS/` manifest (12 entities, 18 relationships)
+- **Cell 10b** patches the graph agent definition with the correct ontology/graph IDs
 
-Quick summary:
-1. **New item** → Ontology → from semantic model `HealthcareDemoHLS`
-2. **Delete** 3 unwanted entities (dim_date, agg_medication_adherence, agg_readmission_by_date)
-3. **Rename** 10 entities (e.g., dim_patient → Patient) using the guide's master table
-4. **Set** source keys and display names per the guide
-5. **Replace** auto-generated relationships with 15 curated ones from the guide
-6. **Build the graph** (Graph tab → Build a graph → select all)
+> **Fallback:** If automated deployment fails, see [ONTOLOGY_GRAPH_SETUP_GUIDE.md](ONTOLOGY_GRAPH_SETUP_GUIDE.md) for manual UI steps.
 
-The guide includes master configuration tables for all entities, relationships, and full property references.
+---
+
+### Set Up the Data Agent (Manual — Fabric UI)
+
+Fabric Data Agents are created and configured in the Fabric UI. The launcher deploys the agent definitions via Git Integration, but you must configure the **data source** and **AI instructions** manually.
+
+#### Step 1: Open the Data Agent
+
+1. In your workspace, find the **HealthcareHLSAgent** item (type: Data Agent)
+2. Click to open it — you'll see the agent configuration page
+
+> If the agent was not deployed via Git Integration, create one manually:  
+> **+ New item** → **Data agent** → name it `HealthcareHLSAgent`
+
+#### Step 2: Add the Data Source
+
+1. Click **+ Add data** → **Data source**
+2. Browse to **OneLake data hub** → select **HealthcareDemoHLS** (the semantic model in your workspace)
+3. The agent will connect to the star schema (12 tables: 4 fact + 8 dimension)
+
+#### Step 3: Configure AI Instructions
+
+1. Click **Agent instructions** (top toolbar)
+2. Copy the AI instructions text from **[DATA_AGENT_INSTRUCTIONS.md](DATA_AGENT_INSTRUCTIONS.md)** → Section **1a — AI Instructions**
+3. Paste into the instructions text box → click **Apply**
+
+> These instructions tell the agent about the star schema, define business rules (e.g., denial rate = denied/total claims), and provide few-shot SQL examples.
+
+#### Step 4: Test the Agent
+
+1. In the agent chat panel, try a sample question:
+   - *"What is the overall denial rate by payer?"*
+   - *"Show me the top 10 providers by total billed amount"*
+   - *"Which patients have the highest readmission risk?"*
+2. See **[SAMPLE_QUESTIONS.md](SAMPLE_QUESTIONS.md)** for 80+ tested questions across all domains
+
+#### Repeat for the Graph Agent
+
+Follow the same steps for **Healthcare Ontology Agent** (the graph-based agent):
+- Data source: the ontology graph (`Healthcare_Demo_Ontology_HLS`)
+- AI instructions: **[DATA_AGENT_INSTRUCTIONS.md](DATA_AGENT_INSTRUCTIONS.md)** → Section **2a — AI Instructions**
+
+---
 
 ### Set Up Data Activator Alerts (Manual — ~15 min)
 
@@ -698,7 +736,7 @@ Edit the top cell of `Healthcare_Launcher.ipynb`:
 
 ```
 ├── Healthcare_Launcher.ipynb          # <- Import this into Fabric
-├── ONTOLOGY_GRAPH_SETUP_GUIDE.md      # Manual ontology setup (12 entities, 18 relationships)
+├── ONTOLOGY_GRAPH_SETUP_GUIDE.md      # Ontology reference / manual fallback (12 entities, 18 relationships)
 ├── DATA_AGENT_GUIDE.md                # Agent instructions, routing, few-shots, knowledge base
 ├── POWERBI_DASHBOARD_GUIDE.md         # Power BI report pages, measures, Direct Lake tips
 ├── FOUNDRY_IQ_SETUP_GUIDE.md          # Azure AI Foundry orchestrator agent setup (11 steps)
@@ -752,7 +790,8 @@ Edit the top cell of `Healthcare_Launcher.ipynb`:
 | Semantic model shows no data | Run the pipeline first — it populates Gold lakehouse tables that the model reads |
 | Data Agent returns generic answers | Ensure `healthcare_knowledge/` docs were uploaded to `lh_gold_curated/Files/` |
 | Graph Agent shows no results | Ensure ontology is deployed (Cell 10a) and graph is populated. Run Cell 10b to patch graph agent IDs |
-| Ontology not auto-deployed | Cell 10a deploys the ontology + graph via API. Follow [ONTOLOGY_GRAPH_SETUP_GUIDE.md](ONTOLOGY_GRAPH_SETUP_GUIDE.md) for manual UI setup |
+| Ontology not auto-deployed | Cell 10a deploys the ontology + graph via API. If it fails, see [ONTOLOGY_GRAPH_SETUP_GUIDE.md](ONTOLOGY_GRAPH_SETUP_GUIDE.md) for manual fallback |
+| Data Agent returns generic answers | Open the agent → verify AI instructions are pasted from [DATA_AGENT_INSTRUCTIONS.md](DATA_AGENT_INSTRUCTIONS.md) and data source is connected |
 | `fabric-launcher` install fails | Ensure your Fabric capacity supports Python package installation |
 
 ## Credits

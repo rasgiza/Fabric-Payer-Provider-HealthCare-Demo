@@ -235,19 +235,13 @@ KQL_COMMANDS = [
     ".alter table fraud_scores policy streamingingestion enable",
     ".alter table care_gap_alerts policy streamingingestion enable",
     ".alter table highcost_alerts policy streamingingestion enable",
-    # --- ONELAKE AVAILABILITY (database-level) ---
-    # Enables OneLake Availability programmatically — no portal toggle needed.
-    # This must run BEFORE per-table mirroring policies.
-    f".alter-merge database {KQL_DB_NAME} policy mirroring dataformat=parquet with (IsEnabled=true)",
     # --- ONELAKE MIRRORING POLICIES (5-minute flush for demos) ---
+    # OneLake Availability must be enabled on the KQL DB first (portal toggle).
     # These policies set the delta-table flush to 5 minutes instead of the
     # default 3 hours, so scoring notebooks see data quickly after streaming.
     ".alter-merge table claims_events policy mirroring dataformat=parquet with (IsEnabled=true, TargetLatencyInMinutes=5)",
     ".alter-merge table adt_events policy mirroring dataformat=parquet with (IsEnabled=true, TargetLatencyInMinutes=5)",
     ".alter-merge table rx_events policy mirroring dataformat=parquet with (IsEnabled=true, TargetLatencyInMinutes=5)",
-    ".alter-merge table fraud_scores policy mirroring dataformat=parquet with (IsEnabled=true, TargetLatencyInMinutes=5)",
-    ".alter-merge table care_gap_alerts policy mirroring dataformat=parquet with (IsEnabled=true, TargetLatencyInMinutes=5)",
-    ".alter-merge table highcost_alerts policy mirroring dataformat=parquet with (IsEnabled=true, TargetLatencyInMinutes=5)",
     # --- JSON INGESTION MAPPINGS ---
     """.create-or-alter table claims_events ingestion json mapping 'claims_events_mapping'
     '[{"column":"event_id","path":"$.event_id","datatype":"string"},{"column":"event_timestamp","path":"$.event_timestamp","datatype":"datetime"},{"column":"event_type","path":"$.event_type","datatype":"string"},{"column":"claim_id","path":"$.claim_id","datatype":"string"},{"column":"patient_id","path":"$.patient_id","datatype":"string"},{"column":"provider_id","path":"$.provider_id","datatype":"string"},{"column":"facility_id","path":"$.facility_id","datatype":"string"},{"column":"payer_id","path":"$.payer_id","datatype":"string"},{"column":"diagnosis_code","path":"$.diagnosis_code","datatype":"string"},{"column":"procedure_code","path":"$.procedure_code","datatype":"string"},{"column":"claim_type","path":"$.claim_type","datatype":"string"},{"column":"claim_amount","path":"$.claim_amount","datatype":"real"},{"column":"latitude","path":"$.latitude","datatype":"real"},{"column":"longitude","path":"$.longitude","datatype":"real"},{"column":"injected_fraud_flags","path":"$.injected_fraud_flags","datatype":"string"}]'""",

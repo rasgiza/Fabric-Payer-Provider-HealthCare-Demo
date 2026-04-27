@@ -750,7 +750,6 @@ Edit the top cell of `Healthcare_Launcher.ipynb`:
 
 ```
 ├── Healthcare_Launcher.ipynb          # <- Import this into Fabric
-├── ONTOLOGY_GRAPH_SETUP_GUIDE.md      # Ontology reference / manual fallback (12 entities, 18 relationships)
 ├── DATA_AGENT_GUIDE.md                # Agent instructions, routing, few-shots, knowledge base
 ├── POWERBI_DASHBOARD_GUIDE.md         # Power BI report pages, measures, Direct Lake tips
 ├── FOUNDRY_IQ_SETUP_GUIDE.md          # Azure AI Foundry orchestrator agent setup (11 steps)
@@ -804,7 +803,7 @@ Edit the top cell of `Healthcare_Launcher.ipynb`:
 | Semantic model shows no data | Run the pipeline first — it populates Gold lakehouse tables that the model reads |
 | Data Agent returns generic answers | Ensure `healthcare_knowledge/` docs were uploaded to `lh_gold_curated/Files/` |
 | Graph Agent shows no results | Ensure ontology is deployed (Cell 10a) and graph is populated. Run Cell 10b to patch graph agent IDs |
-| Ontology not auto-deployed | Cell 10a deploys the ontology + graph via API. If it fails, see [ONTOLOGY_GRAPH_SETUP_GUIDE.md](ONTOLOGY_GRAPH_SETUP_GUIDE.md) for manual fallback |
+| Ontology not auto-deployed | Cell 10a deploys the ontology + graph via API. Re-run the cell or check logs for errors |
 | Data Agent returns generic answers | Open the agent → verify AI instructions are pasted from [DATA_AGENT_INSTRUCTIONS.md](DATA_AGENT_INSTRUCTIONS.md) and data source is connected |
 | `fabric-launcher` install fails | Ensure your Fabric capacity supports Python package installation |
 

@@ -257,10 +257,14 @@ KQL_COMMANDS = [
     # --- UPDATE POLICIES (auto-route from rti_all_events → typed tables) ---
     # These server-side policies fire on every ingestion batch into rti_all_events,
     # extracting rows by _table field and appending them to the target tables.
+    # Note: todatetime() is needed because event_timestamp arrives as string from Eventstream.
+    # toint()/coalesce() handle columns that may be null in the landing table.
     """.create-or-alter function ExtractClaimsEvents() {
         rti_all_events
         | where _table == "claims_events"
-        | project event_id, event_timestamp, event_type, claim_id, patient_id,
+        | project event_id,
+                  event_timestamp = todatetime(event_timestamp),
+                  event_type, claim_id, patient_id,
                   provider_id, facility_id, payer_id, diagnosis_code,
                   procedure_code, claim_type, claim_amount, latitude, longitude,
                   injected_fraud_flags
@@ -268,16 +272,28 @@ KQL_COMMANDS = [
     """.create-or-alter function ExtractAdtEvents() {
         rti_all_events
         | where _table == "adt_events"
-        | project event_id, event_timestamp, event_type, patient_id, facility_id,
-                  facility_name, admission_type, primary_diagnosis, latitude,
-                  longitude, has_open_care_gaps, open_gap_measures
+        | project event_id,
+                  event_timestamp = todatetime(event_timestamp),
+                  event_type, patient_id, facility_id,
+                  facility_name = coalesce(facility_name, ""),
+                  admission_type = coalesce(admission_type, ""),
+                  primary_diagnosis = coalesce(primary_diagnosis, ""),
+                  latitude, longitude,
+                  has_open_care_gaps = coalesce(has_open_care_gaps, false),
+                  open_gap_measures = coalesce(open_gap_measures, "")
     }""",
     """.create-or-alter function ExtractRxEvents() {
         rti_all_events
         | where _table == "rx_events"
-        | project event_id, event_timestamp, event_type, patient_id, provider_id,
-                  medication_code, medication_name, drug_class, quantity,
-                  days_supply, latitude, longitude
+        | project event_id,
+                  event_timestamp = todatetime(event_timestamp),
+                  event_type, patient_id, provider_id,
+                  medication_code = coalesce(medication_code, ""),
+                  medication_name = coalesce(medication_name, ""),
+                  drug_class = coalesce(drug_class, ""),
+                  quantity = toint(coalesce(quantity, 0)),
+                  days_supply = toint(coalesce(days_supply, 0)),
+                  latitude, longitude
     }""",
     ".alter table claims_events policy update @'[{\"IsEnabled\": true, \"Source\": \"rti_all_events\", \"Query\": \"ExtractClaimsEvents()\", \"IsTransactional\": false, \"PropagateIngestionProperties\": true}]'",
     ".alter table adt_events policy update @'[{\"IsEnabled\": true, \"Source\": \"rti_all_events\", \"Query\": \"ExtractAdtEvents()\", \"IsTransactional\": false, \"PropagateIngestionProperties\": true}]'",

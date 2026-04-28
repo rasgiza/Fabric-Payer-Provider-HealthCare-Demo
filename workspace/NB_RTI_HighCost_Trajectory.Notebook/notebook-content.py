@@ -166,23 +166,30 @@ def _kql_query_to_records(query, db=_KQL_DB_NAME):
     rows = [[val for val in row] for row in primary]
     return cols, rows
 
-# Poll KQL until both tables have data
+# Poll KQL until rti_all_events has both claims and ADT data
+# NOTE: Eventstream writes ALL events to rti_all_events (unified landing table).
 _tables_needed = {
-    "claims_events": "claims_events | project event_id, event_timestamp, event_type, claim_id, patient_id, provider_id, facility_id, payer_id, diagnosis_code, procedure_code, claim_type, claim_amount, latitude, longitude, injected_fraud_flags",
-    "adt_events": "adt_events | project event_id, event_timestamp, event_type, patient_id, facility_id, facility_name, admission_type, primary_diagnosis, latitude, longitude, has_open_care_gaps, open_gap_measures",
+    "claims": {
+        "count_query": "rti_all_events | where event_type has 'CLAIM' | count",
+        "proj_query": "rti_all_events | where event_type has 'CLAIM' | project event_id, event_timestamp, event_type, claim_id, patient_id, provider_id, facility_id, payer_id, diagnosis_code, procedure_code, claim_type, claim_amount, latitude, longitude, injected_fraud_flags",
+    },
+    "adt": {
+        "count_query": "rti_all_events | where event_type has 'ADT' or event_type has 'ADMIT' or event_type has 'DISCHARGE' or event_type has 'TRANSFER' | count",
+        "proj_query": "rti_all_events | where event_type has 'ADT' or event_type has 'ADMIT' or event_type has 'DISCHARGE' or event_type has 'TRANSFER' | project event_id, event_timestamp, event_type, patient_id, facility_id, facility_name, admission_type, primary_diagnosis, latitude, longitude, has_open_care_gaps, open_gap_measures",
+    },
 }
 _loaded = {}
 _max_wait = 6   # 6 × 10s = 60 seconds max
 
 for _attempt in range(1, _max_wait + 1):
-    for _tbl, _proj_query in _tables_needed.items():
+    for _tbl, _queries in _tables_needed.items():
         if _tbl in _loaded:
             continue
-        _cols, _rows = _kql_query_to_records(f"{_tbl} | count")
+        _cols, _rows = _kql_query_to_records(_queries["count_query"])
         _cnt = int(_rows[0][0]) if _rows and _rows[0] else 0
         if _cnt > 0:
-            print(f"  {_tbl} in KQL: {_cnt} rows")
-            _cols, _rows = _kql_query_to_records(_proj_query)
+            print(f"  {_tbl} events in rti_all_events: {_cnt} rows")
+            _cols, _rows = _kql_query_to_records(_queries["proj_query"])
             _records = [dict(zip(_cols, row)) for row in _rows]
             _loaded[_tbl] = spark.createDataFrame(_records)
     if len(_loaded) == len(_tables_needed):
@@ -195,18 +202,18 @@ for _attempt in range(1, _max_wait + 1):
 for _tbl in _tables_needed:
     if _tbl not in _loaded:
         raise RuntimeError(
-            f"{_tbl} has no data in KQL after waiting 60 seconds.\n"
+            f"No {_tbl} events in rti_all_events after waiting 60 seconds.\n"
             "Check: (1) The simulator ran and pushed events,\n"
             "       (2) Healthcare_RTI_DB has streaming ingestion policies enabled."
         )
 
-df_claims = (_loaded["claims_events"]
+df_claims = (_loaded["claims"]
     .withColumn("event_timestamp", F.to_timestamp("event_timestamp"))
     .withColumn("claim_amount", F.col("claim_amount").cast("double"))
     .withColumn("latitude", F.col("latitude").cast("double"))
     .withColumn("longitude", F.col("longitude").cast("double"))
 )
-df_adt = (_loaded["adt_events"]
+df_adt = (_loaded["adt"]
     .withColumn("event_timestamp", F.to_timestamp("event_timestamp"))
     .withColumn("latitude", F.col("latitude").cast("double"))
     .withColumn("longitude", F.col("longitude").cast("double"))

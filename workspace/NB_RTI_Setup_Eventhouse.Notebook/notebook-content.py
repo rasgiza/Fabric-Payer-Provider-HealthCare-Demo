@@ -340,6 +340,62 @@ print(f"\nSchema execution complete: {success_count} succeeded, {fail_count} fai
 # CELL **{"language":"python"}**
 
 # ============================================================================
+# Step 3b: Backfill typed tables from existing rti_all_events data
+# ============================================================================
+# KQL update policies only process NEW ingestion. If rti_all_events already
+# has data (e.g. simulator ran before policies were created), we must backfill
+# the typed tables once. This is idempotent: checks if target is empty first.
+# ============================================================================
+print("Step 3b: Checking if backfill is needed...")
+
+BACKFILL_COMMANDS = [
+    # Check counts and backfill if needed
+    ("claims_events", ".set-or-append claims_events <| ExtractClaimsEvents()"),
+    ("adt_events", ".set-or-append adt_events <| ExtractAdtEvents()"),
+    ("rx_events", ".set-or-append rx_events <| ExtractRxEvents()"),
+]
+
+# First check if rti_all_events has any data
+_check_resp = run_kql_command(kql_db_id, "rti_all_events | count")
+_landing_count = 0
+if _check_resp.status_code == 200:
+    try:
+        _frames = _check_resp.json().get("results", [{}])
+        if _frames and _frames[0].get("rows"):
+            _landing_count = int(_frames[0]["rows"][0][0])
+    except Exception:
+        pass
+
+if _landing_count > 0:
+    print(f"  rti_all_events has {_landing_count} rows — checking typed tables...")
+    for _tbl_name, _backfill_cmd in BACKFILL_COMMANDS:
+        # Check if target already has data
+        _cnt_resp = run_kql_command(kql_db_id, f"{_tbl_name} | count")
+        _tbl_count = 0
+        if _cnt_resp.status_code == 200:
+            try:
+                _f = _cnt_resp.json().get("results", [{}])
+                if _f and _f[0].get("rows"):
+                    _tbl_count = int(_f[0]["rows"][0][0])
+            except Exception:
+                pass
+        if _tbl_count == 0:
+            print(f"  Backfilling {_tbl_name} from rti_all_events...")
+            _bf_resp = run_kql_command(kql_db_id, _backfill_cmd)
+            if _bf_resp.status_code in (200, 201):
+                print(f"    OK: {_tbl_name} backfilled")
+            else:
+                print(f"    WARN ({_bf_resp.status_code}): {_tbl_name} -- {_bf_resp.text[:200]}")
+        else:
+            print(f"  {_tbl_name}: already has {_tbl_count} rows — skipping backfill")
+else:
+    print("  rti_all_events is empty — no backfill needed (data will flow via update policies)")
+
+# METADATA **{"language":"python"}**
+
+# CELL **{"language":"python"}**
+
+# ============================================================================
 # Step 4: Verify setup
 # ============================================================================
 print("\nStep 4: Verifying RTI setup...")

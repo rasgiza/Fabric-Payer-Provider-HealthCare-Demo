@@ -124,37 +124,46 @@ READMIT_WINDOW_DAYS = 30       # Readmission = re-admit within this many days
 # CELL **{"language":"python"}**
 
 # ---------- Load events ----------
-print("Loading claims and ADT events from KQL Eventhouse (direct query)...")
+print("Loading claims and ADT events from KQL Eventhouse (Kusto SDK)...")
 
 import time as _wait_time
 import requests as _kql_req
+from azure.kusto.data import KustoConnectionStringBuilder, KustoClient
 
-# Discover KQL Database
+# Discover Eventhouse query URI (same pattern used by KQL push section)
 _ws_id = notebookutils.runtime.context.get("currentWorkspaceId", "")
-_kql_tok = notebookutils.credentials.getToken("pbi")
-_kql_hdr = {"Authorization": f"Bearer {_kql_tok}", "Content-Type": "application/json"}
-_kql_db_id = None
-_r = _kql_req.get(f"https://api.fabric.microsoft.com/v1/workspaces/{_ws_id}/items?type=KQLDatabase", headers=_kql_hdr)
-if _r.status_code == 200:
-    _kql_db_id = next((i["id"] for i in _r.json().get("value", [])
-                       if i["displayName"] == "Healthcare_RTI_DB"), None)
-if not _kql_db_id:
-    raise RuntimeError("Healthcare_RTI_DB not found in workspace. Run NB_RTI_Setup_Eventhouse first.")
+_fabric_tok = notebookutils.credentials.getToken("https://analysis.windows.net/powerbi/api")
+_hdr = {"Authorization": f"Bearer {_fabric_tok}", "Content-Type": "application/json"}
+_KUSTO_QUERY_URI = ""
+_resp = _kql_req.get(f"https://api.fabric.microsoft.com/v1/workspaces/{_ws_id}/items?type=Eventhouse", headers=_hdr)
+if _resp.status_code == 200:
+    for _item in _resp.json().get("value", []):
+        if "Healthcare" in _item.get("displayName", ""):
+            _props_resp = _kql_req.get(
+                f"https://api.fabric.microsoft.com/v1/workspaces/{_ws_id}/eventhouses/{_item['id']}",
+                headers=_hdr
+            )
+            if _props_resp.status_code == 200:
+                _props = _props_resp.json().get("properties", _props_resp.json())
+                _KUSTO_QUERY_URI = _props.get("queryServiceUri", "")
+            break
 
-_query_url = f"https://api.fabric.microsoft.com/v1/workspaces/{_ws_id}/kqlDatabases/{_kql_db_id}/queryRun"
+if not _KUSTO_QUERY_URI:
+    raise RuntimeError("Healthcare_RTI_Eventhouse not found or has no queryServiceUri. Run NB_RTI_Setup_Eventhouse first.")
 
-def _kql_query(query, query_url=_query_url):
-    """Execute a KQL query and return rows as list of dicts."""
-    _tok = notebookutils.credentials.getToken("pbi")
-    _h = {"Authorization": f"Bearer {_tok}", "Content-Type": "application/json"}
-    resp = _kql_req.post(query_url, headers=_h, json={"query": query, "queryKind": "kql"})
-    if resp.status_code != 200:
-        raise RuntimeError(f"KQL query failed (HTTP {resp.status_code}): {resp.text[:500]}")
-    frames = resp.json().get("results", [])
-    if not frames:
+_KQL_DB_NAME = "Healthcare_RTI_DB"
+
+def _kql_query_to_records(query, db=_KQL_DB_NAME):
+    """Execute a KQL query and return (columns, rows) using Kusto SDK."""
+    _tok = notebookutils.credentials.getToken("kusto")
+    _k = KustoConnectionStringBuilder.with_aad_user_token_authentication(_KUSTO_QUERY_URI, _tok)
+    _c = KustoClient(_k)
+    result = _c.execute(db, query)
+    primary = result.primary_results[0] if result.primary_results else None
+    if not primary:
         return [], []
-    cols = [c["name"] for c in frames[0].get("columns", [])]
-    rows = frames[0].get("rows", [])
+    cols = [col.column_name for col in primary.columns]
+    rows = [[val for val in row] for row in primary]
     return cols, rows
 
 # Poll KQL until both tables have data
@@ -169,11 +178,11 @@ for _attempt in range(1, _max_wait + 1):
     for _tbl, _proj_query in _tables_needed.items():
         if _tbl in _loaded:
             continue
-        _cols, _rows = _kql_query(f"{_tbl} | count")
+        _cols, _rows = _kql_query_to_records(f"{_tbl} | count")
         _cnt = int(_rows[0][0]) if _rows and _rows[0] else 0
         if _cnt > 0:
             print(f"  {_tbl} in KQL: {_cnt} rows")
-            _cols, _rows = _kql_query(_proj_query)
+            _cols, _rows = _kql_query_to_records(_proj_query)
             _records = [dict(zip(_cols, row)) for row in _rows]
             _loaded[_tbl] = spark.createDataFrame(_records)
     if len(_loaded) == len(_tables_needed):

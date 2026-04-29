@@ -192,8 +192,16 @@ KQL_COMMANDS = [
     # The Eventstream writes ALL event types into this single table.
     # KQL update policies (defined below) automatically route rows
     # into the typed per-event tables based on the _table field.
+    #
+    # IMPORTANT: event_timestamp is STRING (not datetime) because Eventstream
+    # ingests the ISO-format timestamp as a string. The Extract functions
+    # convert it to datetime for the typed tables. quantity/days_supply are
+    # LONG because that's what Eventstream infers from JSON integers.
+    # If we use different types here (e.g. datetime, int), .create-merge will
+    # FAIL when the table already exists (from Eventstream auto-creation),
+    # and ALL new columns (claim_id, facility_id, etc.) will NOT be added.
     """.create-merge table rti_all_events (
-        event_id: string, event_timestamp: datetime, event_type: string,
+        event_id: string, event_timestamp: string, event_type: string,
         _table: string,
         claim_id: string, patient_id: string, provider_id: string,
         facility_id: string, facility_name: string, payer_id: string,
@@ -201,10 +209,22 @@ KQL_COMMANDS = [
         claim_type: string, claim_amount: real,
         admission_type: string, primary_diagnosis: string,
         medication_code: string, medication_name: string, drug_class: string,
-        quantity: int, days_supply: int,
+        quantity: long, days_supply: long,
         latitude: real, longitude: real,
         injected_fraud_flags: string,
         has_open_care_gaps: bool, open_gap_measures: string
+    )""",
+    # DEFENSIVE: If .create-merge failed due to any residual type conflict,
+    # this .alter-merge adds ONLY the string/real/bool columns that Eventstream
+    # definitely didn't create (claims/ADT-specific columns). These types
+    # cannot conflict because these columns won't exist yet.
+    """.alter-merge table rti_all_events (
+        claim_id: string, facility_id: string, facility_name: string,
+        payer_id: string, diagnosis_code: string, procedure_code: string,
+        claim_type: string, claim_amount: real,
+        admission_type: string, primary_diagnosis: string,
+        has_open_care_gaps: bool, open_gap_measures: string,
+        injected_fraud_flags: string, _table: string
     )""",
     # --- INPUT TABLES ---
     """.create-merge table claims_events (
@@ -259,22 +279,34 @@ KQL_COMMANDS = [
     # extracting rows by _table field and appending them to the target tables.
     # Note: todatetime() is needed because event_timestamp arrives as string from Eventstream.
     # toint()/coalesce() handle columns that may be null in the landing table.
+    # coalesce() on claim-specific fields handles the case where the Eventstream
+    # created rti_all_events before these columns were added.
     """.create-or-alter function ExtractClaimsEvents() {
         rti_all_events
         | where _table == "claims_events"
         | project event_id,
                   event_timestamp = todatetime(event_timestamp),
-                  event_type, claim_id, patient_id,
-                  provider_id, facility_id, payer_id, diagnosis_code,
-                  procedure_code, claim_type, claim_amount, latitude, longitude,
-                  injected_fraud_flags
+                  event_type,
+                  claim_id = coalesce(claim_id, ""),
+                  patient_id,
+                  provider_id = coalesce(provider_id, ""),
+                  facility_id = coalesce(facility_id, ""),
+                  payer_id = coalesce(payer_id, ""),
+                  diagnosis_code = coalesce(diagnosis_code, ""),
+                  procedure_code = coalesce(procedure_code, ""),
+                  claim_type = coalesce(claim_type, ""),
+                  claim_amount = coalesce(claim_amount, 0.0),
+                  latitude,
+                  longitude,
+                  injected_fraud_flags = coalesce(injected_fraud_flags, "")
     }""",
     """.create-or-alter function ExtractAdtEvents() {
         rti_all_events
         | where _table == "adt_events"
         | project event_id,
                   event_timestamp = todatetime(event_timestamp),
-                  event_type, patient_id, facility_id,
+                  event_type, patient_id,
+                  facility_id = coalesce(facility_id, ""),
                   facility_name = coalesce(facility_name, ""),
                   admission_type = coalesce(admission_type, ""),
                   primary_diagnosis = coalesce(primary_diagnosis, ""),
@@ -287,7 +319,8 @@ KQL_COMMANDS = [
         | where _table == "rx_events"
         | project event_id,
                   event_timestamp = todatetime(event_timestamp),
-                  event_type, patient_id, provider_id,
+                  event_type, patient_id,
+                  provider_id = coalesce(provider_id, ""),
                   medication_code = coalesce(medication_code, ""),
                   medication_name = coalesce(medication_name, ""),
                   drug_class = coalesce(drug_class, ""),
@@ -307,7 +340,7 @@ KQL_COMMANDS = [
     ".alter-merge table rx_events policy mirroring dataformat=parquet with (IsEnabled=true, TargetLatencyInMinutes=5)",
     # --- JSON INGESTION MAPPINGS ---
     """.create-or-alter table rti_all_events ingestion json mapping 'rti_all_events_mapping'
-    '[{"column":"event_id","path":"$.event_id","datatype":"string"},{"column":"event_timestamp","path":"$.event_timestamp","datatype":"datetime"},{"column":"event_type","path":"$.event_type","datatype":"string"},{"column":"_table","path":"$._table","datatype":"string"},{"column":"claim_id","path":"$.claim_id","datatype":"string"},{"column":"patient_id","path":"$.patient_id","datatype":"string"},{"column":"provider_id","path":"$.provider_id","datatype":"string"},{"column":"facility_id","path":"$.facility_id","datatype":"string"},{"column":"facility_name","path":"$.facility_name","datatype":"string"},{"column":"payer_id","path":"$.payer_id","datatype":"string"},{"column":"diagnosis_code","path":"$.diagnosis_code","datatype":"string"},{"column":"procedure_code","path":"$.procedure_code","datatype":"string"},{"column":"claim_type","path":"$.claim_type","datatype":"string"},{"column":"claim_amount","path":"$.claim_amount","datatype":"real"},{"column":"admission_type","path":"$.admission_type","datatype":"string"},{"column":"primary_diagnosis","path":"$.primary_diagnosis","datatype":"string"},{"column":"medication_code","path":"$.medication_code","datatype":"string"},{"column":"medication_name","path":"$.medication_name","datatype":"string"},{"column":"drug_class","path":"$.drug_class","datatype":"string"},{"column":"quantity","path":"$.quantity","datatype":"int"},{"column":"days_supply","path":"$.days_supply","datatype":"int"},{"column":"latitude","path":"$.latitude","datatype":"real"},{"column":"longitude","path":"$.longitude","datatype":"real"},{"column":"injected_fraud_flags","path":"$.injected_fraud_flags","datatype":"string"},{"column":"has_open_care_gaps","path":"$.has_open_care_gaps","datatype":"bool"},{"column":"open_gap_measures","path":"$.open_gap_measures","datatype":"string"}]'""",
+    '[{"column":"event_id","path":"$.event_id","datatype":"string"},{"column":"event_timestamp","path":"$.event_timestamp","datatype":"string"},{"column":"event_type","path":"$.event_type","datatype":"string"},{"column":"_table","path":"$._table","datatype":"string"},{"column":"claim_id","path":"$.claim_id","datatype":"string"},{"column":"patient_id","path":"$.patient_id","datatype":"string"},{"column":"provider_id","path":"$.provider_id","datatype":"string"},{"column":"facility_id","path":"$.facility_id","datatype":"string"},{"column":"facility_name","path":"$.facility_name","datatype":"string"},{"column":"payer_id","path":"$.payer_id","datatype":"string"},{"column":"diagnosis_code","path":"$.diagnosis_code","datatype":"string"},{"column":"procedure_code","path":"$.procedure_code","datatype":"string"},{"column":"claim_type","path":"$.claim_type","datatype":"string"},{"column":"claim_amount","path":"$.claim_amount","datatype":"real"},{"column":"admission_type","path":"$.admission_type","datatype":"string"},{"column":"primary_diagnosis","path":"$.primary_diagnosis","datatype":"string"},{"column":"medication_code","path":"$.medication_code","datatype":"string"},{"column":"medication_name","path":"$.medication_name","datatype":"string"},{"column":"drug_class","path":"$.drug_class","datatype":"string"},{"column":"quantity","path":"$.quantity","datatype":"long"},{"column":"days_supply","path":"$.days_supply","datatype":"long"},{"column":"latitude","path":"$.latitude","datatype":"real"},{"column":"longitude","path":"$.longitude","datatype":"real"},{"column":"injected_fraud_flags","path":"$.injected_fraud_flags","datatype":"string"},{"column":"has_open_care_gaps","path":"$.has_open_care_gaps","datatype":"bool"},{"column":"open_gap_measures","path":"$.open_gap_measures","datatype":"string"}]'""",
     """.create-or-alter table claims_events ingestion json mapping 'claims_events_mapping'
     '[{"column":"event_id","path":"$.event_id","datatype":"string"},{"column":"event_timestamp","path":"$.event_timestamp","datatype":"datetime"},{"column":"event_type","path":"$.event_type","datatype":"string"},{"column":"claim_id","path":"$.claim_id","datatype":"string"},{"column":"patient_id","path":"$.patient_id","datatype":"string"},{"column":"provider_id","path":"$.provider_id","datatype":"string"},{"column":"facility_id","path":"$.facility_id","datatype":"string"},{"column":"payer_id","path":"$.payer_id","datatype":"string"},{"column":"diagnosis_code","path":"$.diagnosis_code","datatype":"string"},{"column":"procedure_code","path":"$.procedure_code","datatype":"string"},{"column":"claim_type","path":"$.claim_type","datatype":"string"},{"column":"claim_amount","path":"$.claim_amount","datatype":"real"},{"column":"latitude","path":"$.latitude","datatype":"real"},{"column":"longitude","path":"$.longitude","datatype":"real"},{"column":"injected_fraud_flags","path":"$.injected_fraud_flags","datatype":"string"}]'""",
     """.create-or-alter table adt_events ingestion json mapping 'adt_events_mapping'
@@ -327,13 +360,43 @@ def run_kql_command(db_id, command):
     url = f"{BASE_URL}/workspaces/{WORKSPACE_ID}/kqlDatabases/{db_id}/runCommand"
     return requests.post(url, headers=get_headers(), json={"script": command.strip()})
 
+def _is_kql_success(resp):
+    """Check if KQL command succeeded (HTTP 200 can still contain errors)."""
+    if resp.status_code not in (200, 201):
+        return False
+    try:
+        body = resp.json()
+        # Check for error objects in the response
+        if "error" in body:
+            return False
+        # Check results frames for errors
+        for frame in body.get("results", []):
+            if frame.get("hasErrors"):
+                return False
+    except Exception:
+        pass
+    return True
+
+def _get_kql_error(resp):
+    """Extract error message from KQL response."""
+    try:
+        body = resp.json()
+        if "error" in body:
+            return body["error"].get("message", str(body["error"]))[:200]
+        for frame in body.get("results", []):
+            if frame.get("hasErrors"):
+                return str(frame.get("errors", "unknown error"))[:200]
+    except Exception:
+        pass
+    return resp.text[:200]
+
 success_count = 0
 fail_count = 0
 for cmd in KQL_COMMANDS:
     cmd_clean = cmd.strip()
     if not cmd_clean:
         continue
-    if "create-merge table" in cmd_clean:
+    if "create-merge table" in cmd_clean or "alter-merge table" in cmd_clean:
         label = cmd_clean.split("table ")[-1].split(" ")[0].split("(")[0].strip()
     elif "alter table" in cmd_clean and "policy" in cmd_clean:
         label = "streaming policy: " + cmd_clean.split("table ")[-1].split(" ")[0]
@@ -342,11 +405,12 @@ for cmd in KQL_COMMANDS:
     else:
         label = cmd_clean[:60]
     resp = run_kql_command(kql_db_id, cmd_clean)
-    if resp.status_code in (200, 201):
+    if _is_kql_success(resp):
         print(f"  OK: {label}")
         success_count += 1
     else:
-        print(f"  WARN ({resp.status_code}): {label} -- {resp.text[:200]}")
+        err_msg = _get_kql_error(resp)
+        print(f"  WARN ({resp.status_code}): {label} -- {err_msg}")
         fail_count += 1
 
 print(f"\nSchema execution complete: {success_count} succeeded, {fail_count} failed")

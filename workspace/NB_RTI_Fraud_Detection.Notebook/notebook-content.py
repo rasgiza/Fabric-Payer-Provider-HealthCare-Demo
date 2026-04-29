@@ -163,8 +163,43 @@ def _kql_query_to_records(query, db=_KQL_DB_NAME, client=_kusto_client):
     rows = [[val for val in row] for row in primary]
     return cols, rows
 
+def _kql_mgmt(cmd, db=_KQL_DB_NAME):
+    """Execute a KQL management command (.set-or-append, .alter, etc.)."""
+    _tok = notebookutils.credentials.getToken("kusto")
+    _k = KustoConnectionStringBuilder.with_aad_user_token_authentication(_KUSTO_QUERY_URI, _tok)
+    _c = KustoClient(_k)
+    return _c.execute_mgmt(db, cmd)
+
+# ── Backfill typed tables from rti_all_events ──────────────────────────────
+# ProcessedIngestion mode does not trigger KQL update policies, so data may
+# land in rti_all_events but never reach the typed tables. This backfill
+# ensures the Extract functions populate them regardless of ingestion mode.
+_backfill_map = {
+    "claims_events": "ExtractClaimsEvents()",
+    "adt_events": "ExtractAdtEvents()",
+    "rx_events": "ExtractRxEvents()",
+}
+for _tbl, _fn in _backfill_map.items():
+    _cols, _rows = _kql_query_to_records(f"{_tbl} | count")
+    _cnt = int(_rows[0][0]) if _rows and _rows[0] else 0
+    if _cnt == 0:
+        # Check if source has data to backfill from
+        _cols2, _rows2 = _kql_query_to_records("rti_all_events | count")
+        _src_cnt = int(_rows2[0][0]) if _rows2 and _rows2[0] else 0
+        if _src_cnt > 0:
+            print(f"  Backfilling {_tbl} from rti_all_events ({_src_cnt} source rows)...")
+            try:
+                _kql_mgmt(f".set-or-append {_tbl} <| {_fn}")
+                _cols3, _rows3 = _kql_query_to_records(f"{_tbl} | count")
+                _new_cnt = int(_rows3[0][0]) if _rows3 and _rows3[0] else 0
+                print(f"    → {_tbl}: {_new_cnt} rows after backfill")
+            except Exception as _e:
+                print(f"    [WARN] Backfill {_tbl} failed: {_e}")
+    else:
+        print(f"  {_tbl}: {_cnt} rows (already populated)")
+
 # Poll KQL until claims_events has data
-# Data flow: Eventstream → rti_all_events → claims_events (via KQL update policy)
+# Data flow: Eventstream → rti_all_events → claims_events (via KQL update policy or backfill above)
 df_claims = None
 _max_wait = 6   # 6 × 10s = 60 seconds max
 for _attempt in range(1, _max_wait + 1):

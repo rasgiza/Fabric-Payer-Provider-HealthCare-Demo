@@ -506,15 +506,6 @@ After `Healthcare_Launcher` completes, the Operations Agent is created with goal
 
 ---
 
-### Ontology & Graph Model (Automated)
-
-The ontology and graph model are now **deployed automatically** by Cell 10a of the launcher notebook (or via `deploy_all.py`). No manual setup is required.
-
-- **Cell 10a** creates the ontology from the `ontology/Healthcare_Demo_Ontology_HLS/` manifest (12 entities, 18 relationships)
-- **Cell 10b** patches the graph agent definition with the correct ontology/graph IDs
-
----
-
 ### Data Agents
 
 The **HealthcareHLSAgent** (SQL agent) is deployed programmatically by the launcher — no manual setup required. It connects to the `HealthcareDemoHLS` semantic model and includes AI instructions and data source configuration automatically.
@@ -526,7 +517,7 @@ To test it, open the agent in your workspace and try a sample question:
 
 See **[SAMPLE_QUESTIONS.md](SAMPLE_QUESTIONS.md)** for 80+ tested questions across all domains.
 
-#### Create the Ontology Agent (Manual — Fabric UI)
+#### Data Agent — Ontology As Source
 
 The **HealthcareHLSOntology Agent** (graph agent) must be created manually in the Fabric UI — it cannot be fully deployed via API.
 

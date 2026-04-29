@@ -558,7 +558,7 @@ The **HealthcareHLSOntology Agent** (graph agent) must be created manually in th
 
    ![Agent instructions panel](docs/images/agent-instructions.png)
 
-2. Copy the AI instructions text from **[DATA_AGENT_INSTRUCTIONS.md](DATA_AGENT_INSTRUCTIONS.md)** → Section **2a — AI Instructions**
+2. Copy the AI instructions text from **[DATA_AGENT_INSTRUCTIONS.md → Section 2a](DATA_AGENT_INSTRUCTIONS.md#2-healthcare-ontology-agent-graph-agent)** — AI Instructions
 3. Paste into the instructions text box → click **Apply**
 
 > These instructions tell the agent about the ontology entities, relationships, and graph traversal patterns for healthcare queries.
@@ -569,7 +569,7 @@ The **HealthcareHLSOntology Agent** (graph agent) must be created manually in th
    - *"Which providers treat patients covered by Aetna?"*
    - *"Show the care pathway for patient P-1001"*
    - *"What prescriptions are linked to claims denied for medical necessity?"*
-2. See **[SAMPLE_QUESTIONS.md](SAMPLE_QUESTIONS.md)** → **Graph Agent** section for more questions
+2. See **[SAMPLE_QUESTIONS.md → Graph Agent](SAMPLE_QUESTIONS.md#graph-agent-healthcare-ontology-agent)** section for more questions
 
 ---
 
@@ -804,7 +804,7 @@ Edit the top cell of `Healthcare_Launcher.ipynb`:
 | Data Agent returns generic answers | Ensure `healthcare_knowledge/` docs were uploaded to `lh_gold_curated/Files/` |
 | Graph Agent shows no results | Ensure ontology is deployed (Cell 10a) and graph is populated. Run Cell 10b to patch graph agent IDs |
 | Ontology not auto-deployed | Cell 10a deploys the ontology + graph via API. Re-run the cell or check logs for errors |
-| Data Agent returns generic answers | Open the agent → verify AI instructions are pasted from [DATA_AGENT_INSTRUCTIONS.md](DATA_AGENT_INSTRUCTIONS.md) and data source is connected |
+| Data Agent returns generic answers | Open the agent → verify AI instructions are pasted from [DATA_AGENT_INSTRUCTIONS.md § 1a](DATA_AGENT_INSTRUCTIONS.md#1a--ai-instructions-stage_configjson) and data source is connected |
 | `fabric-launcher` install fails | Ensure your Fabric capacity supports Python package installation |
 
 ## Credits

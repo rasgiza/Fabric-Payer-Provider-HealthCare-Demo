@@ -444,8 +444,6 @@ Healthcare_RTI_Eventstream (Custom Endpoint — EventHub protocol)
 | **Get connection string** | ❌ Not exposed in API schema | ✅ Portal only |
 | Verify topology status | ✅ GET /topology endpoint | ✅ |
 
-> **Reference:** The [ontology-coldchain](https://github.com/microsoft/ontology-coldchain) architecture also requires a manual `.env` step for the connection string — this is a platform-level constraint, not a design choice.
-
 ### Use Case 4 — Operations Agent (HealthcareOpsAgent)
 
 > **Status: Deployed automatically** by Cell 12 of `Healthcare_Launcher` (requires `DEPLOY_STREAMING=True`). The agent is created via the dedicated `/operationsAgents` REST API and configured with goals, instructions, and a KQL data source pointing to `Healthcare_RTI_DB`.

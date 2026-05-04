@@ -364,13 +364,16 @@ print("Scoring rules applied.")
 # Composite Score and Risk Tiers
 # ============================================================================
 
+# Raw composite score (0-100 points), then normalize to 0.0-1.0 probability
+df_scored = df_scored.withColumn(
+    "fraud_score_raw",
+    F.col("velocity_score") + F.col("amount_score") +
+    F.col("geo_score") + F.col("upcoding_score")
+)
+
 df_scored = df_scored.withColumn(
     "fraud_score",
-    F.round(
-        F.col("velocity_score") + F.col("amount_score") +
-        F.col("geo_score") + F.col("upcoding_score"),
-        2
-    )
+    F.round(F.col("fraud_score_raw") / 100.0, 2)
 )
 
 # Assemble fraud flags
@@ -384,12 +387,12 @@ df_scored = df_scored.withColumn(
     )
 )
 
-# Risk tiers
+# Risk tiers (0.0-1.0 scale)
 df_scored = df_scored.withColumn(
     "risk_tier",
-    F.when(F.col("fraud_score") >= 50, "CRITICAL")
-    .when(F.col("fraud_score") >= 30, "HIGH")
-    .when(F.col("fraud_score") >= 15, "MEDIUM")
+    F.when(F.col("fraud_score") >= 0.50, "CRITICAL")
+    .when(F.col("fraud_score") >= 0.30, "HIGH")
+    .when(F.col("fraud_score") >= 0.15, "MEDIUM")
     .otherwise("LOW")
 )
 

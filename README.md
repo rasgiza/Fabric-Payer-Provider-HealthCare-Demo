@@ -150,6 +150,10 @@ Dual-path design: **Batch ETL** (authoritative, historical) + **Real-Time Intell
 
 **[▶ Launch Interactive 3D Graph](https://rasgiza.github.io/Fabric-Payer-Provider-HealthCare-Demo/docs/ontology_graph_3d.html)** — Explore the full ontology in a cinematic Three.js visualization with bloom lighting, animated data-flow particles, and hover tooltips showing every property and relationship.
 
+### 🎬 Interactive 3D Patient Story — Nancy White
+
+**[▶ Launch Nancy White Story](https://rasgiza.github.io/Fabric-Payer-Provider-HealthCare-Demo/demo_3d_story/nancy_white_story.html)** — A cinematic 5-scene walkthrough showing how streaming intelligence catches a $42,000 readmission risk in 48 hours instead of 28 days. Navigate with arrow keys or click.
+
 | Entities | Relationships | Domains |
 |----------|---------------|---------|
 | Patient · Provider · Encounter · Diagnosis · PatientDiagnosis · Medication · Prescription · MedicationAdherence · Claim · Payer · CommunityHealth | livesIn · treatedBy · involves · covers · billsFor · submittedBy · prescribedBy · serves · dispenses · originatesFrom · occursIn · references · affects · adherenceFor · adherenceMedication · ClaimHasPayer · PrescriptionHasPayer | Clinical · Financial · Pharmacy · Diagnostic · SDOH |

@@ -163,11 +163,13 @@ Dual-path design: **Batch ETL** (authoritative, historical) + **Real-Time Intell
 >
 > To run locally: download [`docs/ontology_graph_3d.html`](docs/ontology_graph_3d.html) and open in any browser.
 
-### 🎬 Interactive 3D Patient Story Demo
+### 🎬 Interactive 3D Patient Story Demos
 
-**[▶ Launch Nancy White Story](https://rasgiza.github.io/Fabric-Payer-Provider-HealthCare-Demo/demo_3d_story/nancy_white_story.html)** — Walk through a real patient journey showing how the ontology agent answers clinical questions about medication adherence, SDOH risk, and care recommendations.
+**[▶ Launch Nancy White Story](https://rasgiza.github.io/Fabric-Payer-Provider-HealthCare-Demo/demo_3d_story/nancy_white_story.html)** — Age 63, Medicare, CHF. 9 drug classes, 8/9 non-adherent, pharmacy desert. How streaming intelligence catches a $42,000 readmission risk in 48 hours instead of 28 days.
 
-> To run locally: download [`demo_3d_story/nancy_white_story.html`](demo_3d_story/nancy_white_story.html) and open in any browser.
+**[▶ Launch Sarah Johnson Story](https://rasgiza.github.io/Fabric-Payer-Provider-HealthCare-Demo/demo_3d_story/sarah_johnson_story.html)** — Age 41, Commercial. 13 providers, opioid + benzo FDA black-box combination, 3 psychiatrists, no PCP. How the ontology surfaces an overdose risk that no dashboard can see.
+
+> Navigate with arrow keys, spacebar, click, or number keys. Press **A** for auto-play.
 
 ### Detailed Data Flow
 

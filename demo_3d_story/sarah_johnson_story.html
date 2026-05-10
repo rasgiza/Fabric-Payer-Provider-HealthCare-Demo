@@ -1,0 +1,957 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>The Time Bomb in Your Panel — Sarah Johnson</title>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap');
+*{margin:0;padding:0;box-sizing:border-box}
+:root{
+  --fabric:#0078D4;--iq:#00B7C3;--foundry:#8661C5;--rti:#FFB900;
+  --success:#107C10;--danger:#D13438;--bg:#06060C;--bg2:#0C0C14;
+  --text:#FFFFFF;--muted:#6E7090;--glass:rgba(8,8,16,.88);
+  --critical:#FF1744;--opioid:#E53935;--benzo:#FF6D00;
+}
+html,body{font-family:'Inter',sans-serif;background:var(--bg);color:var(--text);overflow:hidden;height:100%;width:100%}
+canvas{display:block;position:fixed;top:0;left:0;z-index:0}
+.cine{position:fixed;left:0;width:100%;height:48px;background:linear-gradient(180deg,#000 60%,transparent);z-index:5}
+.cine.top{top:0}.cine.bot{bottom:0;background:linear-gradient(0deg,#000 60%,transparent)}
+#title-block{position:fixed;top:70px;left:48px;z-index:12;max-width:520px;opacity:0;transform:translateY(-16px);transition:all .7s cubic-bezier(.22,1,.36,1)}
+#title-block.visible{opacity:1;transform:translateY(0)}
+#title-block h1{font-size:1.65rem;font-weight:800;line-height:1.28;letter-spacing:-.03em}
+#title-block h1 .hl-iq{color:var(--iq)}#title-block h1 .hl-foundry{color:var(--foundry)}
+#title-block h1 .hl-rti{color:var(--rti)}#title-block h1 .hl-danger{color:var(--danger)}
+#title-block h1 .hl-success{color:var(--success)}#title-block h1 .hl-fabric{color:var(--fabric)}
+#title-block h1 .hl-critical{color:var(--critical)}
+#title-block p{font-size:.78rem;color:var(--muted);margin-top:7px;line-height:1.65;max-width:440px}
+#cards{position:fixed;inset:0;pointer-events:none;z-index:11}
+.card-left{position:absolute;left:48px;pointer-events:auto;background:var(--glass);
+  border:1px solid rgba(255,255,255,.06);border-radius:14px;padding:16px 20px;
+  backdrop-filter:blur(24px) saturate(1.4);box-shadow:0 12px 48px rgba(0,0,0,.7);
+  opacity:0;transform:translateX(-20px);transition:all .6s cubic-bezier(.22,1,.36,1);
+  max-width:400px;width:380px}
+.card-left.visible{opacity:1;transform:translateX(0)}
+.card-right{position:absolute;right:48px;pointer-events:auto;background:var(--glass);
+  border:1px solid rgba(255,255,255,.06);border-radius:14px;padding:16px 20px;
+  backdrop-filter:blur(24px) saturate(1.4);box-shadow:0 12px 48px rgba(0,0,0,.7);
+  opacity:0;transform:translateX(20px);transition:all .6s cubic-bezier(.22,1,.36,1);
+  max-width:400px;width:380px}
+.card-right.visible{opacity:1;transform:translateX(0)}
+.card-center{position:absolute;left:50%;transform:translateX(-50%) translateY(20px);
+  pointer-events:auto;background:var(--glass);
+  border:1px solid rgba(255,255,255,.08);border-radius:16px;padding:20px 28px;
+  backdrop-filter:blur(24px) saturate(1.4);box-shadow:0 16px 64px rgba(0,0,0,.8);
+  opacity:0;transition:all .7s cubic-bezier(.22,1,.36,1);max-width:560px;text-align:center}
+.card-center.visible{opacity:1;transform:translateX(-50%) translateY(0)}
+.card-left h3,.card-right h3,.card-center h3{font-size:.68rem;font-weight:700;margin-bottom:7px;text-transform:uppercase;letter-spacing:1.8px}
+.card-left p,.card-right p,.card-center p{font-size:.74rem;color:var(--muted);line-height:1.65}
+.big{font-size:2rem;font-weight:900;margin:3px 0}
+.big.danger{color:var(--danger)}.big.success{color:var(--success)}.big.iq{color:var(--iq)}
+.big.rti{color:var(--rti)}.big.fabric{color:var(--fabric)}.big.critical{color:var(--critical)}
+table{width:100%;border-collapse:collapse;margin-top:8px;font-size:.66rem}
+table th{text-align:left;color:var(--iq);border-bottom:1px solid rgba(255,255,255,.06);padding:4px 7px;font-weight:700}
+table td{padding:4px 7px;color:var(--muted)}
+.pill{display:inline-block;padding:2px 9px;border-radius:20px;font-size:.56rem;font-weight:700;margin:2px;white-space:nowrap}
+.pill-red{background:rgba(209,52,56,.1);color:var(--danger);border:1px solid rgba(209,52,56,.2)}
+.pill-green{background:rgba(16,124,16,.1);color:var(--success);border:1px solid rgba(16,124,16,.2)}
+.pill-yellow{background:rgba(255,185,0,.1);color:var(--rti);border:1px solid rgba(255,185,0,.2)}
+.pill-blue{background:rgba(0,120,212,.1);color:var(--fabric);border:1px solid rgba(0,120,212,.2)}
+.pill-purple{background:rgba(134,97,197,.1);color:var(--foundry);border:1px solid rgba(134,97,197,.2)}
+.pill-teal{background:rgba(0,183,195,.1);color:var(--iq);border:1px solid rgba(0,183,195,.2)}
+.pill-critical{background:rgba(255,23,68,.12);color:var(--critical);border:1px solid rgba(255,23,68,.25)}
+.clickable{cursor:pointer;transition:border-color .2s, box-shadow .2s}
+.clickable:hover{border-color:rgba(255,255,255,.15);box-shadow:0 16px 56px rgba(0,0,0,.8)}
+.click-expand{display:none;margin-top:10px;padding-top:10px;border-top:1px solid rgba(255,255,255,.05)}
+.clickable.expanded .click-expand{display:block}
+.click-hint{font-size:.56rem;color:rgba(255,255,255,.2);margin-top:6px;font-style:italic}
+.badge{display:inline-flex;align-items:center;padding:3px 12px;border-radius:20px;font-size:.62rem;font-weight:700;letter-spacing:.4px}
+.badge-day1{background:rgba(209,52,56,.1);color:var(--danger);border:1px solid rgba(209,52,56,.18)}
+.badge-day2{background:rgba(255,185,0,.1);color:var(--rti);border:1px solid rgba(255,185,0,.18)}
+.badge-day3{background:rgba(0,120,212,.1);color:var(--fabric);border:1px solid rgba(0,120,212,.18)}
+.badge-day28{background:rgba(16,124,16,.1);color:var(--success);border:1px solid rgba(16,124,16,.18)}
+.badge-critical{background:rgba(255,23,68,.12);color:var(--critical);border:1px solid rgba(255,23,68,.22)}
+.badge-fda{background:rgba(255,23,68,.15);color:#FF1744;border:1px solid rgba(255,23,68,.3);font-weight:900;letter-spacing:1px}
+.edge{font-size:.58rem;color:var(--iq);font-family:'Inter',monospace;padding:1px 5px;background:rgba(0,183,195,.06);border-radius:3px}
+.teams-notif{background:rgba(6,6,12,.97);border-left:3px solid var(--critical);border-radius:11px;padding:14px 16px;box-shadow:0 0 32px rgba(255,23,68,.08)}
+.teams-notif h4{font-size:.72rem;color:var(--critical);margin-bottom:6px;font-weight:700}
+.teams-notif .body{font-size:.68rem;color:var(--muted);line-height:1.7}
+.teams-notif .actions{display:flex;gap:7px;margin-top:12px}
+.teams-notif .btn-go{background:var(--critical);color:#fff;border:none;padding:6px 14px;border-radius:7px;font-size:.68rem;cursor:pointer;font-weight:700;font-family:inherit}
+.teams-notif .btn-skip{background:rgba(255,255,255,.04);color:var(--muted);border:1px solid rgba(255,255,255,.06);padding:6px 14px;border-radius:7px;font-size:.68rem;cursor:pointer;font-family:inherit}
+#nav{position:fixed;bottom:16px;left:50%;transform:translateX(-50%);display:flex;gap:5px;z-index:20}
+.dot{width:7px;height:7px;border-radius:50%;background:rgba(255,255,255,.1);cursor:pointer;transition:all .4s}
+.dot:hover{background:rgba(255,255,255,.25)}
+.dot.active{width:26px;border-radius:3px;background:var(--fabric)}
+#scene-lbl{position:fixed;bottom:30px;left:50%;transform:translateX(-50%);font-size:.55rem;color:rgba(255,255,255,.15);z-index:20;letter-spacing:3px;text-transform:uppercase}
+#ctrl{position:fixed;top:16px;right:16px;display:flex;gap:5px;z-index:20}
+.cb{background:rgba(255,255,255,.03);border:1px solid rgba(255,255,255,.05);color:rgba(255,255,255,.3);padding:4px 11px;border-radius:5px;font-size:.58rem;cursor:pointer;font-family:inherit;transition:all .2s}
+.cb:hover{background:rgba(255,255,255,.07);color:#fff}.cb.on{background:var(--fabric);border-color:var(--fabric);color:#fff}
+#loader{position:fixed;inset:0;background:var(--bg);z-index:100;display:flex;flex-direction:column;align-items:center;justify-content:center;transition:opacity 1.2s}
+#loader.done{opacity:0;pointer-events:none}
+#loader .mark{width:52px;height:52px;border:1.5px solid rgba(255,255,255,.06);border-radius:50%;display:flex;align-items:center;justify-content:center;margin-bottom:16px}
+#loader .mark .x{color:#fff;font-size:1.3rem;font-weight:200}
+#loader h1{font-size:.9rem;font-weight:300;letter-spacing:4px;text-transform:uppercase}
+#loader p{font-size:.62rem;color:var(--muted);margin-top:4px}
+.bar{width:120px;height:1.5px;background:rgba(255,255,255,.04);border-radius:2px;overflow:hidden;margin-top:20px}
+.bar div{height:100%;width:0%;background:linear-gradient(90deg,var(--critical),var(--rti),var(--foundry));border-radius:2px;transition:width .12s}
+</style>
+</head>
+<body>
+<div id="loader">
+  <div class="mark"><span class="x">+</span></div>
+  <h1>Lakeside Health</h1>
+  <p>Sarah Johnson — The Time Bomb in Your Panel</p>
+  <div class="bar"><div id="bar-fill"></div></div>
+</div>
+<div class="cine top"></div>
+<div class="cine bot"></div>
+<div id="title-block"><h1></h1><p></p></div>
+<div id="cards"></div>
+<div id="nav"></div>
+<div id="scene-lbl"></div>
+<div id="ctrl"><button class="cb" id="btn-auto">Auto</button></div>
+<script>
+window.onerror=function(msg,src,line,col,err){
+  var d=document.getElementById('loader');
+  var stack=err&&err.stack?'<pre style="color:#AA8800;margin-top:12px;font-size:11px;white-space:pre-wrap;max-height:300px;overflow:auto">'+err.stack+'</pre>':'';
+  if(d){d.innerHTML='<div style="color:#FF4444;padding:40px;text-align:left;max-width:700px;font-family:monospace;font-size:13px"><h2 style="color:#FF4444;margin-bottom:12px">Error</h2><p>'+msg+'</p><p style="color:#888;margin-top:8px">Source: '+(src||'?')+' line '+line+':'+col+'</p>'+stack+'</div>';d.style.display='flex'}
+  return true;
+};
+</script>
+<script crossorigin="anonymous" src="https://cdn.jsdelivr.net/npm/three@0.138.0/build/three.min.js"></script>
+<script>if(typeof THREE==='undefined'){document.getElementById('loader').innerHTML='<p style="color:red;padding:40px">Failed to load Three.js</p>';throw new Error('THREE missing')}</script>
+<script crossorigin="anonymous" src="https://cdn.jsdelivr.net/npm/three@0.138.0/examples/js/controls/OrbitControls.js"></script>
+<script crossorigin="anonymous" src="https://cdn.jsdelivr.net/npm/three@0.138.0/examples/js/shaders/CopyShader.js"></script>
+<script crossorigin="anonymous" src="https://cdn.jsdelivr.net/npm/three@0.138.0/examples/js/shaders/LuminosityHighPassShader.js"></script>
+<script crossorigin="anonymous" src="https://cdn.jsdelivr.net/npm/three@0.138.0/examples/js/postprocessing/EffectComposer.js"></script>
+<script crossorigin="anonymous" src="https://cdn.jsdelivr.net/npm/three@0.138.0/examples/js/postprocessing/ShaderPass.js"></script>
+<script crossorigin="anonymous" src="https://cdn.jsdelivr.net/npm/three@0.138.0/examples/js/postprocessing/RenderPass.js"></script>
+<script crossorigin="anonymous" src="https://cdn.jsdelivr.net/npm/three@0.138.0/examples/js/postprocessing/UnrealBloomPass.js"></script>
+<script crossorigin="anonymous" src="https://cdn.jsdelivr.net/npm/gsap@3.12.5/dist/gsap.min.js"></script>
+<script>
+(function(){
+  var m=[];
+  if(typeof THREE==='undefined')m.push('THREE');
+  else{if(!THREE.OrbitControls)m.push('OrbitControls');if(!THREE.EffectComposer)m.push('EffectComposer');if(!THREE.RenderPass)m.push('RenderPass');if(!THREE.UnrealBloomPass)m.push('UnrealBloomPass');if(!THREE.ShaderPass)m.push('ShaderPass');if(!THREE.CopyShader)m.push('CopyShader')}
+  if(typeof gsap==='undefined')m.push('GSAP');
+  if(m.length){document.getElementById('loader').innerHTML='<p style="color:red;padding:40px;font-family:monospace">Missing: '+m.join(', ')+'</p>';throw new Error('Missing deps')}
+})();
+</script>
+<script>
+try {
+
+const P={fabric:0x0078D4,iq:0x00B7C3,foundry:0x8661C5,rti:0xFFB900,ok:0x107C10,bad:0xD13438,bg:0x06060C,critical:0xFF1744,opioid:0xE53935,benzo:0xFF6D00};
+const W=innerWidth,H=innerHeight;
+
+/* ═══════ RENDERER ═══════ */
+const R=new THREE.WebGLRenderer({antialias:true,powerPreference:'high-performance'});
+R.setSize(W,H);R.setPixelRatio(Math.min(devicePixelRatio,2));
+R.shadowMap.enabled=true;R.shadowMap.type=THREE.PCFSoftShadowMap;
+R.toneMapping=THREE.ACESFilmicToneMapping;R.toneMappingExposure=.95;
+R.outputEncoding=THREE.sRGBEncoding;
+document.body.prepend(R.domElement);
+const scene=new THREE.Scene();scene.background=new THREE.Color(P.bg);
+scene.fog=new THREE.FogExp2(P.bg,.006);
+const cam=new THREE.PerspectiveCamera(42,W/H,.1,800);cam.position.set(0,8,30);
+const ctrl=new THREE.OrbitControls(cam,R.domElement);
+ctrl.enableDamping=true;ctrl.dampingFactor=.06;ctrl.enablePan=false;
+ctrl.maxPolarAngle=Math.PI*.78;ctrl.minDistance=8;ctrl.maxDistance=60;
+ctrl.autoRotate=true;ctrl.autoRotateSpeed=.08;
+const comp=new THREE.EffectComposer(R);comp.addPass(new THREE.RenderPass(scene,cam));
+const bloom=new THREE.UnrealBloomPass(new THREE.Vector2(W,H),.3,.6,.9);comp.addPass(bloom);
+
+/* ═══════ STARFIELD ═══════ */
+(function(){
+  const n=2500,pos=new Float32Array(n*3);
+  for(let i=0;i<n;i++){const r=120+Math.random()*400,th=Math.random()*Math.PI*2,ph=Math.acos(2*Math.random()-1);
+    pos[i*3]=r*Math.sin(ph)*Math.cos(th);pos[i*3+1]=r*Math.sin(ph)*Math.sin(th);pos[i*3+2]=r*Math.cos(ph)}
+  const g=new THREE.BufferGeometry();g.setAttribute('position',new THREE.BufferAttribute(pos,3));
+  scene.add(new THREE.Points(g,new THREE.PointsMaterial({color:0x5566AA,size:.2,transparent:true,opacity:.45,sizeAttenuation:true})));
+})();
+
+/* ═══════ LIGHTING ═══════ */
+scene.add(new THREE.AmbientLight(0x252540,.6));
+const sun=new THREE.DirectionalLight(0xFFEEDD,.85);sun.position.set(15,25,12);sun.castShadow=true;
+sun.shadow.mapSize.set(2048,2048);sun.shadow.camera.left=-40;sun.shadow.camera.right=40;
+sun.shadow.camera.top=40;sun.shadow.camera.bottom=-40;scene.add(sun);
+scene.add(new THREE.DirectionalLight(0x3355AA,.2).translateX(-12).translateY(8));
+scene.add(new THREE.PointLight(0x5577AA,.2,50).translateY(12).translateZ(-15));
+
+/* ═══════ MATERIALS ═══════ */
+const matWall=new THREE.MeshStandardMaterial({color:0x2A3550,roughness:.85,metalness:.05});
+const matWallL=new THREE.MeshStandardMaterial({color:0x354060,roughness:.8,metalness:.05});
+const matGlass=new THREE.MeshPhysicalMaterial({color:0x88BBEE,roughness:.05,metalness:.1,transmission:.6,thickness:.3,transparent:true,opacity:.55});
+const matWinGlow=new THREE.MeshStandardMaterial({color:0x88CCFF,emissive:0x88CCFF,emissiveIntensity:.6,transparent:true,opacity:.7});
+const matRoof=new THREE.MeshStandardMaterial({color:0x1E2838,roughness:.9,metalness:.1});
+const matConc=new THREE.MeshStandardMaterial({color:0x3A3A4A,roughness:.95,metalness:.02});
+const matRedX=new THREE.MeshStandardMaterial({color:0xFF3333,emissive:0xFF3333,emissiveIntensity:.5});
+const matRoad=new THREE.MeshStandardMaterial({color:0x1A1A24,roughness:.95,metalness:.02});
+const matLane=new THREE.MeshStandardMaterial({color:0x555550,roughness:.9});
+
+/* ═══════ GEOMETRY HELPERS ═══════ */
+const bx=(w,h,d,m)=>{const o=new THREE.Mesh(new THREE.BoxGeometry(w,h,d),m);o.castShadow=true;o.receiveShadow=true;return o};
+const cy=(rt,rb,h,m,s=32)=>{const o=new THREE.Mesh(new THREE.CylinderGeometry(rt,rb,h,s),m);o.castShadow=true;return o};
+const sp=(r,m,s=32)=>new THREE.Mesh(new THREE.SphereGeometry(r,s,s),m);
+
+function glow(r,color,intensity){
+  intensity=intensity||.5;
+  const m=new THREE.MeshStandardMaterial({color,emissive:color,emissiveIntensity:intensity,roughness:.15,metalness:.1,transparent:true,opacity:.92});
+  const o=new THREE.Mesh(new THREE.SphereGeometry(r,32,32),m);
+  o.add(new THREE.Mesh(new THREE.SphereGeometry(r*1.6,16,16),new THREE.MeshBasicMaterial({color,transparent:true,opacity:.04})));
+  o.add(new THREE.Mesh(new THREE.SphereGeometry(r*2.5,12,12),new THREE.MeshBasicMaterial({color,transparent:true,opacity:.015})));
+  return o;
+}
+function orbitRing(r,color){
+  return new THREE.Mesh(new THREE.RingGeometry(r-.02,r+.02,96),new THREE.MeshBasicMaterial({color,transparent:true,opacity:.12,side:THREE.DoubleSide}));
+}
+function txt(text,opts){
+  opts=opts||{};var size=opts.size||40,weight=opts.weight||'600',color=opts.color||'#fff',scale=opts.scale||1;
+  const c=document.createElement('canvas'),x=c.getContext('2d');
+  x.font=weight+' '+size+'px Inter,sans-serif';
+  const tw=x.measureText(text).width+16,th=size*1.5;
+  c.width=tw*2;c.height=th*2;x.scale(2,2);
+  x.font=weight+' '+size+'px Inter,sans-serif';x.fillStyle=color;x.textBaseline='middle';
+  x.fillText(text,8,th/2);
+  const t=new THREE.CanvasTexture(c);t.minFilter=THREE.LinearFilter;
+  const s=new THREE.Sprite(new THREE.SpriteMaterial({map:t,transparent:true,depthTest:false}));
+  s.scale.set(tw/70*scale,th/70*scale,1);return s;
+}
+function lnPts(pts,color,op){
+  return new THREE.Line(new THREE.BufferGeometry().setFromPoints(pts),new THREE.LineBasicMaterial({color,transparent:true,opacity:op||.5}));
+}
+function particles(n,spread,color,sz){
+  const pos=new Float32Array(n*3),vel=new Float32Array(n*3);
+  for(let i=0;i<n;i++){for(let j=0;j<3;j++){pos[i*3+j]=(Math.random()-.5)*spread;vel[i*3+j]=(Math.random()-.5)*.01}}
+  const g=new THREE.BufferGeometry();g.setAttribute('position',new THREE.BufferAttribute(pos,3));g.userData={vel:vel};
+  return new THREE.Points(g,new THREE.PointsMaterial({color,size:sz||.04,transparent:true,opacity:.4,sizeAttenuation:true,blending:THREE.AdditiveBlending}));
+}
+function tickP(pts){var p=pts.geometry.attributes.position,v=pts.geometry.userData.vel;for(var i=0;i<p.count;i++){p.array[i*3]+=v[i*3];p.array[i*3+1]+=v[i*3+1];p.array[i*3+2]+=v[i*3+2];for(var j=0;j<3;j++)if(Math.abs(p.array[i*3+j])>14)p.array[i*3+j]*=-.3}p.needsUpdate=true}
+
+function createStreamDots(group,count,color,intensity){
+  var dots=[];
+  for(var i=0;i<count;i++){
+    var d=glow(.04,color,intensity||1.5);d.visible=false;group.add(d);
+    dots.push({mesh:d,t:Math.random(),speed:.15+Math.random()*.12});
+  }
+  return dots;
+}
+function animStream(dots,pathPts,dt){
+  for(var k=0;k<dots.length;k++){
+    var fd=dots[k];fd.t+=dt*fd.speed;if(fd.t>1)fd.t-=1;fd.mesh.visible=true;
+    var sl=1/(pathPts.length-1),seg=Math.min(Math.floor(fd.t/sl),pathPts.length-2),lc=(fd.t-seg*sl)/sl;
+    var a=pathPts[seg],b=pathPts[seg+1];
+    fd.mesh.position.set(a.x+(b.x-a.x)*lc,a.y+(b.y-a.y)*lc+Math.sin(fd.t*Math.PI*4)*.06,a.z+(b.z-a.z)*lc);
+  }
+}
+
+/* ═══════ HTML HELPERS ═══════ */
+var cardsEl=document.getElementById('cards');
+function addCard(id,side,top,html,opts){
+  opts=opts||{};
+  var el=document.getElementById(id);
+  if(!el){el=document.createElement('div');el.id=id;el.className='card-'+side+(opts.click?' clickable':'');cardsEl.appendChild(el)}
+  el.innerHTML=html;el.style.top=top;
+  if(opts.border)el.style.borderColor=opts.border;
+  if(opts.w){el.style.width=opts.w;el.style.maxWidth=opts.w}
+  if(opts.click)el.onclick=function(){el.classList.toggle('expanded')};
+  requestAnimationFrame(function(){el.classList.add('visible')});
+}
+function clearCards(){cardsEl.innerHTML=''}
+function setTitle(h,p){var b=document.getElementById('title-block');b.querySelector('h1').innerHTML=h;b.querySelector('p').innerHTML=p||'';b.classList.add('visible')}
+function hideTitle(){document.getElementById('title-block').classList.remove('visible')}
+
+/* ═══════ STATE ═══════ */
+var SCENES=6,cur=0,autoPlay=false,autoTimer=null;
+var groups=[],enters=[],exits=[],ticks=[];var clock=new THREE.Clock();
+
+var ground=bx(200,.1,200,new THREE.MeshStandardMaterial({color:0x080810,roughness:.75,metalness:.4}));
+ground.position.y=-.05;ground.receiveShadow=true;scene.add(ground);
+var grid=new THREE.GridHelper(200,200,0x12121E,0x0C0C16);grid.material.transparent=true;grid.material.opacity=.25;scene.add(grid);
+
+/* ═══════ BUILDERS ═══════ */
+function buildHospital(){
+  var g=new THREE.Group();
+  g.add(bx(10,14,8,matWall).translateY(7));
+  g.add(bx(6,8,8,matWallL).translateX(-8).translateY(4));
+  g.add(bx(6,8,8,matWallL).translateX(8).translateY(4));
+  g.add(bx(6,2.2,5,matRoof).translateY(15.1));
+  var hp=cy(2.5,2.5,.12,matConc);hp.position.set(0,16.2,0);g.add(hp);
+  var hc=new THREE.Mesh(new THREE.RingGeometry(1.8,2,48),new THREE.MeshStandardMaterial({color:0xffffff,emissive:0xffffff,emissiveIntensity:.25,side:THREE.DoubleSide}));
+  hc.rotation.x=-Math.PI/2;hc.position.set(0,16.3,0);g.add(hc);
+  g.add(txt('H',{size:56,weight:'900',scale:.75}).translateY(16.6));
+  var f,r,c,w;
+  for(f of[1,-1])for(r=0;r<7;r++)for(c=0;c<5;c++){
+    w=bx(.8,1,.06,Math.random()>.3?matWinGlow:matGlass);w.position.set(-3.2+c*1.6,1.5+r*1.8,f*4.03);g.add(w)}
+  for(var wx of[-8,8])for(r=0;r<4;r++)for(c=0;c<3;c++){
+    w=bx(.8,1,.06,Math.random()>.25?matWinGlow:matGlass);w.position.set(wx-1.2+c*1.2,1.5+r*1.8,4.03);g.add(w)}
+  g.add(bx(6,.12,4,new THREE.MeshPhysicalMaterial({color:0x6699BB,transmission:.7,roughness:.05,transparent:true,opacity:.35})).translateY(3.5).translateZ(6));
+  for(var px of[-2.5,2.5]){var p=cy(.12,.12,3.5,matConc);p.position.set(px,1.75,6);g.add(p)}
+  g.add(bx(2,.7,.08,new THREE.MeshStandardMaterial({color:0xff0000,emissive:0xff0000,emissiveIntensity:.7})).translateX(-8).translateY(8.5).translateZ(4.06));
+  g.add(txt('ER',{size:34,weight:'900',scale:.45}).translateX(-8).translateY(8.5).translateZ(4.2));
+  g.add(bx(2,.35,.08,matRedX).translateY(12).translateZ(4.06));
+  g.add(bx(.35,2,.08,matRedX).translateY(12).translateZ(4.06));
+  g.add(txt('LAKESIDE HEALTH',{size:26,weight:'700',color:'#8AAFCC',scale:.85}).translateY(10).translateZ(4.5));
+  g.add(bx(40,.04,4,matRoad).translateZ(14));
+  for(var lx=-18;lx<=18;lx+=4)g.add(bx(1.5,.05,.12,matLane).translateX(lx).translateZ(14));
+  g.add(bx(6,.04,12,new THREE.MeshStandardMaterial({color:0x222230,roughness:.95})).translateZ(10));
+  var treePos=[[6,10],[-6,10],[12,3],[-12,3],[12,-3],[-12,-3],[16,14],[-16,14]];
+  for(var ti=0;ti<treePos.length;ti++){var tx=treePos[ti][0],tz=treePos[ti][1];
+    g.add(cy(.14,.18,1.4,new THREE.MeshStandardMaterial({color:0x5C3D2E,roughness:.9})).translateX(tx).translateY(.7).translateZ(tz));
+    var crown=new THREE.Mesh(new THREE.ConeGeometry(.8,2,8),new THREE.MeshStandardMaterial({color:0x1A5C2A,roughness:.7}));
+    crown.position.set(tx,2.4,tz);g.add(crown);
+  }
+  for(var slx of[-14,0,14]){
+    g.add(cy(.06,.06,3.5,matConc).translateX(slx).translateY(1.75).translateZ(18));
+    g.add(new THREE.PointLight(0xFFDD88,.15,8).translateX(slx).translateY(3.5).translateZ(18));
+    g.add(sp(.12,new THREE.MeshStandardMaterial({color:0xFFDD88,emissive:0xFFDD88,emissiveIntensity:1})).translateX(slx).translateY(3.5).translateZ(18));
+  }
+  var erLight=new THREE.PointLight(0xFF2222,.3,8);erLight.position.set(-9,2,6);g.add(erLight);
+  g.userData.erLight=erLight;
+  return g;
+}
+function buildSarah(){
+  var g=new THREE.Group();
+  g.add(cy(.32,.28,1,new THREE.MeshStandardMaterial({color:0x3B7DD8,roughness:.7})).translateY(.9));
+  g.add(sp(.26,new THREE.MeshStandardMaterial({color:0xDEB887,roughness:.6})).translateY(1.58));
+  var hair=sp(.28,new THREE.MeshStandardMaterial({color:0x4A2E1A,roughness:.8}));hair.position.set(0,1.65,-.04);hair.scale.set(1,.85,.9);g.add(hair);
+  for(var x of[-.11,.11])g.add(cy(.08,.08,.65,new THREE.MeshStandardMaterial({color:0x2A3A55,roughness:.8})).translateX(x).translateY(.35));
+  for(var ax of[-.34,.34])g.add(cy(.055,.045,.6,new THREE.MeshStandardMaterial({color:0xDEB887,roughness:.6})).translateX(ax).translateY(.85).rotateZ(ax<0?.2:-.2));
+  return g;
+}
+
+/* ═══════ SCENE 1 — "Not Medicare. Still Dangerous." ═══════ */
+(function(){
+  var g=new THREE.Group();g.visible=false;scene.add(g);groups.push(g);
+  var hosp=buildHospital();g.add(hosp);
+  var sarah=buildSarah();sarah.position.set(5,0,14);g.add(sarah);
+  g.add(txt('Sarah Johnson, 41',{size:22,color:'#5B9BD5',scale:.65}).translateX(5).translateY(2.5).translateZ(14));
+
+  /* Provider web — 13 scattered glow nodes */
+  var provData=[
+    {label:'Psychiatrist 1',  color:P.foundry},{label:'Psychiatrist 2',  color:P.foundry},
+    {label:'Psychiatrist 3',  color:P.foundry},{label:'Cardiology',      color:P.bad},
+    {label:'Internal Med',    color:P.fabric}, {label:'Family Med',      color:P.iq},
+    {label:'Dermatology',     color:0xE67E22}, {label:'Radiology',       color:0x95A5A6},
+    {label:'Pediatrics',      color:P.rti},    {label:'Anesthesiology',  color:0x7F8C8D},
+    {label:'Pain Mgmt',       color:P.opioid}, {label:'OB/GYN',          color:0xF1C40F},
+    {label:'Urgent Care',     color:0x1ABC9C},
+  ];
+  var provNodes=[];
+  provData.forEach(function(pd,i){
+    var angle=(i/13)*Math.PI*2,r=8+Math.random()*2;
+    var n=glow(.2,pd.color,.35);n.position.set(Math.cos(angle)*r,3+Math.sin(i*1.7)*2,-6+Math.sin(angle)*5);
+    n.scale.set(.01,.01,.01);g.add(n);provNodes.push(n);
+  });
+
+  var ring1=orbitRing(12,P.critical);ring1.position.y=6;ring1.rotation.x=-Math.PI/2;g.add(ring1);
+  var prMat=new THREE.MeshBasicMaterial({color:P.critical,transparent:true,opacity:0,side:THREE.DoubleSide});
+  var pr=new THREE.Mesh(new THREE.RingGeometry(1,1.12,48),prMat);pr.rotation.x=-Math.PI/2;pr.position.set(5,.1,14);g.add(pr);
+  var pts=particles(280,30,0x2A2035,.03);g.add(pts);
+
+  ticks.push(function(dt,t){
+    tickP(pts);sarah.position.y=Math.sin(t*.8)*.04;
+    var ph=(t%2.5)/2.5;prMat.opacity=Math.max(0,.3*(1-ph));pr.scale.set(1+ph*1.5,1+ph*1.5,1);
+    ring1.rotation.z=t*.06;
+    provNodes.forEach(function(n,i){n.position.y=3+Math.sin(i*1.7)*2+Math.sin(t*.3+i)*.08;n.rotation.y+=.003});
+    if(hosp.userData.erLight)hosp.userData.erLight.intensity=.15+Math.sin(t*4)*.15;
+  });
+
+  enters.push(function(){
+    setTitle("Not <span class=\"hl-fabric\">Medicare</span>. Still <span class=\"hl-critical\">Dangerous</span>.",'Sarah Johnson, age 41. Commercial insurance. 13 providers. Three psychiatrists. A pediatrician prescribing to an adult. This isn\'t an HRRP problem — this is a malpractice and patient safety crisis hiding in your commercial panel.');
+    gsap.to(cam.position,{x:-3,y:12,z:30,duration:2.2,ease:'power2.inOut'});
+    gsap.to(ctrl.target,{x:0,y:5,z:2,duration:2.2,ease:'power2.inOut'});
+    bloom.strength=.25;
+    provNodes.forEach(function(n,i){gsap.to(n.scale,{x:1,y:1,z:1,duration:.4,delay:.4+i*.05,ease:'back.out(2)'})});
+
+    setTimeout(function(){addCard('c1cost','right','80px',
+      '<h3 style="color:var(--critical)">The Liability Hiding in Plain Sight</h3>'+
+      '<div class="big critical">$2.4M</div>'+
+      '<p style="font-size:.68rem;color:var(--text);line-height:1.8">Average opioid wrongful-death settlement</p>'+
+      '<p style="font-size:.68rem;line-height:1.9;margin-top:8px;color:var(--muted)">'+
+      '<b style="color:var(--critical)">72,000</b> — U.S. opioid overdose deaths per year<br>'+
+      '<b style="color:var(--critical)">30%</b> — Opioid ER visits involving opioid + benzo combo<br>'+
+      '<b style="color:var(--critical)">3 prescribers</b> — No single physician sees the full picture<br>'+
+      '<b style="color:var(--critical)">$0</b> — What your system flags today</p>'+
+      '<p style="margin-top:8px;font-size:.6rem;color:var(--rti)">This isn\'t a quality metric. This is a patient one bad day from the news.</p>'
+    ,{border:'rgba(255,23,68,.2)'})},600);
+
+    setTimeout(function(){addCard('c1a','right','380px',
+      '<h3 style="color:var(--muted)">13 Providers — Nobody Coordinating</h3>'+
+      '<p style="font-size:.66rem;line-height:1.85;color:var(--text)">'+
+      '<span class="pill pill-purple">Psychiatry &times;3</span> <span class="pill pill-red">Cardiology</span> <span class="pill pill-blue">Internal Med</span> <span class="pill pill-teal">Family Med</span><br>'+
+      '<span class="pill pill-yellow">Pediatrics &#9888;</span> <span style="font-size:.52rem;color:var(--rti)"> prescribing to a 41-year-old</span><br>'+
+      '<span class="pill" style="background:rgba(230,126,34,.1);color:#E67E22;border:1px solid rgba(230,126,34,.2)">Dermatology</span> '+
+      '<span class="pill" style="background:rgba(149,165,166,.1);color:#95A5A6;border:1px solid rgba(149,165,166,.2)">Radiology</span> '+
+      '<span class="pill" style="background:rgba(127,140,141,.1);color:#7F8C8D;border:1px solid rgba(127,140,141,.2)">Anesthesiology</span><br>'+
+      '<span class="pill pill-critical">Pain Mgmt</span> <span class="pill" style="background:rgba(241,196,15,.1);color:#F1C40F;border:1px solid rgba(241,196,15,.2)">OB/GYN</span> <span class="pill pill-teal">Urgent Care</span></p>'+
+      '<p style="margin-top:6px;font-size:.58rem;color:var(--muted)">No PCP managing. No care plan. Nobody coordinating psychiatry, pain, and chronic disease.</p>'
+    ,{border:'rgba(255,255,255,.04)'})},1200);
+
+    setTimeout(function(){addCard('c1p','left','260px',
+      '<div><span class="badge badge-critical">COMMERCIAL PATIENT</span></div>'+
+      '<h3 style="color:var(--text);margin-top:8px">Sarah Johnson</h3>'+
+      '<p style="color:var(--text)">Age 41 · Female · Commercial Insurance · 13 providers</p>'+
+      '<p><span class="pill pill-critical">Opioid + Benzo</span> <span class="pill pill-red">No PCP</span> <span class="pill pill-yellow">Pediatrician Rx</span></p>'+
+      '<p class="click-hint">&#9654; Click for medication detail</p>'+
+      '<div class="click-expand">'+
+      '<table><tr><th>Drug Class</th><th>PDC</th><th>Status</th></tr>'+
+      '<tr><td style="color:var(--critical)">Hydrocodone (Opioid)</td><td style="color:var(--critical);font-weight:700">1.00</td><td><span class="pill pill-critical">Perfect Fill</span></td></tr>'+
+      '<tr><td style="color:var(--benzo)">Lorazepam (Benzo)</td><td style="color:var(--benzo)">0.85</td><td><span class="pill pill-critical">FDA Black-Box</span></td></tr>'+
+      '<tr><td>ACE Inhibitor</td><td style="color:var(--danger)">0.42</td><td><span class="pill pill-red">Non-Adherent</span></td></tr>'+
+      '<tr><td>SSRI</td><td style="color:var(--danger)">0.38</td><td><span class="pill pill-red">Non-Adherent</span></td></tr>'+
+      '<tr><td>Diuretic</td><td style="color:var(--danger)">0.35</td><td><span class="pill pill-red">Non-Adherent</span></td></tr>'+
+      '<tr><td>NSAID</td><td style="color:var(--danger)">0.03</td><td><span class="pill pill-red">356 Gap Days</span></td></tr>'+
+      '<tr><td>Macrolide</td><td style="color:var(--danger)">0.12</td><td><span class="pill pill-red">Non-Adherent</span></td></tr></table>'+
+      '<p style="margin-top:8px;color:var(--critical);font-weight:700;font-size:.66rem">&#9888; She fills the opioid perfectly. She doesn\'t fill her heart, brain, or blood pressure meds.</p>'+
+      '</div>'
+    ,{border:'rgba(255,23,68,.2)',click:true})},1800);
+  });
+  exits.push(function(){clearCards();hideTitle();provNodes.forEach(function(n){n.scale.set(.01,.01,.01)})});
+})();
+
+/* ═══════ SCENE 2 — "The Ontology Sees What Dashboards Can't" ═══════ */
+(function(){
+  var g=new THREE.Group();g.visible=false;scene.add(g);groups.push(g);
+
+  var sources=[
+    {label:'Rx Claims',    sub:'Opioid+Benzo detected',    color:P.opioid, x:-14,y:6},
+    {label:'Provider Net',  sub:'13 prescribers, no PCP',  color:P.fabric, x:-14,y:3.5},
+    {label:'Encounter Log', sub:'Pediatrician anomaly',    color:P.rti,    x:-14,y:1},
+  ];
+  var srcNodes=[];
+  sources.forEach(function(s){
+    var n=glow(.4,s.color,.5);n.position.set(s.x,s.y,0);n.scale.set(.01,.01,.01);g.add(n);srcNodes.push(n);
+    g.add(txt(s.label,{size:13,weight:'700',color:'#'+new THREE.Color(s.color).getHexString(),scale:.36}).translateX(s.x).translateY(s.y+.7));
+    g.add(txt(s.sub,{size:10,color:'#444460',scale:.28}).translateX(s.x).translateY(s.y-.55));
+  });
+  g.add(txt('STREAMING',{size:10,weight:'300',color:'#333350',scale:.3}).translateX(-14).translateY(7.5));
+
+  var dataAgent=glow(.75,P.iq,.6);dataAgent.position.set(-5,3.5,0);dataAgent.scale.set(.01,.01,.01);g.add(dataAgent);
+  g.add(txt('Data Agent',{size:18,weight:'800',color:'#00B7C3',scale:.48}).translateX(-5).translateY(5.2));
+  g.add(txt('Ontology + Relationships',{size:11,color:'#444460',scale:.3}).translateX(-5).translateY(2.2));
+  var daRing=orbitRing(1.5,P.iq);daRing.position.set(-5,3.5,0);daRing.rotation.x=-Math.PI/2;g.add(daRing);
+
+  var ontoNames=['Patient','Prescription','Provider','Encounter','Diagnosis'];
+  var ontoColors=[P.iq,P.opioid,0xF1C40F,P.fabric,0xE67E22];
+  var ontoNodes=[];
+  ontoNames.forEach(function(name,i){
+    var angle=(i/5)*Math.PI*2;
+    var n=glow(.18,ontoColors[i],.4);n.position.set(-5+Math.cos(angle)*2.8,3.5+Math.sin(angle)*1.5,Math.sin(angle)*1);
+    n.scale.set(.01,.01,.01);g.add(n);ontoNodes.push({mesh:n,angle:angle,r:2.8,ry:1.5,rz:1});
+  });
+
+  var foundryAgent=glow(.75,P.foundry,.6);foundryAgent.position.set(5,3.5,0);foundryAgent.scale.set(.01,.01,.01);g.add(foundryAgent);
+  g.add(txt('Foundry Agent',{size:18,weight:'800',color:'#8661C5',scale:.48}).translateX(5).translateY(5.2));
+  g.add(txt('FDA + DEA + Clinical Rules',{size:11,color:'#444460',scale:.3}).translateX(5).translateY(2.2));
+  var faRing=orbitRing(1.5,P.foundry);faRing.position.set(5,3.5,0);faRing.rotation.x=-Math.PI/2;g.add(faRing);
+
+  var kbNames=['FDA Black-Box','DEA Schedule','APA Guide','ACC/AHA'];
+  var kbColors=[P.critical,P.opioid,P.foundry,P.bad];
+  var kbNodes=[];
+  kbNames.forEach(function(name,i){
+    var angle=(i/4)*Math.PI*2;
+    var n=glow(.15,kbColors[i],.3);n.position.set(5+Math.cos(angle)*2.5,3.5+Math.sin(angle)*1.3,Math.sin(angle)*.8);
+    n.scale.set(.01,.01,.01);g.add(n);kbNodes.push({mesh:n,angle:angle,r:2.5,ry:1.3,rz:.8});
+  });
+
+  var opsOut=glow(.5,P.rti,.5);opsOut.position.set(14,3.5,0);opsOut.scale.set(.01,.01,.01);g.add(opsOut);
+  g.add(txt('Ops Agent',{size:14,weight:'700',color:'#FFB900',scale:.38}).translateX(14).translateY(4.6));
+  g.add(txt('Triage + Alert',{size:10,color:'#444460',scale:.28}).translateX(14).translateY(2.7));
+
+  sources.forEach(function(s){g.add(lnPts([new THREE.Vector3(s.x+.5,s.y,0),new THREE.Vector3(-6.2,3.5,0)],s.color,.08))});
+  g.add(lnPts([new THREE.Vector3(-3.5,3.5,0),new THREE.Vector3(3.5,3.5,0)],0x444466,.15));
+  g.add(lnPts([new THREE.Vector3(6.5,3.5,0),new THREE.Vector3(13.2,3.5,0)],P.rti,.1));
+  g.add(txt('findings',{size:10,color:'#333350',scale:.28}).translateX(0).translateY(4.3));
+  g.add(txt('flags',{size:10,color:'#333350',scale:.28}).translateX(10).translateY(4.3));
+
+  var srcToDaDots=[];
+  sources.forEach(function(s){
+    srcToDaDots.push({dots:createStreamDots(g,6,s.color,1.2),path:[new THREE.Vector3(s.x,s.y,0),new THREE.Vector3(-6.2,3.5,0)]});
+  });
+  var daToFaDots=createStreamDots(g,10,0x5588AA,1);
+  var daToFaPath=[new THREE.Vector3(-3.5,3.5,0),new THREE.Vector3(0,3.8,.1),new THREE.Vector3(3.5,3.5,0)];
+  var faToOpsDots=createStreamDots(g,6,P.critical,1.5);
+  var faToOpsPath=[new THREE.Vector3(6.5,3.5,0),new THREE.Vector3(10,3.5,0),new THREE.Vector3(13.2,3.5,0)];
+
+  var streaming=false;
+  var pts=particles(200,30,0x1A2035,.03);g.add(pts);
+
+  ticks.push(function(dt,t){
+    tickP(pts);
+    dataAgent.rotation.y+=.004;foundryAgent.rotation.y-=.004;
+    daRing.rotation.z=t*.12;faRing.rotation.z=-t*.12;
+    ontoNodes.forEach(function(o){var a=o.angle+t*.15;o.mesh.position.set(-5+Math.cos(a)*o.r,3.5+Math.sin(a)*o.ry,Math.sin(a)*o.rz)});
+    kbNodes.forEach(function(o){var a=o.angle-t*.12;o.mesh.position.set(5+Math.cos(a)*o.r,3.5+Math.sin(a)*o.ry,Math.sin(a)*o.rz)});
+    if(streaming){
+      srcToDaDots.forEach(function(s){animStream(s.dots,s.path,dt)});
+      animStream(daToFaDots,daToFaPath,dt);
+      animStream(faToOpsDots,faToOpsPath,dt);
+    }
+    opsOut.position.y=3.5+Math.sin(t*.5)*.06;
+  });
+
+  enters.push(function(){
+    setTitle('<span class="hl-iq">Data Agent</span> + <span class="hl-foundry">Foundry Agent</span>','The ontology connects what dashboards can\'t. A flat report shows 13 prescriptions. The ontology shows that those 13 prescriptions are a clinical and legal time bomb.');
+    gsap.to(cam.position,{x:0,y:5,z:22,duration:1.8,ease:'power2.inOut'});
+    gsap.to(ctrl.target,{x:0,y:3.5,z:0,duration:1.8,ease:'power2.inOut'});
+    bloom.strength=.45;
+
+    srcNodes.forEach(function(n,i){gsap.to(n.scale,{x:1,y:1,z:1,duration:.4,delay:i*.1,ease:'back.out(2)'})});
+    gsap.to(dataAgent.scale,{x:1,y:1,z:1,duration:.5,delay:.4,ease:'elastic.out(1,.6)'});
+    ontoNodes.forEach(function(o,i){gsap.to(o.mesh.scale,{x:1,y:1,z:1,duration:.3,delay:.5+i*.06,ease:'back.out(2)'})});
+    gsap.to(foundryAgent.scale,{x:1,y:1,z:1,duration:.5,delay:.8,ease:'elastic.out(1,.6)'});
+    kbNodes.forEach(function(o,i){gsap.to(o.mesh.scale,{x:1,y:1,z:1,duration:.3,delay:.9+i*.06,ease:'back.out(2)'})});
+    gsap.to(opsOut.scale,{x:1,y:1,z:1,duration:.5,delay:1.3,ease:'back.out(2)'});
+    setTimeout(function(){streaming=true},1400);
+
+    setTimeout(function(){addCard('c2a','left','200px',
+      '<h3 style="color:var(--iq)">Data Agent — What It Finds</h3>'+
+      '<p style="color:var(--text);font-size:.68rem;line-height:1.8">'+
+      '<span class="edge">Patient</span> &rarr; <span class="edge">Prescription</span> &rarr; <span class="edge">Provider</span></p>'+
+      '<table><tr><th>Finding</th><th>Detail</th></tr>'+
+      '<tr><td style="color:var(--critical)">Opioid + Benzo</td><td>Hydrocodone (PDC 1.00) + Lorazepam (0.85) from <b>different prescribers</b></td></tr>'+
+      '<tr><td style="color:var(--rti)">Pediatrician Rx</td><td>Prescribing to 41-year-old adult</td></tr>'+
+      '<tr><td style="color:var(--danger)">NSAID Triple</td><td>Furosemide + Lisinopril + Ibuprofen (356 gap days)</td></tr>'+
+      '<tr><td style="color:var(--danger)">No PCP</td><td>13 providers, 0 primary care coordination</td></tr>'+
+      '<tr><td style="color:var(--foundry)">3 Psychiatrists</td><td>No consolidation, potential duplicate Rx</td></tr></table>'+
+      '<p style="margin-top:6px;font-size:.56rem;color:var(--iq)">Graph traversal — not SQL aggregation. 10 seconds.</p>'
+    ,{border:'rgba(0,183,195,.15)'})},1500);
+
+    setTimeout(function(){addCard('c2b','right','100px',
+      '<h3 style="color:var(--foundry)">Foundry Agent — What To Do</h3>'+
+      '<table><tr><th>Flag</th><th>Rule</th><th>Action</th></tr>'+
+      '<tr><td style="color:var(--critical)">FDA Black-Box</td><td>Opioid + Benzo concurrent</td><td style="color:var(--critical)">IMMEDIATE REVIEW</td></tr>'+
+      '<tr><td style="color:var(--danger)">DEA Schedule II+III</td><td>Multi-prescriber controlled</td><td>Consolidate to 1 provider</td></tr>'+
+      '<tr><td style="color:var(--rti)">Psychiatry &times;3</td><td>APA consolidation guide</td><td>Single psychiatrist</td></tr>'+
+      '<tr><td>NSAID + ACE-I + Diuretic</td><td>Nephrotoxicity risk</td><td>Discontinue NSAID</td></tr>'+
+      '<tr><td>No PCP</td><td>Care coordination mandate</td><td>Assign PCP within 48hr</td></tr></table>'+
+      '<p style="margin-top:8px;font-size:.58rem;color:var(--muted)">'+
+      '<b style="color:var(--critical)">FDA Boxed Warning:</b> "Concurrent use of opioids and benzodiazepines may result in profound sedation, respiratory depression, coma, and death."</p>'
+    ,{border:'rgba(134,97,197,.15)'})},2200);
+
+    setTimeout(function(){
+      addCard('c2c','center','auto',
+        '<p style="font-size:.76rem;line-height:1.6;color:var(--text)">'+
+        'A flat dashboard shows Sarah has <b>13 prescriptions</b>.<br>'+
+        'The ontology shows those 13 prescriptions are a <b style="color:var(--critical)">clinical and legal time bomb</b>.</p>'
+      ,{border:'rgba(255,255,255,.06)'});
+      setTimeout(function(){var el=document.getElementById('c2c');if(el){el.style.top='auto';el.style.bottom='76px'}},50);
+    },3500);
+  });
+
+  exits.push(function(){clearCards();hideTitle();streaming=false;
+    srcNodes.forEach(function(n){n.scale.set(.01,.01,.01)});
+    dataAgent.scale.set(.01,.01,.01);foundryAgent.scale.set(.01,.01,.01);opsOut.scale.set(.01,.01,.01);
+    ontoNodes.forEach(function(o){o.mesh.scale.set(.01,.01,.01)});kbNodes.forEach(function(o){o.mesh.scale.set(.01,.01,.01)});
+    srcToDaDots.forEach(function(s){s.dots.forEach(function(d){d.mesh.visible=false;d.t=Math.random()})});
+    daToFaDots.forEach(function(d){d.mesh.visible=false;d.t=Math.random()});
+    faToOpsDots.forEach(function(d){d.mesh.visible=false;d.t=Math.random()});
+  });
+})();
+
+/* ═══════ SCENE 3 — "The Black Box Warning" ═══════ */
+(function(){
+  var g=new THREE.Group();g.visible=false;scene.add(g);groups.push(g);
+
+  /* Two large medication spheres */
+  var opioidNode=glow(1.2,P.opioid,1);opioidNode.position.set(-4,4,0);opioidNode.scale.set(.01,.01,.01);g.add(opioidNode);
+  g.add(txt('HYDROCODONE',{size:18,weight:'900',color:'#E53935',scale:.5}).translateX(-4).translateY(6));
+  g.add(txt('Opioid · Schedule II · PDC 1.00',{size:11,color:'#AA3333',scale:.32}).translateX(-4).translateY(2.5));
+  var oRing=orbitRing(2,P.opioid);oRing.position.set(-4,4,0);oRing.rotation.x=-Math.PI/2;g.add(oRing);
+
+  var benzoNode=glow(1,P.benzo,.9);benzoNode.position.set(4,4,0);benzoNode.scale.set(.01,.01,.01);g.add(benzoNode);
+  g.add(txt('LORAZEPAM',{size:18,weight:'900',color:'#FF6D00',scale:.5}).translateX(4).translateY(6));
+  g.add(txt('Benzodiazepine · Schedule IV',{size:11,color:'#AA5500',scale:.32}).translateX(4).translateY(2.5));
+  var bRing=orbitRing(1.8,P.benzo);bRing.position.set(4,4,0);bRing.rotation.x=-Math.PI/2;g.add(bRing);
+
+  /* Pulsing danger connection */
+  var dangerLine=lnPts([new THREE.Vector3(-2.5,4,0),new THREE.Vector3(2.5,4,0)],P.critical,.8);g.add(dangerLine);
+  var dangerLine2=lnPts([new THREE.Vector3(-2.5,4.15,.15),new THREE.Vector3(2.5,4.15,.15)],P.critical,.3);g.add(dangerLine2);
+  var dangerLine3=lnPts([new THREE.Vector3(-2.5,3.85,-.15),new THREE.Vector3(2.5,3.85,-.15)],P.critical,.3);g.add(dangerLine3);
+
+  /* FDA warning glow in center */
+  var fdaGlow=glow(.5,P.critical,2);fdaGlow.position.set(0,4,0);fdaGlow.scale.set(.01,.01,.01);g.add(fdaGlow);
+  g.add(txt('FDA BLACK BOX',{size:16,weight:'900',color:'#FF1744',scale:.45}).translateY(4.8));
+
+  /* Three prescriber nodes below */
+  var prescribers=[
+    {label:'Dr. A — Pain Mgmt',  color:P.opioid, x:-5,y:0},
+    {label:'Dr. B — Psychiatry',  color:P.foundry,x:0,y:-.5},
+    {label:'Dr. C — Urgent Care', color:P.iq,     x:5,y:0},
+  ];
+  var rxNodes=[];
+  prescribers.forEach(function(p){
+    var n=glow(.3,p.color,.4);n.position.set(p.x,p.y,0);n.scale.set(.01,.01,.01);g.add(n);rxNodes.push(n);
+    g.add(txt(p.label,{size:12,weight:'600',color:'#'+new THREE.Color(p.color).getHexString(),scale:.32}).translateX(p.x).translateY(p.y-1));
+    g.add(lnPts([new THREE.Vector3(p.x,p.y+.5,0),new THREE.Vector3(p.x<0?-3:p.x>0?3:0,3.5,0)],p.color,.15));
+  });
+  g.add(txt('3 prescribers — none aware of each other',{size:11,color:'#555570',scale:.32}).translateY(-2));
+
+  /* Ops Agent */
+  var opsNode=glow(.6,P.critical,.8);opsNode.position.set(10,4,0);opsNode.scale.set(.01,.01,.01);g.add(opsNode);
+  g.add(txt('CRITICAL ALERT',{size:14,weight:'900',color:'#FF1744',scale:.42}).translateX(10).translateY(5.5));
+  g.add(lnPts([new THREE.Vector3(1,4,0),new THREE.Vector3(9,4,0)],P.critical,.2));
+  var alertDots=createStreamDots(g,10,P.critical,2.5);
+  var alertPath=[new THREE.Vector3(1,4,0),new THREE.Vector3(5,4.2,0),new THREE.Vector3(9,4,0)];
+
+  var pts=particles(300,22,P.critical,.03);g.add(pts);
+  var active=false;
+
+  ticks.push(function(dt,t){
+    tickP(pts);
+    oRing.rotation.z=t*.15;bRing.rotation.z=-t*.18;
+    fdaGlow.scale.x=1+Math.sin(t*3)*.15;fdaGlow.scale.y=1+Math.sin(t*3)*.15;
+    dangerLine.material.opacity=.4+Math.sin(t*4)*.4;
+    opioidNode.position.y=4+Math.sin(t*.6)*.08;benzoNode.position.y=4+Math.sin(t*.6+1)*.08;
+    opsNode.scale.x=1+Math.sin(t*2.5)*.1;opsNode.scale.y=1+Math.sin(t*2.5)*.1;
+    if(active)animStream(alertDots,alertPath,dt);
+  });
+
+  enters.push(function(){
+    setTitle('The <span class="hl-critical">Black Box</span> Warning','Hydrocodone + Lorazepam. The FDA\'s most severe drug interaction warning. Three different providers in your system prescribed this combination. None of them know about each other.');
+    gsap.to(cam.position,{x:0,y:5,z:16,duration:1.8,ease:'power2.inOut'});
+    gsap.to(ctrl.target,{x:1,y:3.5,z:0,duration:1.8,ease:'power2.inOut'});
+    bloom.strength=.55;
+
+    gsap.to(opioidNode.scale,{x:1,y:1,z:1,duration:.6,delay:.3,ease:'elastic.out(1,.6)'});
+    gsap.to(benzoNode.scale,{x:1,y:1,z:1,duration:.6,delay:.5,ease:'elastic.out(1,.6)'});
+    gsap.to(fdaGlow.scale,{x:1,y:1,z:1,duration:.5,delay:.8,ease:'back.out(3)'});
+    rxNodes.forEach(function(n,i){gsap.to(n.scale,{x:1,y:1,z:1,duration:.4,delay:1+i*.15,ease:'back.out(2)'})});
+    gsap.to(opsNode.scale,{x:1,y:1,z:1,duration:.5,delay:1.5,ease:'back.out(2.5)'});
+    setTimeout(function(){active=true},1600);
+
+    setTimeout(function(){addCard('c3a','right','100px',
+      '<div class="teams-notif">'+
+      '<h4>&#9888; CRITICAL — Operations Agent</h4>'+
+      '<div class="body">'+
+      '<b style="color:var(--text)">Sarah Johnson (Age 41, Female, Commercial)</b><br><br>'+
+      '<span style="color:var(--critical);font-weight:700">&#9888; FDA BLACK-BOX COMBINATION DETECTED</span><br>'+
+      '<b style="color:var(--opioid)">Hydrocodone-APAP</b> (PDC 1.00) — Pain Mgmt prescriber<br>'+
+      '<b style="color:var(--benzo)">Lorazepam</b> (PDC 0.85) — Psychiatry prescriber<br><br>'+
+      '&#128137; 3 different controlled-substance prescribers<br>'+
+      '&#128165; Concurrent opioid+benzo = <b>respiratory depression risk</b><br>'+
+      '&#9888; No PCP oversight, no care coordination<br><br>'+
+      '<b style="color:var(--critical)">Immediate physician review required</b></div>'+
+      '<div class="actions">'+
+      '<button class="btn-go" onclick="this.textContent=\'&#10003; Escalated\';this.style.opacity=\'.6\'">&#10003; Escalate Now</button>'+
+      '<button class="btn-skip">&#128196; Add to Review Queue</button></div></div>'
+    ,{border:'transparent'})},900);
+
+    setTimeout(function(){addCard('c3b','left','200px',
+      '<h3 style="color:var(--critical)">Why This Stops the Room</h3>'+
+      '<p style="font-size:.68rem;line-height:2;color:var(--text)">'+
+      '<span class="pill pill-critical">1</span> Opioid + Benzo = #1 cause of opioid overdose death<br>'+
+      '<span class="pill pill-critical">2</span> 30% of opioid-related ER visits involve this combo<br>'+
+      '<span class="pill pill-critical">3</span> 3 prescribers — none aware of each other\'s Rx<br>'+
+      '<span class="pill pill-critical">4</span> She fills the opioid perfectly (PDC 1.00)<br>'+
+      '<span class="pill pill-critical">5</span> She does NOT fill her SSRI, ACE-I, or diuretic</p>'+
+      '<p style="margin-top:8px;font-size:.62rem;color:var(--muted)">'+
+      'This is a behavior pattern, not a knowledge gap. The ontology surfaces what no dashboard can.</p>'
+    ,{border:'rgba(255,23,68,.15)'})},1800);
+  });
+
+  exits.push(function(){clearCards();hideTitle();active=false;
+    opioidNode.scale.set(.01,.01,.01);benzoNode.scale.set(.01,.01,.01);fdaGlow.scale.set(.01,.01,.01);
+    opsNode.scale.set(.01,.01,.01);
+    rxNodes.forEach(function(n){n.scale.set(.01,.01,.01)});
+    alertDots.forEach(function(d){d.mesh.visible=false;d.t=Math.random()});
+  });
+})();
+
+/* ═══════ SCENE 4 — "Day 2 — Intervention" ═══════ */
+(function(){
+  var g=new THREE.Group();g.visible=false;scene.add(g);groups.push(g);
+
+  var sarah=buildSarah();sarah.position.set(0,0,0);g.add(sarah);
+  g.add(txt('Sarah Johnson',{size:20,color:'#5B9BD5',scale:.6}).translateY(2.5));
+
+  var pulseMat=new THREE.MeshBasicMaterial({color:P.fabric,transparent:true,opacity:0,side:THREE.DoubleSide});
+  var pulse=new THREE.Mesh(new THREE.RingGeometry(1.2,1.35,48),pulseMat);pulse.rotation.x=-Math.PI/2;pulse.position.y=.1;g.add(pulse);
+  var eRing=orbitRing(2.5,P.fabric);eRing.position.y=1;eRing.rotation.x=-Math.PI/2;g.add(eRing);
+
+  var actions=[
+    {label:'Pain Mgmt Review',    sub:'Consolidate opioid Rx',       color:P.critical,angle:0},
+    {label:'Psychiatry Consol.',   sub:'3 psychiatrists → 1',        color:P.foundry, angle:Math.PI*.333},
+    {label:'PCP Assignment',       sub:'Care coordination hub',      color:P.fabric,  angle:Math.PI*.667},
+    {label:'Benzo Taper Protocol', sub:'Supervised dose reduction',  color:P.benzo,   angle:Math.PI},
+    {label:'Med Reconciliation',   sub:'Resolve all duplicates',     color:P.iq,      angle:Math.PI*1.333},
+    {label:'NSAID Discontinue',    sub:'Nephrotoxicity prevention',  color:P.rti,     angle:Math.PI*1.667},
+  ];
+  var actNodes=[];var radius=6;
+  actions.forEach(function(a){
+    var x=Math.cos(a.angle)*radius,z=Math.sin(a.angle)*radius;
+    var n=glow(.45,a.color,.6);n.position.set(x,1.5,z);n.scale.set(.01,.01,.01);g.add(n);actNodes.push(n);
+    g.add(txt(a.label,{size:14,weight:'700',color:'#'+new THREE.Color(a.color).getHexString(),scale:.4}).translateX(x).translateY(3).translateZ(z));
+    g.add(txt(a.sub,{size:11,color:'#444460',scale:.3}).translateX(x).translateY(-.1).translateZ(z));
+    g.add(lnPts([new THREE.Vector3(x,1.5,z),new THREE.Vector3(0,1,0)],a.color,.2));
+  });
+
+  var cDots=[];
+  for(var i=0;i<18;i++){var d=glow(.04,P.fabric,2);d.visible=false;g.add(d);
+    cDots.push({mesh:d,t:Math.random(),speed:.18+Math.random()*.1,idx:i%6})}
+  var pts=particles(180,20,P.fabric,.03);g.add(pts);
+
+  ticks.push(function(dt,t){
+    tickP(pts);sarah.position.y=Math.sin(t*.6)*.03;eRing.rotation.z=t*.12;
+    var ph=(t%3)/3;pulseMat.opacity=Math.max(0,.2*(1-ph));pulse.scale.set(1+ph*1.2,1+ph*1.2,1);
+    actNodes.forEach(function(n,i){n.position.y=1.5+Math.sin(t*.5+i*1.1)*.1;n.rotation.y+=.006});
+    cDots.forEach(function(fd){fd.t+=dt*fd.speed;if(fd.t>1)fd.t-=1;fd.mesh.visible=true;
+      var a=actions[fd.idx],sx=Math.cos(a.angle)*radius,sz=Math.sin(a.angle)*radius;
+      fd.mesh.position.set(sx*(1-fd.t),1.5-fd.t*.5+Math.sin(fd.t*Math.PI)*.3,sz*(1-fd.t))});
+  });
+
+  enters.push(function(){
+    setTitle('<span class="hl-fabric">Day 2</span> — Intervention','Six actions execute simultaneously. The opioid+benzo combination triggers immediate physician review. Three psychiatrists consolidate to one. A PCP is assigned for the first time.');
+    gsap.to(cam.position,{x:0,y:7,z:14,duration:1.8,ease:'power2.inOut'});
+    gsap.to(ctrl.target,{x:0,y:1.5,z:0,duration:1.8,ease:'power2.inOut'});
+    bloom.strength=.35;
+    actNodes.forEach(function(n,i){gsap.to(n.scale,{x:1,y:1,z:1,duration:.5,delay:.3+i*.12,ease:'back.out(2)'})});
+
+    setTimeout(function(){addCard('c4a','right','100px',
+      '<div><span class="badge badge-day2">DAY 2 — INTERVENTION</span></div>'+
+      '<h3 style="color:var(--fabric);margin-top:8px">Actions Executed</h3>'+
+      '<p style="font-size:.68rem;line-height:2.2;color:var(--text)">'+
+      '&#10004; <b style="color:var(--critical)">Pain Mgmt review</b> — Consolidate opioid prescribing to single provider<br>'+
+      '&#10004; <b style="color:var(--foundry)">Psychiatry consolidation</b> — 3 psychiatrists &rarr; 1 primary<br>'+
+      '&#10004; <b style="color:var(--fabric)">PCP assigned</b> — First-ever care coordination hub<br>'+
+      '&#10004; <b style="color:var(--benzo)">Benzo taper</b> — Supervised dose reduction protocol<br>'+
+      '&#10004; <b style="color:var(--iq)">Medication reconciliation</b> — Resolve all duplicates across 13 providers<br>'+
+      '&#10004; <b style="color:var(--rti)">NSAID discontinuation</b> — Prevent nephrotoxicity (triple-whammy)</p>'
+    ,{border:'rgba(0,120,212,.2)'})},800);
+
+    setTimeout(function(){addCard('c4b','left','200px',
+      '<h3 style="color:var(--foundry)">Barrier Resolution</h3>'+
+      '<p style="color:var(--text);font-size:.68rem;line-height:2">'+
+      '<span class="pill pill-critical">Opioid+Benzo</span> &rarr; <span class="pill pill-green">Under Review</span><br>'+
+      '<span class="pill pill-purple">3 Psychiatrists</span> &rarr; <span class="pill pill-green">Consolidated</span><br>'+
+      '<span class="pill pill-red">No PCP</span> &rarr; <span class="pill pill-green">Assigned</span><br>'+
+      '<span class="pill pill-critical">Controlled Substance</span> &rarr; <span class="pill pill-blue">Single Prescriber</span><br>'+
+      '<span class="pill pill-red">NSAID Triple</span> &rarr; <span class="pill pill-green">Discontinued</span><br>'+
+      '<span class="pill pill-red">No Care Plan</span> &rarr; <span class="pill pill-blue">Created</span></p>'+
+      '<p style="margin-top:8px;font-size:.62rem;color:var(--muted)">Every risk the agents found has a resolution in progress — in 48 hours.</p>'
+    ,{border:'rgba(134,97,197,.15)'})},1800);
+  });
+
+  exits.push(function(){clearCards();hideTitle();actNodes.forEach(function(n){n.scale.set(.01,.01,.01)});
+    cDots.forEach(function(d){d.mesh.visible=false;d.t=Math.random()})});
+})();
+
+/* ═══════ SCENE 5 — "Two Patients. One System." ═══════ */
+(function(){
+  var g=new THREE.Group();g.visible=false;scene.add(g);groups.push(g);
+
+  /* Nancy (left) */
+  var nancyGlow=glow(.8,0xC4A8D4,.5);nancyGlow.position.set(-7,3,0);nancyGlow.scale.set(.01,.01,.01);g.add(nancyGlow);
+  g.add(txt('Nancy White, 63',{size:16,weight:'700',color:'#C4A8D4',scale:.45}).translateX(-7).translateY(5));
+  g.add(txt('Readmission Risk',{size:13,weight:'600',color:'#D13438',scale:.36}).translateX(-7).translateY(1.5));
+  var nRing=orbitRing(1.5,0xC4A8D4);nRing.position.set(-7,3,0);nRing.rotation.x=-Math.PI/2;g.add(nRing);
+
+  /* Sarah (right) */
+  var sarahGlow=glow(.8,0x5B9BD5,.5);sarahGlow.position.set(7,3,0);sarahGlow.scale.set(.01,.01,.01);g.add(sarahGlow);
+  g.add(txt('Sarah Johnson, 41',{size:16,weight:'700',color:'#5B9BD5',scale:.45}).translateX(7).translateY(5));
+  g.add(txt('Overdose Risk',{size:13,weight:'600',color:'#FF1744',scale:.36}).translateX(7).translateY(1.5));
+  var sRing=orbitRing(1.5,0x5B9BD5);sRing.position.set(7,3,0);sRing.rotation.x=-Math.PI/2;g.add(sRing);
+
+  /* Connecting arc through center */
+  g.add(lnPts([new THREE.Vector3(-5,3,0),new THREE.Vector3(0,4.5,0),new THREE.Vector3(5,3,0)],0x444466,.2));
+  g.add(txt('Same System. Same Ontology. Same 12 Minutes.',{size:13,weight:'600',color:'#555570',scale:.38}).translateY(5.5));
+
+  /* Agent chain below */
+  var chain=[
+    {color:P.iq,     label:'Data Agent',    x:-5,y:-2},
+    {color:P.foundry,label:'Foundry Agent',  x:0,y:-2},
+    {color:P.rti,    label:'Ops Agent',      x:5,y:-2},
+  ];
+  var cNodes=[];
+  chain.forEach(function(c){
+    var s=glow(.45,c.color,.6);s.position.set(c.x,c.y,0);s.scale.set(.01,.01,.01);g.add(s);cNodes.push(s);
+    g.add(txt(c.label,{size:13,weight:'700',color:'#'+new THREE.Color(c.color).getHexString(),scale:.36}).translateX(c.x).translateY(c.y-1.2));
+  });
+  for(var i=0;i<2;i++){
+    g.add(lnPts([new THREE.Vector3(chain[i].x+1,chain[i].y,0),new THREE.Vector3(chain[i+1].x-1,chain[i+1].y,0)],0x444466,.2));
+  }
+  var chainDots=[];
+  for(var ci=0;ci<2;ci++){
+    chainDots.push({dots:createStreamDots(g,4,chain[ci+1].color,1.5),path:[new THREE.Vector3(chain[ci].x+1,chain[ci].y,0),new THREE.Vector3(chain[ci+1].x-1,chain[ci+1].y,0)]});
+  }
+
+  var pts=particles(160,22,0x1A2530,.03);g.add(pts);
+
+  ticks.push(function(dt,t){
+    tickP(pts);
+    nRing.rotation.z=t*.1;sRing.rotation.z=-t*.1;
+    nancyGlow.position.y=3+Math.sin(t*.4)*.08;sarahGlow.position.y=3+Math.sin(t*.4+1)*.08;
+    cNodes.forEach(function(n,i){n.position.y=-2+Math.sin(t*.35+i)*.06});
+    chainDots.forEach(function(cd){animStream(cd.dots,cd.path,dt)});
+  });
+
+  enters.push(function(){
+    setTitle('Two <span class="hl-danger">Patients</span>. One <span class="hl-iq">System</span>.','Nancy White — geriatric polypharmacy, readmission risk. Sarah Johnson — behavioral health + chronic disease, overdose risk. Both invisible until today. Both found in 12 minutes with one ontology and one agent.');
+    gsap.to(cam.position,{x:0,y:4,z:18,duration:1.8,ease:'power2.inOut'});
+    gsap.to(ctrl.target,{x:0,y:2,z:0,duration:1.8,ease:'power2.inOut'});
+    bloom.strength=.32;
+
+    gsap.to(nancyGlow.scale,{x:1,y:1,z:1,duration:.6,delay:.3,ease:'elastic.out(1,.6)'});
+    gsap.to(sarahGlow.scale,{x:1,y:1,z:1,duration:.6,delay:.6,ease:'elastic.out(1,.6)'});
+    cNodes.forEach(function(n,i){gsap.to(n.scale,{x:1,y:1,z:1,duration:.5,delay:1+i*.2,ease:'back.out(2)'})});
+
+    setTimeout(function(){addCard('c5a','left','120px',
+      '<h3 style="color:#C4A8D4">Nancy White</h3>'+
+      '<p style="font-size:.68rem;line-height:1.9;color:var(--text)">'+
+      'Age 63 · Medicare · CHF · 9 drug classes<br>'+
+      '<span class="pill pill-red">8/9 Non-Adherent</span> <span class="pill pill-red">No Cardiology</span><br>'+
+      '<span class="pill pill-red">No Endocrinology</span> <span class="pill pill-red">Pharmacy Desert</span></p>'+
+      '<p style="margin-top:6px;font-size:.62rem;color:var(--danger);font-weight:600">Risk: $42K readmission + $13.5M CMS penalty</p>'+
+      '<p style="margin-top:4px;font-size:.58rem;color:var(--success)">&#10004; Caught Day 2. Referrals initiated Day 3.</p>'
+    ,{border:'rgba(196,168,212,.15)'})},800);
+
+    setTimeout(function(){addCard('c5b','right','120px',
+      '<h3 style="color:#5B9BD5">Sarah Johnson</h3>'+
+      '<p style="font-size:.68rem;line-height:1.9;color:var(--text)">'+
+      'Age 41 · Commercial · 13 providers · 3 psychiatrists<br>'+
+      '<span class="pill pill-critical">Opioid PDC 1.00</span> <span class="pill pill-critical">+ Benzo</span><br>'+
+      '<span class="pill pill-red">No PCP</span> <span class="pill pill-yellow">Pediatrician Rx</span></p>'+
+      '<p style="margin-top:6px;font-size:.62rem;color:var(--critical);font-weight:600">Risk: FDA black-box combo. $2.4M wrongful death exposure.</p>'+
+      '<p style="margin-top:4px;font-size:.58rem;color:var(--success)">&#10004; Caught Day 1. Opioid review + benzo taper Day 2.</p>'
+    ,{border:'rgba(91,155,213,.15)'})},1400);
+
+    setTimeout(function(){addCard('c5c','left','380px',
+      '<h3 style="color:var(--muted)">The Pattern</h3>'+
+      '<p style="font-size:.68rem;line-height:2.2;color:var(--text)">'+
+      '<b style="color:var(--danger)">Nancy:</b> Geriatric polypharmacy &rarr; readmission risk<br>'+
+      '<b style="color:var(--critical)">Sarah:</b> Behavioral health + chronic &rarr; overdose risk<br><br>'+
+      '<b style="color:var(--muted)">Both:</b> Fragmented providers. No coordination. Data existed.<br>'+
+      '<b style="color:var(--iq)">Now:</b> One ontology. One agent. <b>12 minutes.</b></p>'
+    )},2400);
+
+    setTimeout(function(){
+      addCard('c5d','center','auto',
+        '<p style="font-size:.9rem;font-weight:800;line-height:1.6">'+
+        'Two patients. Six questions. Twelve minutes.<br><br>'+
+        '<span style="color:var(--muted);font-size:.72rem;font-weight:400">Today, no human in your organization has assembled either of these pictures.<br>'+
+        'The data existed. The capability didn\'t.<br><br></span>'+
+        '<span style="color:var(--success);font-size:.9rem">Now it does.</span></p>'
+      ,{border:'rgba(255,255,255,.08)'});
+      setTimeout(function(){var el=document.getElementById('c5d');if(el){el.style.top='auto';el.style.bottom='76px'}},50);
+    },3800);
+  });
+
+  exits.push(function(){clearCards();hideTitle();
+    nancyGlow.scale.set(.01,.01,.01);sarahGlow.scale.set(.01,.01,.01);
+    cNodes.forEach(function(n){n.scale.set(.01,.01,.01)});
+    chainDots.forEach(function(cd){cd.dots.forEach(function(d){d.mesh.visible=false;d.t=Math.random()})});
+  });
+})();
+
+/* ═══════ SCENE 6 — "What Questions Do You Have?" ═══════ */
+(function(){
+  var g=new THREE.Group();g.visible=false;scene.add(g);groups.push(g);
+
+  var agents=[
+    {color:P.iq,     label:'Data Agent',    sub:'Finds it',       x:-6},
+    {color:P.foundry,label:'Foundry Agent',  sub:'Knows what to do',x:0},
+    {color:P.rti,    label:'Ops Agent',      sub:'Makes it happen', x:6},
+  ];
+  var aNodes=[];
+  agents.forEach(function(a){
+    var n=glow(.7,a.color,.8);n.position.set(a.x,3,0);n.scale.set(.01,.01,.01);g.add(n);aNodes.push(n);
+    g.add(txt(a.label,{size:18,weight:'800',color:'#'+new THREE.Color(a.color).getHexString(),scale:.5}).translateX(a.x).translateY(5));
+    g.add(txt(a.sub,{size:13,weight:'400',color:'#555570',scale:.35}).translateX(a.x).translateY(1.5));
+    var ring=orbitRing(1.3,a.color);ring.position.set(a.x,3,0);ring.rotation.x=-Math.PI/2;g.add(ring);
+  });
+  for(var i=0;i<2;i++){
+    g.add(lnPts([new THREE.Vector3(agents[i].x+1.5,3,0),new THREE.Vector3(agents[i+1].x-1.5,3,0)],0x333350,.2));
+  }
+  var chainDots=[];
+  for(var ci=0;ci<2;ci++){
+    chainDots.push({dots:createStreamDots(g,3,agents[ci+1].color,1),path:[new THREE.Vector3(agents[ci].x+1.5,3,0),new THREE.Vector3(agents[ci+1].x-1.5,3,0)]});
+  }
+
+  var pts=particles(100,20,0x151520,.025);g.add(pts);
+
+  ticks.push(function(dt,t){
+    tickP(pts);
+    aNodes.forEach(function(n,i){n.position.y=3+Math.sin(t*.3+i*1.2)*.08;n.rotation.y+=.002});
+    chainDots.forEach(function(cd){animStream(cd.dots,cd.path,dt)});
+  });
+
+  enters.push(function(){
+    setTitle('Multiply This By <span class="hl-success">Every Patient</span>','That\'s the demo. What questions do you have?');
+    gsap.to(cam.position,{x:0,y:4,z:16,duration:2,ease:'power2.inOut'});
+    gsap.to(ctrl.target,{x:0,y:3,z:0,duration:2,ease:'power2.inOut'});
+    bloom.strength=.25;
+    aNodes.forEach(function(n,i){gsap.to(n.scale,{x:1,y:1,z:1,duration:.6,delay:.5+i*.25,ease:'elastic.out(1,.6)'})});
+
+    setTimeout(function(){
+      addCard('c6a','center','auto',
+        '<p style="font-size:1.05rem;font-weight:800;line-height:1.5">'+
+        '<span style="color:var(--iq)">Data Agent</span> finds it.<br>'+
+        '<span style="color:var(--foundry)">Foundry Agent</span> knows what to do.<br>'+
+        '<span style="color:var(--rti)">Ops Agent</span> makes it happen.<br><br>'+
+        '<span style="color:var(--success);font-size:1.2rem">What questions do you have?</span></p>'
+      ,{border:'rgba(255,255,255,.06)'});
+      setTimeout(function(){var el=document.getElementById('c6a');if(el){el.style.top='auto';el.style.bottom='100px'}},50);
+    },1800);
+
+    setTimeout(function(){addCard('c6b','left','200px',
+      '<h3 style="color:var(--muted)">If They Ask For More</h3>'+
+      '<p style="font-size:.66rem;line-height:2;color:var(--muted)">'+
+      '<b style="color:var(--iq)">"More like Sarah?"</b><br>'+
+      '<span style="color:#555570">&rarr; "Show me 5 patients on both an opioid and a benzo prescribed by different providers."</span><br><br>'+
+      '<b style="color:var(--iq)">"What about kids?"</b><br>'+
+      '<span style="color:#555570">&rarr; "Show me a pediatric patient with prescriptions from 3+ different providers."</span><br><br>'+
+      '<b style="color:var(--iq)">"Can we see the pharmacy pattern?"</b><br>'+
+      '<span style="color:#555570">&rarr; "For Sarah Johnson, show prescription fill dates and pharmacy types."</span></p>'
+    ,{border:'rgba(255,255,255,.04)'})},3000);
+  });
+
+  exits.push(function(){clearCards();hideTitle();
+    aNodes.forEach(function(n){n.scale.set(.01,.01,.01)});
+    chainDots.forEach(function(cd){cd.dots.forEach(function(d){d.mesh.visible=false;d.t=Math.random()})});
+  });
+})();
+
+/* ═══════ NAVIGATION ═══════ */
+function go(i){
+  if(i<0||i>=SCENES||i===cur)return;
+  groups[cur].visible=false;if(exits[cur])exits[cur]();
+  cur=i;groups[cur].visible=true;if(enters[cur])enters[cur]();
+  document.querySelectorAll('.dot').forEach(function(d,j){d.classList.toggle('active',j===cur)});
+  document.getElementById('scene-lbl').textContent=(cur+1)+' / '+SCENES;
+  if(autoPlay){clearTimeout(autoTimer);autoTimer=setTimeout(function(){go(cur+1)},16000)}
+}
+var next=function(){go(cur+1)},prev=function(){go(cur-1)};
+var navEl=document.getElementById('nav');
+for(var ni=0;ni<SCENES;ni++){(function(idx){
+  var d=document.createElement('div');d.className='dot'+(idx===0?' active':'');
+  d.addEventListener('click',function(){go(idx)});navEl.appendChild(d);
+})(ni)}
+document.addEventListener('keydown',function(e){
+  if(e.key==='ArrowRight'||e.key===' '){e.preventDefault();next()}
+  else if(e.key==='ArrowLeft')prev();
+  else if(e.key==='a'||e.key==='A')toggleAuto();
+  else if(e.key>='1'&&e.key<='6')go(+e.key-1);
+});
+R.domElement.addEventListener('click',function(e){if(e.target===R.domElement)next()});
+var btnAuto=document.getElementById('btn-auto');
+function toggleAuto(){autoPlay=!autoPlay;btnAuto.classList.toggle('on',autoPlay);btnAuto.textContent=autoPlay?'Auto: ON':'Auto';
+  if(autoPlay)autoTimer=setTimeout(function(){go(cur+1)},16000);else clearTimeout(autoTimer)}
+btnAuto.addEventListener('click',toggleAuto);
+window.addEventListener('resize',function(){var w=innerWidth,h=innerHeight;cam.aspect=w/h;cam.updateProjectionMatrix();R.setSize(w,h);comp.setSize(w,h)});
+
+/* ═══════ RENDER ═══════ */
+function animate(){requestAnimationFrame(animate);var dt=clock.getDelta(),t=clock.getElapsedTime();ctrl.update();if(ticks[cur])ticks[cur](dt,t);comp.render()}
+var bf=document.getElementById('bar-fill');var pct=0;
+var li=setInterval(function(){pct+=7+Math.random()*13;if(pct>=100){pct=100;clearInterval(li);
+  setTimeout(function(){document.getElementById('loader').classList.add('done');groups[0].visible=true;if(enters[0])enters[0]();document.getElementById('scene-lbl').textContent='1 / '+SCENES},500)}
+  bf.style.width=pct+'%'},110);
+animate();
+
+} catch(e) {
+  var d=document.getElementById('loader');
+  if(d){d.innerHTML='<div style="color:#FF4444;padding:40px;text-align:left;max-width:700px;font-family:monospace;font-size:13px"><h2 style="color:#FF4444;margin-bottom:12px">Init Error</h2><p>'+e.message+'</p><pre style="color:#AA8800;margin-top:12px;font-size:11px;white-space:pre-wrap;max-height:400px;overflow:auto">'+(e.stack||'')+'</pre></div>';d.style.display='flex'}
+}
+</script>
+</body>
+</html>

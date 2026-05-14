@@ -313,7 +313,18 @@ The solution includes two complementary AI agents:
 - **HealthcareHLSAgent** — SQL-based agent for aggregations, rates, and trends ("What is the denial rate?", "Top 10 providers by cost")
 - **Healthcare Ontology Agent** — Graph traversal agent for entity lookups and relationships ("Tell me about patient PAT0000001", "Who treated this patient?", "Trace claim CLM0009999 from patient to payer")
 
-See **[SAMPLE_QUESTIONS.md](SAMPLE_QUESTIONS.md)** for 80+ copy-paste questions organized by domain and agent.
+See **[SAMPLE_QUESTIONS.md](SAMPLE_QUESTIONS.md)** for 90+ copy-paste questions organized by domain and agent — including a top **[Executive Pain-Point Questions](SAMPLE_QUESTIONS.md#executive-pain-point-questions-boardroom--c-suite)** section (CFO, CMO, CMIO, COO, VP Pop Health, CIO) framed in real-world boardroom language.
+
+#### Recommended Demo Warm-Up Sequence (Graph Ontology Agent)
+
+The Graph Data Agent runs on top of an OpenAI assistant thread + tool-call harness. The first 1–2 calls after the agent is published spin up that thread and load the GQL examples from `aiInstructions` into the LLM's working context. Cold-starting straight into a complex aggregation question can surface as `submit_tool_outputs failed` (BadRequest) or "An error occurred". To get reliable demos, **always warm up with two simple list queries first**:
+
+1. `List 5 providers` — confirms the graph is reachable and primes provider entity.
+2. `Show me 5 patients` — primes patient entity and adherence relationship.
+3. `Which patients have the most non-adherent drug classes?` — the headline aggregation question (uses `MATCH ... FILTER ... LET ... GROUP BY ... ORDER BY ... LIMIT`).
+4. Pick a patient from step 3 and drill in: `Show me adherence details for <First> <Last>, age <N>`.
+
+This gives you both reliability (the assistant thread is warm) and a stronger narrative arc (broad → specific → recommendation).
 
 ### Data Agent Reference
 

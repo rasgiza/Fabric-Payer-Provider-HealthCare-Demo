@@ -350,6 +350,11 @@
       "id": "310f7ab9-5f3e-4a7d-b6cb-bf857bb4bb3c",
       "question": "Show me non-adherent patients with their full names and the drug classes they are non-adherent to.",
       "query": "SELECT dp.patient_id, CONCAT(dp.first_name, ' ', dp.last_name) AS patient_name, dp.age, dm.drug_class, dm.therapeutic_area, ama.pdc_score, ama.gap_days FROM agg_medication_adherence ama JOIN dim_patient dp ON dp.patient_key = ama.patient_key AND dp.is_current = 1 JOIN dim_medication dm ON dm.medication_key = ama.medication_key WHERE ama.adherence_category = 'Non-Adherent' ORDER BY patient_name, dm.drug_class"
+    },
+    {
+      "id": "sq35-patient-adherence-by-drug-class",
+      "question": "Show me medication adherence for Jane Doe age 50 by drug class.",
+      "query": "SELECT CONCAT(dp.first_name, ' ', dp.last_name) AS patient_name, dp.age, dm.drug_class, dm.therapeutic_area, COUNT(*) AS medications_in_class, AVG(ama.pdc_score) AS avg_pdc_score, MIN(ama.pdc_score) AS worst_pdc_score, SUM(ama.gap_days) AS total_gap_days, MAX(ama.adherence_category) AS worst_adherence_category, STRING_AGG(dm.medication_name, ', ') WITHIN GROUP (ORDER BY dm.medication_name) AS medications FROM agg_medication_adherence ama JOIN dim_patient dp ON dp.patient_key = ama.patient_key AND dp.is_current = 1 JOIN dim_medication dm ON dm.medication_key = ama.medication_key WHERE dp.first_name = 'Jane' AND dp.last_name = 'Doe' AND dp.age = 50 GROUP BY dp.first_name, dp.last_name, dp.age, dm.drug_class, dm.therapeutic_area ORDER BY worst_pdc_score ASC"
     }
   ]
 }

@@ -9,6 +9,22 @@ One-click deployment of a complete **Healthcare Payer/Provider Analytics** solut
 
 ---
 
+## 🎬 Recommended Demo Questions
+
+> **For an easy, story-driven demo that showcases both the Fabric Data Agent and the Foundry IQ Knowledge Agent, ask these two questions back-to-back — same patient, same story.**
+
+1. **In the Fabric Data Agent (`HealthcareHLSAgent`):**
+   *"Show me medication adherence for Betty Brown age 83 by drug class."*
+   → Returns per-class PDC, gap days, and adherence category from the gold lakehouse.
+
+2. **In the Foundry IQ Knowledge Agent (`HLSAgent`):**
+   *"Betty Brown was just discharged after a CHF admission with high readmission risk and is non-adherent on multiple chronic medications. What TCM and MTM interventions should her care team take in the next 7 days? Cite the guidelines."*
+   → Returns a cited care plan grounded in the clinical knowledge docs at `lh_gold_curated/Files/healthcare_knowledge/`.
+
+**Why this works:** Q1 shows Fabric's structured-data power; Q2 shows Foundry's reasoning + grounded citations. Together they tell the platform story — *data → decision* — in under 60 seconds.
+
+---
+
 ## Table of Contents
 
 1. [Why This Demo? — The Payer & Provider Pain Points](#why-this-demo--the-payer--provider-pain-points)

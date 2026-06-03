@@ -1,0 +1,38 @@
+question,expected_source
+"What is the overall claim denial rate, and how does it break down by payer?",semantic_model
+"What are the top 5 denial reasons by claim count and total billed amount?",semantic_model
+"What is the denial rate by provider specialty? Show the top 10 specialties.",semantic_model
+"Show me all denied claims over $50,000 — include the patient, payer, denial reason, and billed amount.",lakehouse
+"What is our total at-risk revenue (high denial-risk claims, billed amount)?",semantic_model
+"Show me claims with high denial risk that are still pending.",lakehouse
+"How many claims are in each denial risk category?",semantic_model
+"What is the 30-day readmission rate, and how does it trend by month?",semantic_model
+"List the top 10 patients with the highest readmission risk scores, with their age and insurance type.",lakehouse
+"What is the readmission rate by encounter type?",semantic_model
+"What is the readmission rate by department?",semantic_model
+"What is the average length of stay for high-risk vs low-risk readmission patients?",semantic_model
+"How many encounters are in each readmission risk category?",semantic_model
+"Show me members who are non-adherent to their medications, with their drug class and gap days.",lakehouse
+"What is the medication adherence rate by drug class and therapeutic area?",semantic_model
+"Show me chronic patients who are non-adherent to their medications.",lakehouse
+"How many patients are adherent vs non-adherent?",semantic_model
+"What is the average prescription cost broken down by drug class and therapeutic area?",semantic_model
+"Show me members living in high social-vulnerability zip codes with their risk factors.",lakehouse
+"How does SDOH risk tier affect adherence rate and readmission rate?",semantic_model
+"Which payer types have the highest readmission rates?",semantic_model
+"Show me readmitted patients with their social risk and adherence data.",lakehouse
+"What is the average length of stay by encounter type?",semantic_model
+"What are the top diagnoses by volume?",semantic_model
+"Which chronic conditions are most prevalent?",semantic_model
+"List the top 20 patients with the highest prescription costs.",lakehouse
+"How many patients are in each age group?",semantic_model
+"Compare total prescription cost by payer — which payer pays the most and which shifts the most cost to patients?",semantic_model
+"What is the average patient copay by payer and drug class?",semantic_model
+"Which payers bear the highest cost burden for chronic medications?",semantic_model
+"Show me which providers prescribe the most to each payer — the provider-payer prescription network.",lakehouse
+"Which payers have the lowest collection rate (paid vs billed)? Show the reimbursement gap.",semantic_model
+"Show me patients who were readmitted AND are non-adherent — include their risk scores and drug class.",lakehouse
+"Show me denied claims with their primary diagnosis.",lakehouse
+"Which encounters are linked to denied claims?",lakehouse
+"What is the denial rate for patients in high-poverty zip codes vs the overall rate?",semantic_model
+"Show me high-risk readmission patients who are also medication non-adherent — what payers cover them and what's the cost?",lakehouse

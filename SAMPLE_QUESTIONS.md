@@ -2,71 +2,98 @@
 
 ## Fabric Data Agent (HealthcareHLSAgent)
 
-Open **HealthcareHLSAgent** in your Fabric workspace. The Data Agent queries the Gold lakehouse star schema directly. Copy-paste any of these to get started:
+Open **HealthcareHLSAgent** in your Fabric workspace. The agent has **two sources** and picks one per question:
 
-### Claim Denials & Revenue Cycle
+| Source | Use for | Cue words |
+|---|---|---|
+| **Semantic Model** `HealthcareDemoHLS` (PRIMARY) | KPIs, rates, trends, breakdowns, totals — answered with pre-built DAX measures | rate, %, total, count, average, trend, by month, breakdown, distribution, top N by `<measure>` |
+| **Lakehouse** `lh_gold_curated` (FALLBACK) | Row-level detail — patient/claim/prescription rows, names, IDs, multi-row filters | show me, list, name of, who is, over $X, flagged as |
+
+The questions below are split the same way. Copy-paste any to get started.
+
+---
+
+### A. KPI & Trend Questions → Semantic Model (DAX measures)
+
+#### Claim Denials & Revenue Cycle
 | # | Question |
 |---|----------|
-| 1 | What is the overall claim denial rate and how does it break down by payer? |
+| 1 | What is the overall claim denial rate, and how does it break down by payer? |
 | 2 | What are the top 5 denial reasons by claim count and total billed amount? |
-| 3 | Which providers have the highest denial rates? Show the top 10 with their specialties. |
-| 4 | Show me all denied claims over $50,000 — include the patient, payer, denial reason, and billed amount. |
-| 5 | What is the total revenue at risk from claims flagged as high denial risk that haven’t been denied yet? |
-| 6 | Show me claims with high denial risk that are still pending. |
+| 3 | What is the denial rate by provider specialty? Show the top 10 specialties. |
+| 5 | What is our total at-risk revenue (high denial-risk claims, billed amount)? |
 | 7 | How many claims are in each denial risk category? |
-
-### Readmissions & Patient Risk
-| # | Question |
-|---|----------|
-| 8 | What is the 30-day readmission rate and how does it trend by month? |
-| 9 | List the top 10 patients with the highest readmission risk scores with their age and insurance type. |
-| 10 | What is the readmission rate by encounter type? |
-| 11 | Which facilities have the highest readmission rates? |
-| 12 | Show me the average length of stay for high-risk vs low-risk readmission patients. |
-| 13 | How many encounters are in each readmission risk category? |
-
-### Medication Adherence
-| # | Question |
-|---|----------|
-| 14 | Show me members who are non-adherent to their medications with their drug class and gap days. |
-| 15 | Show me medication adherence rates by drug class and therapeutic area. |
-| 16 | Which patients with chronic conditions are non-adherent to their medications? |
-| 17 | How many patients are adherent vs non-adherent? |
-| 18 | Show me prescription costs broken down by drug class and therapeutic area. |
-
-### Social Determinants of Health (SDOH)
-| # | Question |
-|---|----------|
-| 19 | Show me members living in high social vulnerability zip codes with their risk factors. |
-| 20 | How does SDOH risk tier affect readmission risk? |
-| 21 | Which payers have the highest readmission rates? |
-| 22 | Show me readmitted patients with their social risk and adherence data. |
-
-### Encounters & Providers
-| # | Question |
-|---|----------|
-| 23 | What is the average length of stay by encounter type? |
-| 24 | What are the top diagnoses by volume? |
-| 25 | Which chronic conditions are most prevalent? |
-| 26 | Which patients have the highest prescription costs? |
-| 27 | How many patients are in each age group? |
-
-### Payer & Prescription Cost Analysis
-| # | Question |
-|---|----------|
-| 28 | Compare prescription costs by payer — which payer pays the most and which shifts the most cost to patients? |
-| 29 | What is the average patient copay by payer and drug class? |
-| 30 | Which payers bear the highest cost burden for chronic medications? |
-| 31 | Show me which providers prescribe the most to each payer — the provider-payer prescription network. |
 | 32 | Which payers have the lowest collection rate (paid vs billed)? Show the reimbursement gap. |
 
-### Cross-Domain Analytics
+#### Readmissions & Length of Stay
 | # | Question |
 |---|----------|
-| 33 | Show me patients who were readmitted AND are non-adherent to their medications with their risk scores and drug class. |
+| 8 | What is the 30-day readmission rate, and how does it trend by month? |
+| 10 | What is the readmission rate by encounter type? |
+| 12 | What is the average length of stay for high-risk vs low-risk readmission patients? |
+| 13 | How many encounters are in each readmission risk category? |
+| 21 | Which payer types have the highest readmission rates? |
+| 23 | What is the average length of stay by encounter type? |
+
+#### Medication Adherence
+| # | Question |
+|---|----------|
+| 15 | What is the medication adherence rate by drug class and therapeutic area? |
+| 17 | How many patients are adherent vs non-adherent? |
+| 18 | What is the average prescription cost broken down by drug class and therapeutic area? |
+| 20 | How does SDOH risk tier affect adherence rate and readmission rate? |
+
+#### Patient & Provider Volume
+| # | Question |
+|---|----------|
+| 11 | What is the readmission rate by department? |
+| 24 | What are the top diagnoses by volume? |
+| 25 | Which chronic conditions are most prevalent? |
+| 27 | How many patients are in each age group? |
+
+#### Payer & Prescription KPIs
+| # | Question |
+|---|----------|
+| 28 | Compare total prescription cost by payer — which payer pays the most and which shifts the most cost to patients? |
+| 29 | What is the average patient copay by payer and drug class? |
+| 30 | Which payers bear the highest cost burden for chronic medications? |
+| 36 | What is the denial rate for patients in high-poverty zip codes vs the overall rate? |
+
+---
+
+### B. Detail & Lookup Questions → Lakehouse (SQL row queries)
+
+#### Denied Claims & Pending Work
+| # | Question |
+|---|----------|
+| 4 | Show me all denied claims over $50,000 — include the patient, payer, denial reason, and billed amount. |
+| 6 | Show me claims with high denial risk that are still pending. |
 | 34 | Show me denied claims with their primary diagnosis. |
 | 35 | Which encounters are linked to denied claims? |
-| 36 | For patients in high-poverty zip codes, how does denial rate compare to the overall population? |
+
+#### High-Risk Patient Lists
+| # | Question |
+|---|----------|
+| 9 | List the top 10 patients with the highest readmission risk scores, with their age and insurance type. |
+| 22 | Show me readmitted patients with their social risk and adherence data. |
+| 26 | List the top 20 patients with the highest prescription costs. |
+
+#### Adherence Outreach Lists
+| # | Question |
+|---|----------|
+| 14 | Show me members who are non-adherent to their medications, with their drug class and gap days. |
+| 16 | Show me chronic patients who are non-adherent to their medications. |
+
+#### SDOH & Provider Network Detail
+| # | Question |
+|---|----------|
+| 19 | Show me members living in high social-vulnerability zip codes with their risk factors. |
+| 31 | Show me which providers prescribe the most to each payer — the provider-payer prescription network. |
+
+#### Cross-Domain Lookups
+| # | Question |
+|---|----------|
+| 33 | Show me patients who were readmitted AND are non-adherent — include their risk scores and drug class. |
 | 37 | Show me high-risk readmission patients who are also medication non-adherent — what payers cover them and what's the cost? |
 
 ---

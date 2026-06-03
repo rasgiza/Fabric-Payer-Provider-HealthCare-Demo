@@ -49,11 +49,12 @@ The questions below are split the same way. Copy-paste any to get started.
 | 11 | What is the readmission rate by department? |
 | 24 | What are the top diagnoses by volume? |
 | 25 | Which chronic conditions are most prevalent? |
-| 27 | How many patients are in each age group? |
+| 27 | What is our avoidable-readmission cost exposure — total expected payments tied to high-risk encounters that were readmitted within 30 days? |
 
 #### Payer & Prescription KPIs
 | # | Question |
 |---|----------|
+| 26 | Which drug classes drive the largest patient out-of-pocket burden, and what share of patients in each class are non-adherent (therapy-abandonment proxy)? |
 | 28 | Compare total prescription cost by payer — which payer pays the most and which shifts the most cost to patients? |
 | 29 | What is the average patient copay by payer and drug class? |
 | 30 | Which payers bear the highest cost burden for chronic medications? |
@@ -76,7 +77,6 @@ The questions below are split the same way. Copy-paste any to get started.
 |---|----------|
 | 9 | List the top 10 patients with the highest readmission risk scores, with their age and insurance type. |
 | 22 | Show me readmitted patients with their social risk and adherence data. |
-| 26 | List the top 20 patients with the highest prescription costs. |
 
 #### Adherence Outreach Lists
 | # | Question |

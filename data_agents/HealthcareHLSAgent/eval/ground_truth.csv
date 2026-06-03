@@ -24,8 +24,8 @@ question,expected_source
 "What is the average length of stay by encounter type?",semantic_model
 "What are the top diagnoses by volume?",semantic_model
 "Which chronic conditions are most prevalent?",semantic_model
-"List the top 20 patients with the highest prescription costs.",lakehouse
-"How many patients are in each age group?",semantic_model
+"Which drug classes drive the largest patient out-of-pocket burden, and what share of patients in each class are non-adherent (therapy-abandonment proxy)?",semantic_model
+"What is our avoidable-readmission cost exposure — total expected payments tied to high-risk encounters that were readmitted within 30 days?",semantic_model
 "Compare total prescription cost by payer — which payer pays the most and which shifts the most cost to patients?",semantic_model
 "What is the average patient copay by payer and drug class?",semantic_model
 "Which payers bear the highest cost burden for chronic medications?",semantic_model

@@ -1,0 +1,2226 @@
+{
+  "$schema": "https://developer.microsoft.com/json-schemas/fabric/item/dataAgent/definition/dataSource/1.0.0/schema.json",
+  "artifactId": "00000000-0000-0000-0000-000000000003",
+  "workspaceId": "00000000-0000-0000-0000-000000000000",
+  "dataSourceInstructions": "DEFAULT SOURCE FOR KPIs AND RATES.\n\nWHEN TO USE\n- Any 'rate', 'ratio', 'percentage', 'share', 'distribution' question.\n- Any 'how many', 'count', 'total', 'sum', 'average' question that does not need patient names or row-level detail.\n- Any 'trend', 'over time', 'by month', 'by quarter', 'YoY', 'MTD', 'YTD' question.\n- Breakdown questions ('by payer', 'by drug class', 'by encounter type', 'by age group', 'by risk tier').\n\nMEASURE-FIRST RULE\n- ALWAYS prefer a pre-built DAX measure over recomputing from underlying columns.\n- If a measure exists for the metric, USE IT. Never write SUMX/COUNTX/DIVIDE manually for something a measure already covers.\n\nMEASURE QUICK REFERENCE\n- Denial Rate, Total Claims, Total Billed, Total Paid, Collection Rate, At Risk Revenue, Avg Denial Risk, MTD Claims, Paid by Payment Date  -> fact_claim\n- Readmission Rate, High/Medium/Low Risk Readmissions, Avg Length of Stay, Avg Readmission Risk, Total Charges, PY Charges, YoY Charge Growth, YTD Charges, Total Cost, PMPM, Avg Cost Per Encounter, Inpatient Encounters, Emergency Encounters, Quality Score, Total Encounters  -> fact_encounter\n- Adherent Rate, Avg PDC Score, High Risk Denials  -> agg_medication_adherence\n- Total Fills, Total Rx Cost, Avg Rx Cost Per Fill, Generic Fill Rate, Payer Rx Cost, Patient Copay Total  -> fact_prescription\n- Total Patients, Chronic Patients, Chronic Rate, Avg Patient Age, Female/Male Patients  -> dim_patient\n- Unique Diagnoses, Chronic Diagnoses, Patients with Chronic Conditions  -> fact_diagnosis\n\nBREAKDOWN AXES (group-by columns)\n- dim_payer[payer_name], dim_payer[payer_type]\n- dim_provider[specialty], dim_provider[department], dim_provider[display_name]\n- dim_medication[drug_class], dim_medication[therapeutic_area]\n- dim_diagnosis[icd_category]\n- dim_patient[age_group], dim_patient[gender], dim_patient[insurance_type]\n- dim_sdoh[risk_tier]\n- dim_date[year], dim_date[quarter], dim_date[month_name], dim_date[full_date]\n- fact_encounter[encounter_type], fact_claim[denial_risk_category], fact_encounter[readmission_risk_category]\n\nDAX RULES\n1. Use EVALUATE SUMMARIZECOLUMNS for breakdown questions.\n2. Reference measures with surrounding brackets: [Denial Rate], not 'Denial Rate'.\n3. For trends, group by dim_date columns and ORDER BY the date column.\n4. NEVER hard-code a date filter unless the user explicitly asks for one.\n5. For 'top N', use TOPN(N, table, [Measure], DESC).\n6. Format rate measures as percent in the answer text (e.g., '12.4%').\n\nROUTING BACK TO LAKEHOUSE\nIf the question asks for patient names, claim IDs, prescription details, or any row-level\nlookup that cannot be answered with a measure + dimension breakdown, the planner should\nswitch to the lakehouse source. This source does not return individual patient PII rows.",
+  "displayName": "HealthcareDemoHLS",
+  "type": "semantic_model",
+  "userDescription": "PRIMARY source for healthcare KPIs, rates, trends, and aggregated metrics. Direct Lake semantic model 'HealthcareDemoHLS' over the lh_gold_curated star schema, with curated DAX measures (Denial Rate, Readmission Rate, Adherent Rate, Total Charges, Avg Length of Stay, Collection Rate, Avg PDC Score, PMPM, MTD/YTD/YoY variants, etc.). Use this source for any question about rates, percentages, totals, counts, monthly/yearly trends, or KPI breakdowns by category (payer, drug class, encounter type, age group, risk tier). Tables follow the same names as the lakehouse star schema.",
+  "metadata": {},
+  "elements": [
+    {
+      "id": "6824cb9d-43a0-494d-8a09-679f8d8f4187",
+      "is_selected": true,
+      "display_name": "agg_medication_adherence",
+      "type": "semantic_model.table",
+      "description": null,
+      "children": [
+        {
+          "id": "c794cab5-55cb-4bef-a939-02918a0e1ca8",
+          "is_selected": true,
+          "display_name": "patient_key",
+          "type": "semantic_model.column",
+          "data_type": "int64",
+          "description": null,
+          "children": []
+        },
+        {
+          "id": "16d05279-cdef-45c2-8075-4c16db7ec819",
+          "is_selected": true,
+          "display_name": "medication_key",
+          "type": "semantic_model.column",
+          "data_type": "int64",
+          "description": null,
+          "children": []
+        },
+        {
+          "id": "e332f9fc-5402-4b0f-99ac-35b3ea7ccdbc",
+          "is_selected": true,
+          "display_name": "drug_class",
+          "type": "semantic_model.column",
+          "data_type": "string",
+          "description": null,
+          "children": []
+        },
+        {
+          "id": "2ab4d6b3-cd46-45e7-94cb-a04b802fe18d",
+          "is_selected": true,
+          "display_name": "therapeutic_area",
+          "type": "semantic_model.column",
+          "data_type": "string",
+          "description": null,
+          "children": []
+        },
+        {
+          "id": "9121e009-c4c9-45c0-8079-dd7fea1f0838",
+          "is_selected": true,
+          "display_name": "measurement_period_start",
+          "type": "semantic_model.column",
+          "data_type": "string",
+          "description": null,
+          "children": []
+        },
+        {
+          "id": "7a7590ba-e315-4114-8000-0b987916e62e",
+          "is_selected": true,
+          "display_name": "measurement_period_end",
+          "type": "semantic_model.column",
+          "data_type": "string",
+          "description": null,
+          "children": []
+        },
+        {
+          "id": "7ac2cc91-6874-41c7-92cd-459eb1aa5300",
+          "is_selected": true,
+          "display_name": "total_fills",
+          "type": "semantic_model.column",
+          "data_type": "double",
+          "description": null,
+          "children": []
+        },
+        {
+          "id": "1b25ea50-f1fa-4792-8da6-12693ac005b1",
+          "is_selected": true,
+          "display_name": "total_days_supply",
+          "type": "semantic_model.column",
+          "data_type": "double",
+          "description": null,
+          "children": []
+        },
+        {
+          "id": "282a070a-2864-4eae-b542-24bdaff16668",
+          "is_selected": true,
+          "display_name": "days_in_period",
+          "type": "semantic_model.column",
+          "data_type": "string",
+          "description": null,
+          "children": []
+        },
+        {
+          "id": "244b07af-9963-41da-93d6-49903e874d64",
+          "is_selected": true,
+          "display_name": "covered_days",
+          "type": "semantic_model.column",
+          "data_type": "string",
+          "description": null,
+          "children": []
+        },
+        {
+          "id": "bf862995-8777-4c4b-ae61-6b89bbc5786b",
+          "is_selected": true,
+          "display_name": "pdc_score",
+          "type": "semantic_model.column",
+          "data_type": "double",
+          "description": null,
+          "children": []
+        },
+        {
+          "id": "7b6e475a-8445-4f23-a78f-6eb0e299d795",
+          "is_selected": true,
+          "display_name": "adherence_category",
+          "type": "semantic_model.column",
+          "data_type": "string",
+          "description": null,
+          "children": []
+        },
+        {
+          "id": "cb811095-d477-4d48-a31a-42b41f1abd14",
+          "is_selected": true,
+          "display_name": "total_medication_cost",
+          "type": "semantic_model.column",
+          "data_type": "double",
+          "description": null,
+          "children": []
+        },
+        {
+          "id": "088f67d9-0217-4c12-a617-812fa7cbcaf9",
+          "is_selected": true,
+          "display_name": "total_payer_cost",
+          "type": "semantic_model.column",
+          "data_type": "double",
+          "description": null,
+          "children": []
+        },
+        {
+          "id": "6caeab2c-2598-4b76-ac21-4d02001934b1",
+          "is_selected": true,
+          "display_name": "total_patient_cost",
+          "type": "semantic_model.column",
+          "data_type": "double",
+          "description": null,
+          "children": []
+        },
+        {
+          "id": "3fefafcd-21a0-4056-a2b4-d12397079622",
+          "is_selected": true,
+          "display_name": "gap_days",
+          "type": "semantic_model.column",
+          "data_type": "string",
+          "description": null,
+          "children": []
+        },
+        {
+          "id": "5efc2955-48bc-43e1-9385-cc3ef0634fbf",
+          "is_selected": true,
+          "display_name": "is_chronic",
+          "type": "semantic_model.column",
+          "data_type": "int64",
+          "description": null,
+          "children": []
+        },
+        {
+          "id": "cb1c8ff1-217e-4ba6-b020-da82ec254bb6",
+          "is_selected": false,
+          "display_name": "_load_timestamp",
+          "type": "semantic_model.column",
+          "data_type": "string",
+          "description": null,
+          "children": []
+        },
+        {
+          "id": "0fb316c9-3979-425a-a358-cef23a62f29a",
+          "is_selected": true,
+          "display_name": "High Risk Denials",
+          "type": "semantic_model.measure",
+          "data_type": "double",
+          "description": null,
+          "children": []
+        },
+        {
+          "id": "f2574ab0-3faa-4d31-b810-f1d2de76a0dd",
+          "is_selected": true,
+          "display_name": "Adherent Rate",
+          "type": "semantic_model.measure",
+          "data_type": "double",
+          "description": null,
+          "children": []
+        },
+        {
+          "id": "f2a8df0e-6d4e-4696-9f16-cd260bededf5",
+          "is_selected": true,
+          "display_name": "Avg PDC Score",
+          "type": "semantic_model.measure",
+          "data_type": "double",
+          "description": null,
+          "children": []
+        }
+      ]
+    },
+    {
+      "id": "eb602186-2623-464d-b24c-8799d9b92e83",
+      "is_selected": true,
+      "display_name": "agg_readmission_by_date",
+      "type": "semantic_model.table",
+      "description": null,
+      "children": [
+        {
+          "id": "8005b90f-c2d3-4369-93c7-132695856a0d",
+          "is_selected": true,
+          "display_name": "encounter_date_key",
+          "type": "semantic_model.column",
+          "data_type": "int64",
+          "description": null,
+          "children": []
+        },
+        {
+          "id": "07a22c13-d118-4280-b04c-b22d4809b8a1",
+          "is_selected": true,
+          "display_name": "encounter_type",
+          "type": "semantic_model.column",
+          "data_type": "string",
+          "description": null,
+          "children": []
+        },
+        {
+          "id": "4ecc9ad5-79ba-4a7b-b70a-1f83e67f4744",
+          "is_selected": true,
+          "display_name": "total_encounters",
+          "type": "semantic_model.column",
+          "data_type": "double",
+          "description": null,
+          "children": []
+        },
+        {
+          "id": "23dfaccd-4c22-4e07-a4eb-071c5e96b228",
+          "is_selected": true,
+          "display_name": "high_risk_count",
+          "type": "semantic_model.column",
+          "data_type": "int64",
+          "description": null,
+          "children": []
+        },
+        {
+          "id": "69f28eca-9e61-4168-95a8-f635d4c6b70f",
+          "is_selected": true,
+          "display_name": "medium_risk_count",
+          "type": "semantic_model.column",
+          "data_type": "int64",
+          "description": null,
+          "children": []
+        },
+        {
+          "id": "fd7a0ac9-be16-476c-b1e8-1d476afaa635",
+          "is_selected": true,
+          "display_name": "low_risk_count",
+          "type": "semantic_model.column",
+          "data_type": "int64",
+          "description": null,
+          "children": []
+        },
+        {
+          "id": "b2592653-d7db-490e-94c8-4097ca097271",
+          "is_selected": true,
+          "display_name": "avg_risk_score",
+          "type": "semantic_model.column",
+          "data_type": "double",
+          "description": null,
+          "children": []
+        },
+        {
+          "id": "f7cb7b21-1576-4173-b28c-affd51fad52c",
+          "is_selected": true,
+          "display_name": "actual_readmissions",
+          "type": "semantic_model.column",
+          "data_type": "string",
+          "description": null,
+          "children": []
+        },
+        {
+          "id": "4f26cd72-2eb8-4de3-93d6-80ff9048dbbd",
+          "is_selected": true,
+          "display_name": "total_charges",
+          "type": "semantic_model.column",
+          "data_type": "double",
+          "description": null,
+          "children": []
+        },
+        {
+          "id": "0c05b9a9-e2b0-4e5c-85d8-fa7e9d76cb51",
+          "is_selected": true,
+          "display_name": "avg_length_of_stay",
+          "type": "semantic_model.column",
+          "data_type": "double",
+          "description": null,
+          "children": []
+        }
+      ]
+    },
+    {
+      "id": "017ca3d3-82d0-45dd-8f02-6e5c8589cb5b",
+      "is_selected": true,
+      "display_name": "dim_date",
+      "type": "semantic_model.table",
+      "description": null,
+      "children": [
+        {
+          "id": "12e612df-9c9c-45ec-b0d2-96c0dc448307",
+          "is_selected": true,
+          "display_name": "date_key",
+          "type": "semantic_model.column",
+          "data_type": "int64",
+          "description": null,
+          "children": []
+        },
+        {
+          "id": "b495465a-e20f-4ba7-8fd4-6ed887732883",
+          "is_selected": true,
+          "display_name": "full_date",
+          "type": "semantic_model.column",
+          "data_type": "dateTime",
+          "description": null,
+          "children": []
+        },
+        {
+          "id": "11c03815-1309-4f16-819a-71906ff5df18",
+          "is_selected": true,
+          "display_name": "day_of_week",
+          "type": "semantic_model.column",
+          "data_type": "string",
+          "description": null,
+          "children": []
+        },
+        {
+          "id": "73af5a68-0462-4d6a-8d66-140e156c3ae8",
+          "is_selected": true,
+          "display_name": "day_name",
+          "type": "semantic_model.column",
+          "data_type": "string",
+          "description": null,
+          "children": []
+        },
+        {
+          "id": "873bdeaf-2d91-498d-a3cf-69c2cdae8ea0",
+          "is_selected": true,
+          "display_name": "day_of_month",
+          "type": "semantic_model.column",
+          "data_type": "string",
+          "description": null,
+          "children": []
+        },
+        {
+          "id": "1cee81ad-6373-4187-8384-35fbb334ec9f",
+          "is_selected": true,
+          "display_name": "day_of_year",
+          "type": "semantic_model.column",
+          "data_type": "string",
+          "description": null,
+          "children": []
+        },
+        {
+          "id": "b0f4bfa4-7d3f-496b-8359-63868b3bb024",
+          "is_selected": true,
+          "display_name": "week_of_year",
+          "type": "semantic_model.column",
+          "data_type": "string",
+          "description": null,
+          "children": []
+        },
+        {
+          "id": "564d54bc-3e25-4db9-a2ed-b0182ca02b79",
+          "is_selected": true,
+          "display_name": "month_number",
+          "type": "semantic_model.column",
+          "data_type": "string",
+          "description": null,
+          "children": []
+        },
+        {
+          "id": "24cda038-141c-4387-8714-789db14c6ffd",
+          "is_selected": true,
+          "display_name": "month_name",
+          "type": "semantic_model.column",
+          "data_type": "string",
+          "description": null,
+          "children": []
+        },
+        {
+          "id": "c941f147-adca-408b-8204-1b68c0ee904f",
+          "is_selected": true,
+          "display_name": "quarter",
+          "type": "semantic_model.column",
+          "data_type": "string",
+          "description": null,
+          "children": []
+        },
+        {
+          "id": "5578d466-4ca4-4738-9ac2-d879f74048b0",
+          "is_selected": true,
+          "display_name": "year",
+          "type": "semantic_model.column",
+          "data_type": "string",
+          "description": null,
+          "children": []
+        },
+        {
+          "id": "76b446ca-b72f-4a62-b689-d456ed62d604",
+          "is_selected": true,
+          "display_name": "is_weekend",
+          "type": "semantic_model.column",
+          "data_type": "int64",
+          "description": null,
+          "children": []
+        },
+        {
+          "id": "3c49ebff-742f-4472-9cbb-9a1c268a039d",
+          "is_selected": true,
+          "display_name": "is_holiday",
+          "type": "semantic_model.column",
+          "data_type": "int64",
+          "description": null,
+          "children": []
+        },
+        {
+          "id": "297e8f2e-fa9c-46dc-a95a-9afecd366205",
+          "is_selected": true,
+          "display_name": "fiscal_year",
+          "type": "semantic_model.column",
+          "data_type": "string",
+          "description": null,
+          "children": []
+        },
+        {
+          "id": "a1f53de3-9843-4440-8a7a-0d705af0519e",
+          "is_selected": true,
+          "display_name": "fiscal_quarter",
+          "type": "semantic_model.column",
+          "data_type": "string",
+          "description": null,
+          "children": []
+        }
+      ]
+    },
+    {
+      "id": "b5ad2cd7-5382-4147-9872-23794f7b3918",
+      "is_selected": true,
+      "display_name": "dim_diagnosis",
+      "type": "semantic_model.table",
+      "description": null,
+      "children": [
+        {
+          "id": "b46c7d54-fe30-4a1a-8589-d05664efa6f4",
+          "is_selected": true,
+          "display_name": "diagnosis_key",
+          "type": "semantic_model.column",
+          "data_type": "int64",
+          "description": null,
+          "children": []
+        },
+        {
+          "id": "09c7fb11-b349-498b-b740-6b862f9c3357",
+          "is_selected": true,
+          "display_name": "icd_code",
+          "type": "semantic_model.column",
+          "data_type": "string",
+          "description": null,
+          "children": []
+        },
+        {
+          "id": "b78e7e13-a457-4e39-bffb-7b9a5a0da958",
+          "is_selected": true,
+          "display_name": "icd_description",
+          "type": "semantic_model.column",
+          "data_type": "string",
+          "description": null,
+          "children": []
+        },
+        {
+          "id": "dd90e6f4-fe4c-45a2-b9fd-30da479650c0",
+          "is_selected": true,
+          "display_name": "icd_category",
+          "type": "semantic_model.column",
+          "data_type": "string",
+          "description": null,
+          "children": []
+        },
+        {
+          "id": "96aab361-e3c2-4a7a-a42b-8f200161afd2",
+          "is_selected": true,
+          "display_name": "is_chronic",
+          "type": "semantic_model.column",
+          "data_type": "int64",
+          "description": null,
+          "children": []
+        },
+        {
+          "id": "e1b3b5fb-1ec9-45ec-8452-a94e7bee7a5b",
+          "is_selected": false,
+          "display_name": "is_active",
+          "type": "semantic_model.column",
+          "data_type": "int64",
+          "description": null,
+          "children": []
+        },
+        {
+          "id": "de78ee55-0c22-4d2c-b47d-5ed24b6fff3c",
+          "is_selected": false,
+          "display_name": "_load_timestamp",
+          "type": "semantic_model.column",
+          "data_type": "string",
+          "description": null,
+          "children": []
+        }
+      ]
+    },
+    {
+      "id": "7a457f64-1e94-43e0-8711-5d1304b80e2d",
+      "is_selected": true,
+      "display_name": "dim_medication",
+      "type": "semantic_model.table",
+      "description": null,
+      "children": [
+        {
+          "id": "669b5af1-a6ac-44e9-84d0-53c299f90193",
+          "is_selected": true,
+          "display_name": "medication_key",
+          "type": "semantic_model.column",
+          "data_type": "int64",
+          "description": null,
+          "children": []
+        },
+        {
+          "id": "62c07716-92c5-4259-8aa4-c8f99b0b4682",
+          "is_selected": true,
+          "display_name": "rxnorm_code",
+          "type": "semantic_model.column",
+          "data_type": "string",
+          "description": null,
+          "children": []
+        },
+        {
+          "id": "6954cbdc-5a99-49c0-86c9-0dd978abcbd9",
+          "is_selected": true,
+          "display_name": "medication_name",
+          "type": "semantic_model.column",
+          "data_type": "string",
+          "description": null,
+          "children": []
+        },
+        {
+          "id": "dba2d63c-d35a-44b2-b2ab-677e6b81f27b",
+          "is_selected": true,
+          "display_name": "generic_name",
+          "type": "semantic_model.column",
+          "data_type": "string",
+          "description": null,
+          "children": []
+        },
+        {
+          "id": "0b2155d1-032e-4101-adcc-efe5ab5d89d3",
+          "is_selected": true,
+          "display_name": "drug_class",
+          "type": "semantic_model.column",
+          "data_type": "string",
+          "description": null,
+          "children": []
+        },
+        {
+          "id": "57eb909a-bd5b-48fe-93d3-dbd4b7723580",
+          "is_selected": true,
+          "display_name": "therapeutic_area",
+          "type": "semantic_model.column",
+          "data_type": "string",
+          "description": null,
+          "children": []
+        },
+        {
+          "id": "aafc2d9b-2a87-4ea2-98a2-365e788a9163",
+          "is_selected": true,
+          "display_name": "route",
+          "type": "semantic_model.column",
+          "data_type": "string",
+          "description": null,
+          "children": []
+        },
+        {
+          "id": "42350729-bb7e-4ee2-86f5-5acf2434c572",
+          "is_selected": true,
+          "display_name": "form",
+          "type": "semantic_model.column",
+          "data_type": "string",
+          "description": null,
+          "children": []
+        },
+        {
+          "id": "559a2b60-98dc-4088-bfac-39c50c6b1d7e",
+          "is_selected": true,
+          "display_name": "strength",
+          "type": "semantic_model.column",
+          "data_type": "string",
+          "description": null,
+          "children": []
+        },
+        {
+          "id": "0ad0b649-104b-4c0f-9008-c75c1d9806bc",
+          "is_selected": true,
+          "display_name": "is_chronic",
+          "type": "semantic_model.column",
+          "data_type": "int64",
+          "description": null,
+          "children": []
+        },
+        {
+          "id": "6c1352ae-5d8f-48e8-bd39-77b8bcb0446f",
+          "is_selected": false,
+          "display_name": "is_active",
+          "type": "semantic_model.column",
+          "data_type": "int64",
+          "description": null,
+          "children": []
+        },
+        {
+          "id": "8c829752-9001-40c3-b826-2645571bb6d2",
+          "is_selected": false,
+          "display_name": "_load_timestamp",
+          "type": "semantic_model.column",
+          "data_type": "string",
+          "description": null,
+          "children": []
+        }
+      ]
+    },
+    {
+      "id": "79792405-1b9b-4788-af2b-272e5e7bd6c1",
+      "is_selected": true,
+      "display_name": "dim_patient",
+      "type": "semantic_model.table",
+      "description": null,
+      "children": [
+        {
+          "id": "abb00bb3-64a1-43dc-b41d-bbf9bb8c1cf7",
+          "is_selected": true,
+          "display_name": "patient_id",
+          "type": "semantic_model.column",
+          "data_type": "string",
+          "description": null,
+          "children": []
+        },
+        {
+          "id": "8f298236-fb00-404a-a81b-694551955eba",
+          "is_selected": true,
+          "display_name": "first_name",
+          "type": "semantic_model.column",
+          "data_type": "string",
+          "description": null,
+          "children": []
+        },
+        {
+          "id": "f9cde79c-3b74-4d48-9eea-6604ea0d4009",
+          "is_selected": true,
+          "display_name": "last_name",
+          "type": "semantic_model.column",
+          "data_type": "string",
+          "description": null,
+          "children": []
+        },
+        {
+          "id": "7fc17bee-c397-48fb-afe9-f788786cb396",
+          "is_selected": true,
+          "display_name": "date_of_birth",
+          "type": "semantic_model.column",
+          "data_type": "string",
+          "description": null,
+          "children": []
+        },
+        {
+          "id": "bbb372c0-21ae-4bc3-913f-fd391ff38bb0",
+          "is_selected": true,
+          "display_name": "gender",
+          "type": "semantic_model.column",
+          "data_type": "string",
+          "description": null,
+          "children": []
+        },
+        {
+          "id": "f6ff3a76-4513-4186-a79e-86ac39bf3e7c",
+          "is_selected": true,
+          "display_name": "address",
+          "type": "semantic_model.column",
+          "data_type": "string",
+          "description": null,
+          "children": []
+        },
+        {
+          "id": "9de84a08-200d-442a-939b-7350d4f7cecc",
+          "is_selected": true,
+          "display_name": "city",
+          "type": "semantic_model.column",
+          "data_type": "string",
+          "description": null,
+          "children": []
+        },
+        {
+          "id": "a245b61c-e836-44eb-8c06-a2df25ecb367",
+          "is_selected": true,
+          "display_name": "state",
+          "type": "semantic_model.column",
+          "data_type": "string",
+          "description": null,
+          "children": []
+        },
+        {
+          "id": "d56311bd-7d2d-45e8-b723-97c894fe656e",
+          "is_selected": true,
+          "display_name": "zip_code",
+          "type": "semantic_model.column",
+          "data_type": "string",
+          "description": null,
+          "children": []
+        },
+        {
+          "id": "353e6b18-b153-4621-98e3-9479709dbfa1",
+          "is_selected": true,
+          "display_name": "phone",
+          "type": "semantic_model.column",
+          "data_type": "string",
+          "description": null,
+          "children": []
+        },
+        {
+          "id": "a3af31ee-4223-469a-b9ec-ed6caa8a8466",
+          "is_selected": true,
+          "display_name": "email",
+          "type": "semantic_model.column",
+          "data_type": "string",
+          "description": null,
+          "children": []
+        },
+        {
+          "id": "68b0650e-6c84-4080-903f-210998fe8cde",
+          "is_selected": true,
+          "display_name": "insurance_type",
+          "type": "semantic_model.column",
+          "data_type": "string",
+          "description": null,
+          "children": []
+        },
+        {
+          "id": "d3871b3e-d994-40c7-9710-a79932eb47f8",
+          "is_selected": true,
+          "display_name": "insurance_provider",
+          "type": "semantic_model.column",
+          "data_type": "string",
+          "description": null,
+          "children": []
+        },
+        {
+          "id": "d54e6fcc-0188-494d-afa5-d8c76b52bd3f",
+          "is_selected": true,
+          "display_name": "insurance_policy_number",
+          "type": "semantic_model.column",
+          "data_type": "string",
+          "description": null,
+          "children": []
+        },
+        {
+          "id": "d7fa9ee6-8e71-4d54-9144-31fae6e3be65",
+          "is_selected": true,
+          "display_name": "age",
+          "type": "semantic_model.column",
+          "data_type": "string",
+          "description": null,
+          "children": []
+        },
+        {
+          "id": "75b88299-15fe-4547-afdf-cf75e38067dc",
+          "is_selected": true,
+          "display_name": "age_group",
+          "type": "semantic_model.column",
+          "data_type": "string",
+          "description": null,
+          "children": []
+        },
+        {
+          "id": "b2b2044c-ba89-40f8-b602-c8d8c7e79ce5",
+          "is_selected": true,
+          "display_name": "patient_key",
+          "type": "semantic_model.column",
+          "data_type": "int64",
+          "description": null,
+          "children": []
+        },
+        {
+          "id": "2ffac3f8-6506-4be9-a311-aa1991e72184",
+          "is_selected": false,
+          "display_name": "is_current",
+          "type": "semantic_model.column",
+          "data_type": "int64",
+          "description": null,
+          "children": []
+        },
+        {
+          "id": "a9e02f4d-fef4-4711-9682-6b1077eec401",
+          "is_selected": false,
+          "display_name": "effective_start_date",
+          "type": "semantic_model.column",
+          "data_type": "dateTime",
+          "description": null,
+          "children": []
+        },
+        {
+          "id": "efa4ba9e-6315-49e3-9aa9-705bd0768467",
+          "is_selected": false,
+          "display_name": "effective_end_date",
+          "type": "semantic_model.column",
+          "data_type": "dateTime",
+          "description": null,
+          "children": []
+        },
+        {
+          "id": "fe1c397e-6b9c-4475-b50e-f7da614d42b8",
+          "is_selected": false,
+          "display_name": "_load_timestamp",
+          "type": "semantic_model.column",
+          "data_type": "string",
+          "description": null,
+          "children": []
+        },
+        {
+          "id": "c11fcddb-0528-4564-b93a-5fa78ac20b68",
+          "is_selected": true,
+          "display_name": "Total Patients",
+          "type": "semantic_model.measure",
+          "data_type": "double",
+          "description": null,
+          "children": []
+        },
+        {
+          "id": "a433d306-9d25-41b3-82d3-63401d70a00c",
+          "is_selected": true,
+          "display_name": "Chronic Patients",
+          "type": "semantic_model.measure",
+          "data_type": "double",
+          "description": null,
+          "children": []
+        },
+        {
+          "id": "ef82f22d-63fd-46b6-89d7-f119b2e41b14",
+          "is_selected": true,
+          "display_name": "Chronic Rate",
+          "type": "semantic_model.measure",
+          "data_type": "double",
+          "description": null,
+          "children": []
+        },
+        {
+          "id": "ff26e6d6-2420-4950-addb-f30650e4880c",
+          "is_selected": true,
+          "display_name": "Avg Patient Age",
+          "type": "semantic_model.measure",
+          "data_type": "double",
+          "description": null,
+          "children": []
+        },
+        {
+          "id": "1f8b6444-095e-4b94-b654-05ad11fa599a",
+          "is_selected": true,
+          "display_name": "Female Patients",
+          "type": "semantic_model.measure",
+          "data_type": "double",
+          "description": null,
+          "children": []
+        },
+        {
+          "id": "2a9c2ebb-e09c-40e3-a37d-1e74d4828ca4",
+          "is_selected": true,
+          "display_name": "Male Patients",
+          "type": "semantic_model.measure",
+          "data_type": "double",
+          "description": null,
+          "children": []
+        }
+      ]
+    },
+    {
+      "id": "62379d36-419b-4364-96d7-16366bcee19e",
+      "is_selected": true,
+      "display_name": "dim_payer",
+      "type": "semantic_model.table",
+      "description": null,
+      "children": [
+        {
+          "id": "abb53707-f999-4545-9072-e836d3a2ac67",
+          "is_selected": true,
+          "display_name": "payer_id",
+          "type": "semantic_model.column",
+          "data_type": "string",
+          "description": null,
+          "children": []
+        },
+        {
+          "id": "0e21130c-76d7-4a2a-bd4d-fdf5eef6bbde",
+          "is_selected": true,
+          "display_name": "payer_name",
+          "type": "semantic_model.column",
+          "data_type": "string",
+          "description": null,
+          "children": []
+        },
+        {
+          "id": "aaea534d-87de-4b77-ab44-5fab04472a28",
+          "is_selected": true,
+          "display_name": "payer_type",
+          "type": "semantic_model.column",
+          "data_type": "string",
+          "description": null,
+          "children": []
+        },
+        {
+          "id": "2f260d16-9fa5-47d6-85dd-468521c96d04",
+          "is_selected": true,
+          "display_name": "payer_key",
+          "type": "semantic_model.column",
+          "data_type": "int64",
+          "description": null,
+          "children": []
+        },
+        {
+          "id": "0da7c0e1-dd8d-4eae-963d-84af97ceb5f9",
+          "is_selected": false,
+          "display_name": "is_active",
+          "type": "semantic_model.column",
+          "data_type": "int64",
+          "description": null,
+          "children": []
+        },
+        {
+          "id": "1c73adee-e1c0-46c7-a405-3a6374340adc",
+          "is_selected": false,
+          "display_name": "_load_timestamp",
+          "type": "semantic_model.column",
+          "data_type": "string",
+          "description": null,
+          "children": []
+        }
+      ]
+    },
+    {
+      "id": "265c1861-362e-48bc-8493-d8795b6efdda",
+      "is_selected": true,
+      "display_name": "dim_provider",
+      "type": "semantic_model.table",
+      "description": null,
+      "children": [
+        {
+          "id": "96cb15e7-0216-4324-934b-7b656f8157cf",
+          "is_selected": true,
+          "display_name": "provider_id",
+          "type": "semantic_model.column",
+          "data_type": "string",
+          "description": null,
+          "children": []
+        },
+        {
+          "id": "67e3c613-884a-4ad2-b817-8b990980839b",
+          "is_selected": true,
+          "display_name": "first_name",
+          "type": "semantic_model.column",
+          "data_type": "string",
+          "description": null,
+          "children": []
+        },
+        {
+          "id": "6c8d76a1-4315-4746-9ddf-6018a1972a09",
+          "is_selected": true,
+          "display_name": "last_name",
+          "type": "semantic_model.column",
+          "data_type": "string",
+          "description": null,
+          "children": []
+        },
+        {
+          "id": "d21c0fb0-d2bb-4f5f-a3e9-4012de99222c",
+          "is_selected": true,
+          "display_name": "display_name",
+          "type": "semantic_model.column",
+          "data_type": "string",
+          "description": null,
+          "children": []
+        },
+        {
+          "id": "2fba0c14-72fd-4bbd-b4f2-22ec3ef89c80",
+          "is_selected": true,
+          "display_name": "npi_number",
+          "type": "semantic_model.column",
+          "data_type": "string",
+          "description": null,
+          "children": []
+        },
+        {
+          "id": "41900065-be42-464b-87d6-e2082e15d820",
+          "is_selected": true,
+          "display_name": "specialty",
+          "type": "semantic_model.column",
+          "data_type": "string",
+          "description": null,
+          "children": []
+        },
+        {
+          "id": "eff205a7-f771-4f64-80c9-f769f607ab7a",
+          "is_selected": true,
+          "display_name": "department",
+          "type": "semantic_model.column",
+          "data_type": "string",
+          "description": null,
+          "children": []
+        },
+        {
+          "id": "672928e9-2dd2-40bf-968b-9bba010d81c4",
+          "is_selected": true,
+          "display_name": "facility_id",
+          "type": "semantic_model.column",
+          "data_type": "string",
+          "description": null,
+          "children": []
+        },
+        {
+          "id": "dbed7126-1179-40aa-88e1-efb64996c21f",
+          "is_selected": false,
+          "display_name": "is_active",
+          "type": "semantic_model.column",
+          "data_type": "int64",
+          "description": null,
+          "children": []
+        },
+        {
+          "id": "98f6245e-b72a-4a08-8d97-9139fca6561d",
+          "is_selected": true,
+          "display_name": "provider_key",
+          "type": "semantic_model.column",
+          "data_type": "int64",
+          "description": null,
+          "children": []
+        },
+        {
+          "id": "97a6843a-9bb2-47bd-8755-4ff6c3eb31bf",
+          "is_selected": false,
+          "display_name": "is_current",
+          "type": "semantic_model.column",
+          "data_type": "int64",
+          "description": null,
+          "children": []
+        },
+        {
+          "id": "6218b075-4f97-4579-a0bb-373f64ee9d8f",
+          "is_selected": false,
+          "display_name": "effective_start_date",
+          "type": "semantic_model.column",
+          "data_type": "dateTime",
+          "description": null,
+          "children": []
+        },
+        {
+          "id": "aceeb836-397c-4b0c-9ba0-d33fbeff1333",
+          "is_selected": false,
+          "display_name": "effective_end_date",
+          "type": "semantic_model.column",
+          "data_type": "dateTime",
+          "description": null,
+          "children": []
+        },
+        {
+          "id": "4c39932f-0ea4-4ce3-866f-47399cde9738",
+          "is_selected": false,
+          "display_name": "_load_timestamp",
+          "type": "semantic_model.column",
+          "data_type": "string",
+          "description": null,
+          "children": []
+        }
+      ]
+    },
+    {
+      "id": "1bf93135-cfb0-4045-962d-21cb278b2694",
+      "is_selected": true,
+      "display_name": "dim_sdoh",
+      "type": "semantic_model.table",
+      "description": null,
+      "children": [
+        {
+          "id": "2c415cbd-c894-42a2-a248-9ab123001181",
+          "is_selected": true,
+          "display_name": "sdoh_key",
+          "type": "semantic_model.column",
+          "data_type": "int64",
+          "description": null,
+          "children": []
+        },
+        {
+          "id": "15ec5789-0b34-496d-b588-f3f852c88a83",
+          "is_selected": true,
+          "display_name": "zip_code",
+          "type": "semantic_model.column",
+          "data_type": "string",
+          "description": null,
+          "children": []
+        },
+        {
+          "id": "1f7ff1b5-7e29-4299-b24a-68ae065da104",
+          "is_selected": true,
+          "display_name": "state",
+          "type": "semantic_model.column",
+          "data_type": "string",
+          "description": null,
+          "children": []
+        },
+        {
+          "id": "da8c4084-1ab1-4ea8-a312-8e47a699e24d",
+          "is_selected": true,
+          "display_name": "poverty_rate",
+          "type": "semantic_model.column",
+          "data_type": "double",
+          "description": null,
+          "children": []
+        },
+        {
+          "id": "e2205a75-694d-4279-aa28-10a06ff2e597",
+          "is_selected": true,
+          "display_name": "food_desert_flag",
+          "type": "semantic_model.column",
+          "data_type": "int64",
+          "description": null,
+          "children": []
+        },
+        {
+          "id": "9d8b259c-1b85-447f-bcbd-c15f350db31d",
+          "is_selected": true,
+          "display_name": "transportation_score",
+          "type": "semantic_model.column",
+          "data_type": "double",
+          "description": null,
+          "children": []
+        },
+        {
+          "id": "511febd9-39d2-469c-9752-1e1a58bcebb0",
+          "is_selected": true,
+          "display_name": "housing_instability_rate",
+          "type": "semantic_model.column",
+          "data_type": "double",
+          "description": null,
+          "children": []
+        },
+        {
+          "id": "deffa7dc-008f-43cd-b580-c5d09fc3046d",
+          "is_selected": true,
+          "display_name": "uninsured_rate",
+          "type": "semantic_model.column",
+          "data_type": "double",
+          "description": null,
+          "children": []
+        },
+        {
+          "id": "ae0ca5a6-e65d-4937-a66e-8dfc61ec48aa",
+          "is_selected": true,
+          "display_name": "broadband_access_pct",
+          "type": "semantic_model.column",
+          "data_type": "double",
+          "description": null,
+          "children": []
+        },
+        {
+          "id": "f4ca153f-ab6a-4901-b771-ecc86a23cc2c",
+          "is_selected": true,
+          "display_name": "median_household_income",
+          "type": "semantic_model.column",
+          "data_type": "string",
+          "description": null,
+          "children": []
+        },
+        {
+          "id": "ff70fb8f-18ad-4963-80aa-83d5b74200dd",
+          "is_selected": true,
+          "display_name": "population",
+          "type": "semantic_model.column",
+          "data_type": "string",
+          "description": null,
+          "children": []
+        },
+        {
+          "id": "5478b7d1-fd50-482c-a4fc-24e33f81f527",
+          "is_selected": true,
+          "display_name": "social_vulnerability_index",
+          "type": "semantic_model.column",
+          "data_type": "string",
+          "description": null,
+          "children": []
+        },
+        {
+          "id": "3441c5de-8134-4241-be43-effd673f06a6",
+          "is_selected": true,
+          "display_name": "risk_tier",
+          "type": "semantic_model.column",
+          "data_type": "string",
+          "description": null,
+          "children": []
+        },
+        {
+          "id": "705a496e-73e4-4faf-88cc-805b754f58a5",
+          "is_selected": false,
+          "display_name": "is_active",
+          "type": "semantic_model.column",
+          "data_type": "int64",
+          "description": null,
+          "children": []
+        },
+        {
+          "id": "46fbe24b-e03b-4a64-b6d7-2835d7eb1e15",
+          "is_selected": false,
+          "display_name": "_load_timestamp",
+          "type": "semantic_model.column",
+          "data_type": "string",
+          "description": null,
+          "children": []
+        }
+      ]
+    },
+    {
+      "id": "564d5951-4b79-4da6-a67d-ce987ded4672",
+      "is_selected": true,
+      "display_name": "fact_claim",
+      "type": "semantic_model.table",
+      "description": null,
+      "children": [
+        {
+          "id": "065228fd-4dff-4e6c-b419-40e2cc2af58f",
+          "is_selected": true,
+          "display_name": "claim_id",
+          "type": "semantic_model.column",
+          "data_type": "string",
+          "description": null,
+          "children": []
+        },
+        {
+          "id": "7e0769c4-8f7a-498a-9525-5d72070785ff",
+          "is_selected": true,
+          "display_name": "claim_date_key",
+          "type": "semantic_model.column",
+          "data_type": "int64",
+          "description": null,
+          "children": []
+        },
+        {
+          "id": "72ca82b7-d2c3-4808-817c-87ec646f7842",
+          "is_selected": true,
+          "display_name": "payment_date_key",
+          "type": "semantic_model.column",
+          "data_type": "int64",
+          "description": null,
+          "children": []
+        },
+        {
+          "id": "428b37a5-8d24-4e4c-a3b7-d9fb85deb186",
+          "is_selected": true,
+          "display_name": "patient_key",
+          "type": "semantic_model.column",
+          "data_type": "int64",
+          "description": null,
+          "children": []
+        },
+        {
+          "id": "a0bd4d6c-34af-47b5-ac74-c821563a6aa2",
+          "is_selected": true,
+          "display_name": "provider_key",
+          "type": "semantic_model.column",
+          "data_type": "int64",
+          "description": null,
+          "children": []
+        },
+        {
+          "id": "53320a6f-81dd-4211-b676-8352fa32e98c",
+          "is_selected": true,
+          "display_name": "payer_key",
+          "type": "semantic_model.column",
+          "data_type": "int64",
+          "description": null,
+          "children": []
+        },
+        {
+          "id": "fe19b915-e2c8-488d-8d16-b8c5a42c82c6",
+          "is_selected": true,
+          "display_name": "encounter_key",
+          "type": "semantic_model.column",
+          "data_type": "int64",
+          "description": null,
+          "children": []
+        },
+        {
+          "id": "310b1414-496c-4016-974a-76144da0816d",
+          "is_selected": false,
+          "display_name": "facility_key",
+          "type": "semantic_model.column",
+          "data_type": "int64",
+          "description": null,
+          "children": []
+        },
+        {
+          "id": "88530403-6ef8-4b13-a8e6-0a2bc80ecf00",
+          "is_selected": true,
+          "display_name": "claim_type",
+          "type": "semantic_model.column",
+          "data_type": "string",
+          "description": null,
+          "children": []
+        },
+        {
+          "id": "ed8a6f1f-1bdb-4b3c-bf42-49698171e861",
+          "is_selected": true,
+          "display_name": "claim_status",
+          "type": "semantic_model.column",
+          "data_type": "string",
+          "description": null,
+          "children": []
+        },
+        {
+          "id": "b688b30a-b7e9-45cb-aabe-27e25d02558a",
+          "is_selected": true,
+          "display_name": "billed_amount",
+          "type": "semantic_model.column",
+          "data_type": "double",
+          "description": null,
+          "children": []
+        },
+        {
+          "id": "32c58212-bba3-4e76-b1a0-8cfac012f38c",
+          "is_selected": true,
+          "display_name": "allowed_amount",
+          "type": "semantic_model.column",
+          "data_type": "double",
+          "description": null,
+          "children": []
+        },
+        {
+          "id": "fee51f23-9a31-46e8-89e5-e46cccf38939",
+          "is_selected": true,
+          "display_name": "paid_amount",
+          "type": "semantic_model.column",
+          "data_type": "double",
+          "description": null,
+          "children": []
+        },
+        {
+          "id": "3ba77587-fe2e-4fde-8531-656a2d9e8ab1",
+          "is_selected": true,
+          "display_name": "denial_flag",
+          "type": "semantic_model.column",
+          "data_type": "int64",
+          "description": null,
+          "children": []
+        },
+        {
+          "id": "8ac469b8-8254-4fd1-8b36-83b054cd2bce",
+          "is_selected": true,
+          "display_name": "denial_risk_score",
+          "type": "semantic_model.column",
+          "data_type": "double",
+          "description": null,
+          "children": []
+        },
+        {
+          "id": "66a8d56a-a91f-400d-99ac-3ebe45c2ea6a",
+          "is_selected": true,
+          "display_name": "denial_risk_category",
+          "type": "semantic_model.column",
+          "data_type": "string",
+          "description": null,
+          "children": []
+        },
+        {
+          "id": "828ffeb9-f934-4dc7-ae6a-476fd546b865",
+          "is_selected": true,
+          "display_name": "primary_denial_reason",
+          "type": "semantic_model.column",
+          "data_type": "string",
+          "description": null,
+          "children": []
+        },
+        {
+          "id": "9efa0813-e388-4e47-9b0a-63c642eb1a1c",
+          "is_selected": true,
+          "display_name": "recommended_action",
+          "type": "semantic_model.column",
+          "data_type": "string",
+          "description": null,
+          "children": []
+        },
+        {
+          "id": "5d3c8534-25b5-42b7-bd75-45429017c3fc",
+          "is_selected": false,
+          "display_name": "_load_timestamp",
+          "type": "semantic_model.column",
+          "data_type": "string",
+          "description": null,
+          "children": []
+        },
+        {
+          "id": "af006470-9278-41ce-8ef2-ba1f605661f2",
+          "is_selected": true,
+          "display_name": "claim_key",
+          "type": "semantic_model.column",
+          "data_type": "int64",
+          "description": null,
+          "children": []
+        },
+        {
+          "id": "0eee313c-6af7-4c99-8fcc-e3ec449c0177",
+          "is_selected": true,
+          "display_name": "Total Claims",
+          "type": "semantic_model.measure",
+          "data_type": "double",
+          "description": null,
+          "children": []
+        },
+        {
+          "id": "111469fa-7b20-4632-a465-05ed0d182c67",
+          "is_selected": true,
+          "display_name": "Denial Rate",
+          "type": "semantic_model.measure",
+          "data_type": "double",
+          "description": null,
+          "children": []
+        },
+        {
+          "id": "0ee53f1b-2276-4139-9b13-a05b75d6c34f",
+          "is_selected": true,
+          "display_name": "Total Billed",
+          "type": "semantic_model.measure",
+          "data_type": "double",
+          "description": null,
+          "children": []
+        },
+        {
+          "id": "332e51fd-fe38-4c0a-87b4-792e79dd7b45",
+          "is_selected": true,
+          "display_name": "Total Paid",
+          "type": "semantic_model.measure",
+          "data_type": "double",
+          "description": null,
+          "children": []
+        },
+        {
+          "id": "eb527a08-632c-4f66-8c30-2f0ffe08ddc4",
+          "is_selected": true,
+          "display_name": "Collection Rate",
+          "type": "semantic_model.measure",
+          "data_type": "double",
+          "description": null,
+          "children": []
+        },
+        {
+          "id": "264b9207-e81f-42cb-b443-7f3e71aa2af1",
+          "is_selected": true,
+          "display_name": "At Risk Revenue",
+          "type": "semantic_model.measure",
+          "data_type": "double",
+          "description": null,
+          "children": []
+        },
+        {
+          "id": "27b67f9a-383b-4724-a17c-e35ccee88c4d",
+          "is_selected": true,
+          "display_name": "Avg Denial Risk",
+          "type": "semantic_model.measure",
+          "data_type": "double",
+          "description": null,
+          "children": []
+        },
+        {
+          "id": "d630e4c7-8a4e-40af-8cb2-0c4dd01bc3db",
+          "is_selected": true,
+          "display_name": "MTD Claims",
+          "type": "semantic_model.measure",
+          "data_type": "double",
+          "description": null,
+          "children": []
+        },
+        {
+          "id": "4cd99462-014d-4571-a7c5-059f54059478",
+          "is_selected": true,
+          "display_name": "Paid by Payment Date",
+          "type": "semantic_model.measure",
+          "data_type": "double",
+          "description": null,
+          "children": []
+        }
+      ]
+    },
+    {
+      "id": "8dccac9f-bdd2-4246-8d01-eb5a8fe39748",
+      "is_selected": true,
+      "display_name": "fact_diagnosis",
+      "type": "semantic_model.table",
+      "description": null,
+      "children": [
+        {
+          "id": "3b865704-633f-49b8-8480-fcc838765cbf",
+          "is_selected": true,
+          "display_name": "fact_diagnosis_key",
+          "type": "semantic_model.column",
+          "data_type": "int64",
+          "description": null,
+          "children": []
+        },
+        {
+          "id": "31d45376-60ae-43b9-88cd-b9c71c388af7",
+          "is_selected": true,
+          "display_name": "diagnosis_id",
+          "type": "semantic_model.column",
+          "data_type": "string",
+          "description": null,
+          "children": []
+        },
+        {
+          "id": "482818c4-45f3-4c2a-8593-16a93cfc42bc",
+          "is_selected": true,
+          "display_name": "encounter_key",
+          "type": "semantic_model.column",
+          "data_type": "int64",
+          "description": null,
+          "children": []
+        },
+        {
+          "id": "f5d45cdb-09ad-4810-9d7e-a3d507924916",
+          "is_selected": true,
+          "display_name": "diagnosis_date_key",
+          "type": "semantic_model.column",
+          "data_type": "int64",
+          "description": null,
+          "children": []
+        },
+        {
+          "id": "21d88ded-2d30-47d1-8a05-f66d943f8c1b",
+          "is_selected": true,
+          "display_name": "patient_key",
+          "type": "semantic_model.column",
+          "data_type": "int64",
+          "description": null,
+          "children": []
+        },
+        {
+          "id": "0870936b-8bfb-470b-9b47-d6e62d15fcc3",
+          "is_selected": true,
+          "display_name": "diagnosis_key",
+          "type": "semantic_model.column",
+          "data_type": "int64",
+          "description": null,
+          "children": []
+        },
+        {
+          "id": "17b013cb-21ea-4a1d-b878-abefcac4ba94",
+          "is_selected": false,
+          "display_name": "facility_key",
+          "type": "semantic_model.column",
+          "data_type": "int64",
+          "description": null,
+          "children": []
+        },
+        {
+          "id": "ab964398-d20a-4dd4-9586-fb2987d772f3",
+          "is_selected": true,
+          "display_name": "icd_code",
+          "type": "semantic_model.column",
+          "data_type": "string",
+          "description": null,
+          "children": []
+        },
+        {
+          "id": "06cbedf7-f571-46f7-884d-742f96c9096b",
+          "is_selected": true,
+          "display_name": "diagnosis_sequence",
+          "type": "semantic_model.column",
+          "data_type": "int64",
+          "description": null,
+          "children": []
+        },
+        {
+          "id": "062ecd62-8d92-4ea7-b7df-a9cc47c7154a",
+          "is_selected": true,
+          "display_name": "diagnosis_type",
+          "type": "semantic_model.column",
+          "data_type": "int64",
+          "description": null,
+          "children": []
+        },
+        {
+          "id": "81211795-a96c-4333-9fd5-5a08b55298d5",
+          "is_selected": true,
+          "display_name": "present_on_admission",
+          "type": "semantic_model.column",
+          "data_type": "string",
+          "description": null,
+          "children": []
+        },
+        {
+          "id": "6dd96fe2-b6ad-42a8-beff-29e46e6d7664",
+          "is_selected": false,
+          "display_name": "_load_timestamp",
+          "type": "semantic_model.column",
+          "data_type": "string",
+          "description": null,
+          "children": []
+        },
+        {
+          "id": "0a583bb1-ac0a-448e-b7c7-14b1101b0dc8",
+          "is_selected": true,
+          "display_name": "Unique Diagnoses",
+          "type": "semantic_model.measure",
+          "data_type": "double",
+          "description": null,
+          "children": []
+        },
+        {
+          "id": "794689f5-e4ba-420a-8ce7-42fdf2356b5a",
+          "is_selected": true,
+          "display_name": "Chronic Diagnoses",
+          "type": "semantic_model.measure",
+          "data_type": "double",
+          "description": null,
+          "children": []
+        },
+        {
+          "id": "007a9132-ed88-4ea4-9611-899c32270c2d",
+          "is_selected": true,
+          "display_name": "Patients with Chronic Conditions",
+          "type": "semantic_model.measure",
+          "data_type": "double",
+          "description": null,
+          "children": []
+        }
+      ]
+    },
+    {
+      "id": "eab71ee1-6103-46aa-8709-f16888523a78",
+      "is_selected": true,
+      "display_name": "fact_encounter",
+      "type": "semantic_model.table",
+      "description": null,
+      "children": [
+        {
+          "id": "2b65321f-e31f-4528-b95a-18c06acaf377",
+          "is_selected": true,
+          "display_name": "encounter_id",
+          "type": "semantic_model.column",
+          "data_type": "string",
+          "description": null,
+          "children": []
+        },
+        {
+          "id": "c53418c5-7d34-4320-b7ad-cc45a984ab8e",
+          "is_selected": true,
+          "display_name": "encounter_date_key",
+          "type": "semantic_model.column",
+          "data_type": "int64",
+          "description": null,
+          "children": []
+        },
+        {
+          "id": "be8bfc75-9731-42d3-83c8-c45020cc66ce",
+          "is_selected": true,
+          "display_name": "discharge_date_key",
+          "type": "semantic_model.column",
+          "data_type": "int64",
+          "description": null,
+          "children": []
+        },
+        {
+          "id": "54d796ed-1f99-46f7-9141-d629ff4c9047",
+          "is_selected": true,
+          "display_name": "patient_key",
+          "type": "semantic_model.column",
+          "data_type": "int64",
+          "description": null,
+          "children": []
+        },
+        {
+          "id": "c1551aa9-a314-4c8f-9810-b43ee4d5f29f",
+          "is_selected": true,
+          "display_name": "provider_key",
+          "type": "semantic_model.column",
+          "data_type": "int64",
+          "description": null,
+          "children": []
+        },
+        {
+          "id": "1a56a4f7-b300-48dd-817f-481144af4c83",
+          "is_selected": false,
+          "display_name": "facility_key",
+          "type": "semantic_model.column",
+          "data_type": "int64",
+          "description": null,
+          "children": []
+        },
+        {
+          "id": "c8c86c18-7e1b-4e1f-80cd-e024fbb5bf9e",
+          "is_selected": true,
+          "display_name": "encounter_type",
+          "type": "semantic_model.column",
+          "data_type": "string",
+          "description": null,
+          "children": []
+        },
+        {
+          "id": "f70cd5f0-e0da-45fe-ba3c-c20fbd4789f1",
+          "is_selected": true,
+          "display_name": "admission_type",
+          "type": "semantic_model.column",
+          "data_type": "string",
+          "description": null,
+          "children": []
+        },
+        {
+          "id": "a4133b5e-925c-418a-8645-14f3943f5bff",
+          "is_selected": true,
+          "display_name": "discharge_disposition",
+          "type": "semantic_model.column",
+          "data_type": "string",
+          "description": null,
+          "children": []
+        },
+        {
+          "id": "f6cafaa1-6394-4bfa-bc60-2e1d6dc971db",
+          "is_selected": true,
+          "display_name": "length_of_stay",
+          "type": "semantic_model.column",
+          "data_type": "string",
+          "description": null,
+          "children": []
+        },
+        {
+          "id": "7e4ea772-76d2-4d72-8347-f61ae3131600",
+          "is_selected": true,
+          "display_name": "total_charges",
+          "type": "semantic_model.column",
+          "data_type": "double",
+          "description": null,
+          "children": []
+        },
+        {
+          "id": "00f7de7b-52c1-4903-a89f-f79459ba37d3",
+          "is_selected": true,
+          "display_name": "total_cost",
+          "type": "semantic_model.column",
+          "data_type": "double",
+          "description": null,
+          "children": []
+        },
+        {
+          "id": "8f8ad176-2d50-4b1c-adff-9572794b66a2",
+          "is_selected": true,
+          "display_name": "readmission_flag",
+          "type": "semantic_model.column",
+          "data_type": "int64",
+          "description": null,
+          "children": []
+        },
+        {
+          "id": "365a8883-0cf7-4f87-99eb-dc13a920ac3f",
+          "is_selected": true,
+          "display_name": "readmission_risk_score",
+          "type": "semantic_model.column",
+          "data_type": "double",
+          "description": null,
+          "children": []
+        },
+        {
+          "id": "81c7358c-150b-41ed-b4a3-942e28b3b299",
+          "is_selected": true,
+          "display_name": "readmission_risk_category",
+          "type": "semantic_model.column",
+          "data_type": "string",
+          "description": null,
+          "children": []
+        },
+        {
+          "id": "205f9d26-c946-4da6-854a-74da8407afd1",
+          "is_selected": false,
+          "display_name": "_load_timestamp",
+          "type": "semantic_model.column",
+          "data_type": "string",
+          "description": null,
+          "children": []
+        },
+        {
+          "id": "a174b421-a755-488d-ad43-78beadd46968",
+          "is_selected": true,
+          "display_name": "encounter_key",
+          "type": "semantic_model.column",
+          "data_type": "int64",
+          "description": null,
+          "children": []
+        },
+        {
+          "id": "897502fb-5c52-4bec-9564-a0626984af5a",
+          "is_selected": true,
+          "display_name": "Total Encounters",
+          "type": "semantic_model.measure",
+          "data_type": "double",
+          "description": null,
+          "children": []
+        },
+        {
+          "id": "0b7a5d7f-8021-4703-b3a7-6f7311a409e5",
+          "is_selected": true,
+          "display_name": "Readmission Rate",
+          "type": "semantic_model.measure",
+          "data_type": "double",
+          "description": null,
+          "children": []
+        },
+        {
+          "id": "0f16324a-9ca2-448b-909a-1bea99f13e67",
+          "is_selected": true,
+          "display_name": "High Risk Readmissions",
+          "type": "semantic_model.measure",
+          "data_type": "double",
+          "description": null,
+          "children": []
+        },
+        {
+          "id": "68cc9b09-fa9d-4430-b64c-d7df59a31b6c",
+          "is_selected": true,
+          "display_name": "Medium Risk Readmissions",
+          "type": "semantic_model.measure",
+          "data_type": "double",
+          "description": null,
+          "children": []
+        },
+        {
+          "id": "415fe46d-3b5f-42a6-9d30-804a5f4220c3",
+          "is_selected": true,
+          "display_name": "Low Risk Readmissions",
+          "type": "semantic_model.measure",
+          "data_type": "double",
+          "description": null,
+          "children": []
+        },
+        {
+          "id": "271ec0e2-f863-46e4-b9f5-34fc9e07e582",
+          "is_selected": true,
+          "display_name": "Avg Length of Stay",
+          "type": "semantic_model.measure",
+          "data_type": "double",
+          "description": null,
+          "children": []
+        },
+        {
+          "id": "d55b186b-3efd-4faa-a678-d2811a4ea5b6",
+          "is_selected": true,
+          "display_name": "Avg Readmission Risk",
+          "type": "semantic_model.measure",
+          "data_type": "double",
+          "description": null,
+          "children": []
+        },
+        {
+          "id": "f0194fb5-e101-44ac-beb3-9d1a3e1e3b43",
+          "is_selected": true,
+          "display_name": "Total Charges",
+          "type": "semantic_model.measure",
+          "data_type": "double",
+          "description": null,
+          "children": []
+        },
+        {
+          "id": "7f103c2c-7844-4fdd-8bc2-1cd98d86a56c",
+          "is_selected": true,
+          "display_name": "PY Charges",
+          "type": "semantic_model.measure",
+          "data_type": "double",
+          "description": null,
+          "children": []
+        },
+        {
+          "id": "572e28ea-560e-46b2-96af-38ac0a388e89",
+          "is_selected": true,
+          "display_name": "YoY Charge Growth",
+          "type": "semantic_model.measure",
+          "data_type": "double",
+          "description": null,
+          "children": []
+        },
+        {
+          "id": "383df6eb-c813-4a7e-a877-be704494aa1a",
+          "is_selected": true,
+          "display_name": "YTD Charges",
+          "type": "semantic_model.measure",
+          "data_type": "double",
+          "description": null,
+          "children": []
+        },
+        {
+          "id": "9a418228-0f15-49e6-bf3b-7c64f327316d",
+          "is_selected": true,
+          "display_name": "Total Cost",
+          "type": "semantic_model.measure",
+          "data_type": "double",
+          "description": null,
+          "children": []
+        },
+        {
+          "id": "350b581d-9bbc-4c8b-9fab-8437106b2cfe",
+          "is_selected": true,
+          "display_name": "PMPM",
+          "type": "semantic_model.measure",
+          "data_type": "double",
+          "description": null,
+          "children": []
+        },
+        {
+          "id": "b538cdc8-6005-4437-b43b-90714cc030e3",
+          "is_selected": true,
+          "display_name": "Avg Cost Per Encounter",
+          "type": "semantic_model.measure",
+          "data_type": "double",
+          "description": null,
+          "children": []
+        },
+        {
+          "id": "f606f949-695f-47b7-abb4-554b6b2aeaec",
+          "is_selected": true,
+          "display_name": "Inpatient Encounters",
+          "type": "semantic_model.measure",
+          "data_type": "double",
+          "description": null,
+          "children": []
+        },
+        {
+          "id": "1b1cd3a4-075b-4fd1-ad51-5e67aed722e0",
+          "is_selected": true,
+          "display_name": "Emergency Encounters",
+          "type": "semantic_model.measure",
+          "data_type": "double",
+          "description": null,
+          "children": []
+        },
+        {
+          "id": "96a2da49-881c-479a-8e88-124450402924",
+          "is_selected": true,
+          "display_name": "Quality Score",
+          "type": "semantic_model.measure",
+          "data_type": "double",
+          "description": null,
+          "children": []
+        }
+      ]
+    },
+    {
+      "id": "92460cbf-815d-4946-a405-fc1ac8fd188b",
+      "is_selected": true,
+      "display_name": "fact_prescription",
+      "type": "semantic_model.table",
+      "description": null,
+      "children": [
+        {
+          "id": "cab446e0-41c1-4165-bce9-0c0fc51e5446",
+          "is_selected": true,
+          "display_name": "prescription_id",
+          "type": "semantic_model.column",
+          "data_type": "string",
+          "description": null,
+          "children": []
+        },
+        {
+          "id": "19e178df-62ce-4cfb-aac3-93535155efc1",
+          "is_selected": true,
+          "display_name": "prescription_group_id",
+          "type": "semantic_model.column",
+          "data_type": "string",
+          "description": null,
+          "children": []
+        },
+        {
+          "id": "a01240b9-b15e-4967-b5a8-c941984c4697",
+          "is_selected": true,
+          "display_name": "fill_date_key",
+          "type": "semantic_model.column",
+          "data_type": "int64",
+          "description": null,
+          "children": []
+        },
+        {
+          "id": "9d02a925-a6ab-4005-a1d8-5f4c7c098356",
+          "is_selected": true,
+          "display_name": "patient_key",
+          "type": "semantic_model.column",
+          "data_type": "int64",
+          "description": null,
+          "children": []
+        },
+        {
+          "id": "695ee689-52b4-4b69-b62f-b9c5cd338b27",
+          "is_selected": true,
+          "display_name": "provider_key",
+          "type": "semantic_model.column",
+          "data_type": "int64",
+          "description": null,
+          "children": []
+        },
+        {
+          "id": "3a698501-dbbc-40d2-96b6-5f9b8b621972",
+          "is_selected": true,
+          "display_name": "payer_key",
+          "type": "semantic_model.column",
+          "data_type": "int64",
+          "description": null,
+          "children": []
+        },
+        {
+          "id": "b1647ffd-f875-49ac-a356-7561f4b69a99",
+          "is_selected": true,
+          "display_name": "encounter_key",
+          "type": "semantic_model.column",
+          "data_type": "int64",
+          "description": null,
+          "children": []
+        },
+        {
+          "id": "649c714a-bc78-47e9-ad50-154cc2c81a26",
+          "is_selected": true,
+          "display_name": "medication_key",
+          "type": "semantic_model.column",
+          "data_type": "int64",
+          "description": null,
+          "children": []
+        },
+        {
+          "id": "937e86a8-755a-4f8a-81c2-ce164feec11d",
+          "is_selected": false,
+          "display_name": "facility_key",
+          "type": "semantic_model.column",
+          "data_type": "int64",
+          "description": null,
+          "children": []
+        },
+        {
+          "id": "9245e923-d81d-4887-b624-a4392847683c",
+          "is_selected": true,
+          "display_name": "fill_number",
+          "type": "semantic_model.column",
+          "data_type": "string",
+          "description": null,
+          "children": []
+        },
+        {
+          "id": "b5f5b981-33d8-425a-a2b2-eae13bfd3755",
+          "is_selected": true,
+          "display_name": "days_supply",
+          "type": "semantic_model.column",
+          "data_type": "string",
+          "description": null,
+          "children": []
+        },
+        {
+          "id": "2d91575f-a4a2-44d0-a945-a322282e1efd",
+          "is_selected": true,
+          "display_name": "quantity_dispensed",
+          "type": "semantic_model.column",
+          "data_type": "string",
+          "description": null,
+          "children": []
+        },
+        {
+          "id": "3022ec85-63bf-414d-923b-10788fd04072",
+          "is_selected": true,
+          "display_name": "refills_authorized",
+          "type": "semantic_model.column",
+          "data_type": "string",
+          "description": null,
+          "children": []
+        },
+        {
+          "id": "52d39a90-3b03-406f-b9f6-e2bbe8b6812b",
+          "is_selected": true,
+          "display_name": "is_generic",
+          "type": "semantic_model.column",
+          "data_type": "int64",
+          "description": null,
+          "children": []
+        },
+        {
+          "id": "ddab7816-3b03-4926-8e9e-74902b7fe9d6",
+          "is_selected": true,
+          "display_name": "is_chronic_medication",
+          "type": "semantic_model.column",
+          "data_type": "int64",
+          "description": null,
+          "children": []
+        },
+        {
+          "id": "f0c1eb77-c6d7-4735-b7e1-d951138af979",
+          "is_selected": true,
+          "display_name": "pharmacy_type",
+          "type": "semantic_model.column",
+          "data_type": "string",
+          "description": null,
+          "children": []
+        },
+        {
+          "id": "3e57681a-27fa-4d7c-aae6-6b182e6998a9",
+          "is_selected": true,
+          "display_name": "total_cost",
+          "type": "semantic_model.column",
+          "data_type": "double",
+          "description": null,
+          "children": []
+        },
+        {
+          "id": "456713b7-649c-496f-b122-c6c7be2e8c20",
+          "is_selected": true,
+          "display_name": "payer_paid",
+          "type": "semantic_model.column",
+          "data_type": "string",
+          "description": null,
+          "children": []
+        },
+        {
+          "id": "414b7a77-52a2-47e8-a3e2-bbac3207314e",
+          "is_selected": true,
+          "display_name": "patient_copay",
+          "type": "semantic_model.column",
+          "data_type": "string",
+          "description": null,
+          "children": []
+        },
+        {
+          "id": "1774e51d-f148-43db-8cce-a1fd04cbc8be",
+          "is_selected": true,
+          "display_name": "prescribing_reason_code",
+          "type": "semantic_model.column",
+          "data_type": "string",
+          "description": null,
+          "children": []
+        },
+        {
+          "id": "e8c4a62e-a3a2-4585-bd52-c69dc8f3d966",
+          "is_selected": false,
+          "display_name": "_load_timestamp",
+          "type": "semantic_model.column",
+          "data_type": "string",
+          "description": null,
+          "children": []
+        },
+        {
+          "id": "ced287d8-f3a8-424d-ae6e-776e901f27e1",
+          "is_selected": true,
+          "display_name": "prescription_key",
+          "type": "semantic_model.column",
+          "data_type": "int64",
+          "description": null,
+          "children": []
+        },
+        {
+          "id": "b406e3f4-b558-4046-8b5e-e74697a8d76f",
+          "is_selected": true,
+          "display_name": "Total Fills",
+          "type": "semantic_model.measure",
+          "data_type": "double",
+          "description": null,
+          "children": []
+        },
+        {
+          "id": "243140d3-e7ca-4ae9-b448-b5d3a134eaca",
+          "is_selected": true,
+          "display_name": "Total Rx Cost",
+          "type": "semantic_model.measure",
+          "data_type": "double",
+          "description": null,
+          "children": []
+        },
+        {
+          "id": "efbb3d18-74c3-4a90-b80e-3b0f778b38ed",
+          "is_selected": true,
+          "display_name": "Avg Rx Cost Per Fill",
+          "type": "semantic_model.measure",
+          "data_type": "double",
+          "description": null,
+          "children": []
+        },
+        {
+          "id": "c8d1e1cf-b3e9-45de-965d-709e008193f4",
+          "is_selected": true,
+          "display_name": "Generic Fill Rate",
+          "type": "semantic_model.measure",
+          "data_type": "double",
+          "description": null,
+          "children": []
+        },
+        {
+          "id": "8ff0c97d-13a0-447c-a01d-697c93a9d201",
+          "is_selected": true,
+          "display_name": "Payer Rx Cost",
+          "type": "semantic_model.measure",
+          "data_type": "double",
+          "description": null,
+          "children": []
+        },
+        {
+          "id": "b30fd8e6-aed4-4176-adde-cd52578edf05",
+          "is_selected": true,
+          "display_name": "Patient Copay Total",
+          "type": "semantic_model.measure",
+          "data_type": "double",
+          "description": null,
+          "children": []
+        }
+      ]
+    }
+  ]
+}

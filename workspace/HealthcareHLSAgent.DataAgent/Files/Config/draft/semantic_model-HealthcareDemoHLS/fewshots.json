@@ -1,0 +1,65 @@
+{
+  "$schema": "https://developer.microsoft.com/json-schemas/fabric/item/dataAgent/definition/fewshots/1.0.0/schema.json",
+  "fewshots": [
+    {
+      "question": "What is the overall claim denial rate?",
+      "query": "EVALUATE ROW(\"Denial Rate\", [Denial Rate], \"Total Claims\", [Total Claims])",
+      "explanation": "Use the [Denial Rate] measure on fact_claim. Single-row scalar."
+    },
+    {
+      "question": "What is the denial rate by payer?",
+      "query": "EVALUATE\nSUMMARIZECOLUMNS(\n    dim_payer[payer_name],\n    \"Denial Rate\", [Denial Rate],\n    \"Total Claims\", [Total Claims],\n    \"Total Billed\", [Total Billed]\n)\nORDER BY [Denial Rate] DESC",
+      "explanation": "Group by payer_name. Use the prebuilt [Denial Rate] measure — never recompute from denial_flag."
+    },
+    {
+      "question": "What is the 30-day readmission rate trend by month?",
+      "query": "EVALUATE\nSUMMARIZECOLUMNS(\n    dim_date[year],\n    dim_date[month_number],\n    dim_date[month_name],\n    \"Readmission Rate\", [Readmission Rate],\n    \"Total Encounters\", [Total Encounters]\n)\nORDER BY dim_date[year], dim_date[month_number]",
+      "explanation": "Trend by month uses dim_date with year+month for sorting."
+    },
+    {
+      "question": "What is the readmission rate by encounter type?",
+      "query": "EVALUATE\nSUMMARIZECOLUMNS(\n    fact_encounter[encounter_type],\n    \"Readmission Rate\", [Readmission Rate],\n    \"Total Encounters\", [Total Encounters],\n    \"Avg Length of Stay\", [Avg Length of Stay]\n)\nORDER BY [Readmission Rate] DESC",
+      "explanation": "encounter_type is a column on fact_encounter."
+    },
+    {
+      "question": "How many encounters are in each readmission risk category?",
+      "query": "EVALUATE\nSUMMARIZECOLUMNS(\n    fact_encounter[readmission_risk_category],\n    \"Total Encounters\", [Total Encounters],\n    \"Avg Readmission Risk\", [Avg Readmission Risk]\n)\nORDER BY [Total Encounters] DESC",
+      "explanation": "Distribution = group by category column + count."
+    },
+    {
+      "question": "What is medication adherence rate by drug class?",
+      "query": "EVALUATE\nSUMMARIZECOLUMNS(\n    agg_medication_adherence[drug_class],\n    \"Adherent Rate\", [Adherent Rate],\n    \"Avg PDC Score\", [Avg PDC Score]\n)\nORDER BY [Adherent Rate] DESC",
+      "explanation": "drug_class lives on agg_medication_adherence in this model."
+    },
+    {
+      "question": "How many patients are adherent vs non-adherent?",
+      "query": "EVALUATE\nSUMMARIZECOLUMNS(\n    agg_medication_adherence[adherence_category],\n    \"Patients\", DISTINCTCOUNT(agg_medication_adherence[patient_key])\n)\nORDER BY [Patients] DESC",
+      "explanation": "Distinct patients per adherence_category bucket."
+    },
+    {
+      "question": "Compare prescription cost by payer.",
+      "query": "EVALUATE\nSUMMARIZECOLUMNS(\n    dim_payer[payer_name],\n    \"Total Rx Cost\", [Total Rx Cost],\n    \"Payer Rx Cost\", [Payer Rx Cost],\n    \"Patient Copay Total\", [Patient Copay Total],\n    \"Generic Fill Rate\", [Generic Fill Rate]\n)\nORDER BY [Total Rx Cost] DESC",
+      "explanation": "Use prebuilt prescription cost measures across payers."
+    },
+    {
+      "question": "Which payers have the lowest collection rate?",
+      "query": "EVALUATE\nSUMMARIZECOLUMNS(\n    dim_payer[payer_name],\n    \"Collection Rate\", [Collection Rate],\n    \"Total Billed\", [Total Billed],\n    \"Total Paid\", [Total Paid]\n)\nORDER BY [Collection Rate] ASC",
+      "explanation": "Collection rate = paid / billed via measure."
+    },
+    {
+      "question": "What is the average length of stay by encounter type?",
+      "query": "EVALUATE\nSUMMARIZECOLUMNS(\n    fact_encounter[encounter_type],\n    \"Avg Length of Stay\", [Avg Length of Stay],\n    \"Total Encounters\", [Total Encounters]\n)\nORDER BY [Avg Length of Stay] DESC",
+      "explanation": "ALOS measure already exists; never AVG length_of_stay column manually."
+    },
+    {
+      "question": "How many patients are in each age group?",
+      "query": "EVALUATE\nSUMMARIZECOLUMNS(\n    dim_patient[age_group],\n    \"Total Patients\", [Total Patients]\n)\nORDER BY dim_patient[age_group]",
+      "explanation": "Use the [Total Patients] measure (already filters is_current=1)."
+    },
+    {
+      "question": "What is our YoY charge growth?",
+      "query": "EVALUATE ROW(\n    \"YTD Charges\", [YTD Charges],\n    \"PY Charges\", [PY Charges],\n    \"YoY Charge Growth\", [YoY Charge Growth]\n)",
+      "explanation": "Time-intelligence measures already encoded."
+    }
+  ]
+}

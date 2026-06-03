@@ -335,6 +335,21 @@
       "id": "sq34-provider-payer-rx-network",
       "question": "Show me which providers prescribe the most to each payer — the provider-payer prescription network.",
       "query": "SELECT dpr.display_name as provider, dpr.specialty, py.payer_name, COUNT(*) as total_fills, SUM(fp.total_cost) as total_cost, SUM(fp.payer_paid) as payer_paid FROM fact_prescription fp JOIN dim_provider dpr ON fp.provider_key = dpr.provider_key AND dpr.is_current = 1 JOIN dim_payer py ON fp.payer_key = py.payer_key GROUP BY dpr.display_name, dpr.specialty, py.payer_name ORDER BY total_cost DESC"
+    },
+    {
+      "id": "a8742113-42e4-4e47-b3e6-934bca26f962",
+      "question": "Which patients have the most non-adherent drug classes?",
+      "query": "WITH patient_classes AS (SELECT DISTINCT dp.patient_id, dp.first_name, dp.last_name, dp.age, dm.drug_class FROM agg_medication_adherence ama JOIN dim_patient dp ON dp.patient_key = ama.patient_key AND dp.is_current = 1 JOIN dim_medication dm ON dm.medication_key = ama.medication_key WHERE ama.adherence_category = 'Non-Adherent') SELECT TOP 10 patient_id, first_name, last_name, age, COUNT(*) AS non_adherent_class_count, STRING_AGG(drug_class, ', ') WITHIN GROUP (ORDER BY drug_class) AS non_adherent_drug_classes FROM patient_classes GROUP BY patient_id, first_name, last_name, age ORDER BY non_adherent_class_count DESC"
+    },
+    {
+      "id": "e3379be9-9db7-4e10-9adc-af43c23649aa",
+      "question": "List the top 10 patients with the most non-adherent drug classes, including their names and the drug classes.",
+      "query": "WITH patient_classes AS (SELECT DISTINCT dp.patient_id, dp.first_name, dp.last_name, dp.age, dm.drug_class FROM agg_medication_adherence ama JOIN dim_patient dp ON dp.patient_key = ama.patient_key AND dp.is_current = 1 JOIN dim_medication dm ON dm.medication_key = ama.medication_key WHERE ama.adherence_category = 'Non-Adherent') SELECT TOP 10 patient_id, first_name, last_name, age, COUNT(*) AS non_adherent_class_count, STRING_AGG(drug_class, ', ') WITHIN GROUP (ORDER BY drug_class) AS non_adherent_drug_classes FROM patient_classes GROUP BY patient_id, first_name, last_name, age ORDER BY non_adherent_class_count DESC"
+    },
+    {
+      "id": "310f7ab9-5f3e-4a7d-b6cb-bf857bb4bb3c",
+      "question": "Show me non-adherent patients with their full names and the drug classes they are non-adherent to.",
+      "query": "SELECT dp.patient_id, dp.first_name, dp.last_name, dp.age, dm.drug_class, dm.therapeutic_area, ama.pdc_score, ama.gap_days FROM agg_medication_adherence ama JOIN dim_patient dp ON dp.patient_key = ama.patient_key AND dp.is_current = 1 JOIN dim_medication dm ON dm.medication_key = ama.medication_key WHERE ama.adherence_category = 'Non-Adherent' ORDER BY dp.last_name, dp.first_name, dm.drug_class"
     }
   ]
 }

@@ -1,3 +1,4 @@
+/// Diagnosis (ICD code) dimension. One row per ICD code (diagnosis_key) with description, category, and chronic-condition flag. Join to fact_diagnosis on diagnosis_key.
 table dim_diagnosis
 	lineageTag: 16a4efcb-bb20-41aa-9bfb-fc39feaa04ab
 	sourceLineageTag: [dbo].[dim_diagnosis]
@@ -39,6 +40,7 @@ table dim_diagnosis
 
 		annotation SummarizationSetBy = Automatic
 
+	/// 1 = ICD code represents a chronic condition.
 	column is_chronic
 		dataType: int64
 		formatString: 0

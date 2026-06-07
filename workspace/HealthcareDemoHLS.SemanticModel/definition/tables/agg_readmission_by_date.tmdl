@@ -1,3 +1,4 @@
+/// Pre-aggregated readmission counts by encounter date and encounter type. Daily totals with high/medium/low risk counts, average risk score, and actual readmissions. Use for readmission trend reporting (already aggregated – do not also sum fact_encounter).
 table agg_readmission_by_date
 	lineageTag: 14a52265-d69d-4d45-b1d9-7928712eb147
 	sourceLineageTag: [dbo].[agg_readmission_by_date]

@@ -1,3 +1,4 @@
+/// Social Determinants of Health dimension keyed by ZIP code. Community-level measures (poverty rate, food desert, transportation, housing instability, uninsured rate, broadband access, median income) plus a composite social_vulnerability_index and risk_tier. Join to dim_patient on zip_code.
 table dim_sdoh
 	lineageTag: 10893ca7-0e87-4ada-90b3-ec7ee684691e
 	sourceLineageTag: [dbo].[dim_sdoh]
@@ -41,6 +42,7 @@ table dim_sdoh
 
 		annotation PBI_FormatHint = {"isGeneralNumber":true}
 
+	/// 1 = ZIP code is classified as a food desert.
 	column food_desert_flag
 		dataType: int64
 		formatString: 0
@@ -115,6 +117,7 @@ table dim_sdoh
 
 		annotation SummarizationSetBy = Automatic
 
+	/// Composite social vulnerability score (0-1); higher = more vulnerable community.
 	column social_vulnerability_index
 		dataType: double
 		lineageTag: e2a34105-77c4-4fb8-993d-56ae5f0a5b50
@@ -126,6 +129,7 @@ table dim_sdoh
 
 		annotation PBI_FormatHint = {"isGeneralNumber":true}
 
+	/// Categorical SDOH risk tier (e.g. High, Medium, Low) derived from social_vulnerability_index.
 	column risk_tier
 		dataType: string
 		lineageTag: bf5752a0-72d2-4540-a6fc-e1ac30305197

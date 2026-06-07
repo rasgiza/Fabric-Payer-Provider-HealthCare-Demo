@@ -1,3 +1,4 @@
+/// Pre-aggregated medication adherence by patient and medication. Grain: one row per patient / medication / measurement period. Holds PDC score, adherence category, covered vs gap days, and cost split. Use for CMS Star-rating PDC and adherence reporting (already aggregated – do not also sum fact_prescription).
 table agg_medication_adherence
 	lineageTag: 919f3a81-780d-43f4-808c-ceb52a04fd34
 	sourceLineageTag: [dbo].[agg_medication_adherence]
@@ -125,6 +126,7 @@ table agg_medication_adherence
 
 		annotation SummarizationSetBy = Automatic
 
+	/// Proportion of Days Covered (0-1). PDC >= 0.80 is considered adherent per CMS Star measures.
 	column pdc_score
 		dataType: double
 		lineageTag: 62a51315-2d48-44b0-a6a3-845e4429f712
@@ -136,6 +138,7 @@ table agg_medication_adherence
 
 		annotation PBI_FormatHint = {"isGeneralNumber":true}
 
+	/// Adherence bucket derived from PDC: 'Adherent' (PDC >= 0.80) vs 'Non-Adherent'.
 	column adherence_category
 		dataType: string
 		lineageTag: 097356c5-5ee6-461c-b3d9-9b7d67a2d343
@@ -178,6 +181,7 @@ table agg_medication_adherence
 
 		annotation PBI_FormatHint = {"isGeneralNumber":true}
 
+	/// Days in the measurement period the patient had no medication on hand.
 	column gap_days
 		dataType: int64
 		formatString: 0

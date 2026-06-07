@@ -2,6 +2,8 @@
 
 One-click deployment of a complete **Healthcare Payer/Provider Analytics** solution into Microsoft Fabric — no Python install, no `.env` files, no manual setup.
 
+> **The story in one line:** *Same Fabric data foundation, two delivery surfaces — **push** to Microsoft Teams via Data Activator the moment a fraud, readmit-risk, or capacity event fires, and **pull** via the Foundry Orchestrator Agent + Power BI / RTI Dashboard when leaders want to investigate. One governance model, real-time and on-demand.*
+
 > [!IMPORTANT]
 > - All data in this demo is **100% synthetic**. No real patient information (PHI) is used.
 > - Data was generated using a synthetic data generator with realistic distributions but entirely fictional names and records.
@@ -94,6 +96,23 @@ By combining all six dimensions — **claims + readmissions + adherence + SDOH +
 - **Ontology-driven knowledge graphs** connecting patients → encounters → claims → providers → payers
 
 All from a single workspace deployed in minutes.
+
+### How this maps to the Microsoft "Healthcare Provider Use Cases" framing
+
+This demo aligns directly with the [Microsoft Healthcare Provider Use Cases](https://microsoft.sharepoint.com/teams/USHealthcareCloudandAIPlatforms/SitePages/Healthcare-Provider-Use-Cases.aspx) playbook. Position it against these solution areas and pain points:
+
+| MS framing | This demo's coverage |
+|---|---|
+| **Data foundation** (connect data across systems) | ✅ Medallion (Bronze→Silver→Gold) on Fabric/OneLake unifying EHR, claims, ADT, SDOH, pharmacy; ontology + KB sit on top |
+| **AI-powered experiences** (summarization, knowledge access, automation) | ✅ Foundry Orchestrator agent with KB grounding + citations; sub-agents for clinical / financial / ops questions |
+| **Productivity & collaboration** (care teams, ops, back office) | ✅ Activator → **Teams cards** push the alert into the workflow the user already lives in |
+| **Application platform** (targeted solutions, prototypes) | 🟡 Partial — Healthcare_Launcher.ipynb is itself a one-click reusable solution accelerator; complement with custom apps as needed |
+| **Operations & analytics** (throughput, RCM, service line, exec decision support) | ✅ Sweet spot — Power BI exec dashboard, RTI Dashboard, fraud/SIU, contract analytics |
+| **Care team productivity** (workflow automation, knowledge access, secure collab) | ✅ Real-time Teams alerts + grounded agent answers with citations |
+| **Front door & access** (intake, contact center, scheduling) | ❌ Not in scope — complementary to Microsoft Cloud for Healthcare patient experience accelerators |
+| **Clinical documentation** (scribe, ambient) | ❌ Not in scope — complementary to Dragon / DAX Copilot |
+
+**The business pain answered:** provider operations are blind to events when they happen and slow to ask *why* when they don't. This demo unifies the data once on Fabric, then delivers the same intelligence two ways — pushed into Teams the instant something fires, and pulled into a grounded AI cockpit when leaders want to investigate.
 
 ---
 
@@ -316,6 +335,15 @@ See **[SAMPLE_QUESTIONS.md](SAMPLE_QUESTIONS.md)** for 80+ copy-paste questions 
 ### Data Agent Reference
 
 For the complete agent configuration -- AI instructions, concept-to-table routing, SQL rules, few-shot examples, knowledge base, and customization guide -- see **[DATA_AGENT_GUIDE.md](DATA_AGENT_GUIDE.md)**.
+
+#### Built to Microsoft best practices
+
+`HealthcareHLSAgent` and its `HealthcareDemoHLS` semantic model follow Microsoft's published guidance: **[Semantic model best practices for data agent](https://learn.microsoft.com/en-us/fabric/data-science/semantic-model-best-practices#prep-for-ai-make-semantic-model-ai-ready)** and **[Prepare your data for AI](https://learn.microsoft.com/en-us/power-bi/create-reports/copilot-prepare-data-ai)**.
+
+- **Keep agent instructions cross-source and high-level.** The DAX generation tool ignores data-agent-level instructions when querying a semantic model, so model-specific guidance belongs in **Prep for AI** (AI instructions, AI data schema, verified answers) on the model itself. The agent prompt is kept thin: response formatting, cross-source routing, and tone only. Start lean and add context iteratively.
+- **Make the semantic model AI-ready.** Tables, columns, and measures carry descriptions; model-level Prep-for-AI instructions and verified answers are documented for the model owner to apply in the Power BI UI (they can't be set through the agent API).
+
+The copy-paste-ready instructions, verified answers, and the API-vs-UI deployment map are in **[HLS_AGENT_PREP_FOR_AI.md](HLS_AGENT_PREP_FOR_AI.md)**.
 
 ### Power BI Dashboard
 

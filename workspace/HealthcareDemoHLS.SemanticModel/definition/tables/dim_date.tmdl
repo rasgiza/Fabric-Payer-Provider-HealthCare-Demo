@@ -1,3 +1,4 @@
+/// Date dimension. One row per calendar day (date_key). Join the fact tables' *_date_key columns to date_key for time-based analysis (day, month, quarter, year).
 table dim_date
 	lineageTag: 0ec76a00-d377-4006-86d6-9b236534f7f9
 	sourceLineageTag: [dbo].[dim_date]

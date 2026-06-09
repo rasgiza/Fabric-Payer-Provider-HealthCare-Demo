@@ -23,7 +23,7 @@ carries `///` table, column, and measure descriptions (DirectLake on `lh_gold_cu
 | **A. Agent-level instructions** (operational prompt) | `HealthcareHLSAgent.DataAgent/.../stage_config.json` | ✅ API / Git sync |
 | **B. Data-source instructions** (schema, routing, SQL rules, values) | `.../datasource.json` | ✅ API / Git sync |
 | **C. Model-level *Prep for AI* instructions** | Semantic model → *Prep for AI* pane | ⚠️ **Fabric UI only — copy-paste** |
-| **D. Verified answers** (NL → DAX/SQL) | Semantic model / agent → *Verified answers* | ⚠️ **Fabric UI only — copy-paste** |
+| **D. Verified answers** (NL → saved visual) | Created in **Power BI Desktop** (right-click visual → *Set up verified answer*); surfaces in service *Prep data for AI → Verified answers* | ⚠️ **Desktop + service UI** |
 
 **Why the split:** model-level Prep-for-AI instructions (C) and verified answers (D)
 **cannot be updated through the API today**, so they are documented here for you to paste
@@ -31,27 +31,65 @@ into the Fabric UI by hand. Keep A intentionally thin — it should only tell th
 reason over the sources and shape its answers*, never repeat the schema/value detail that
 belongs in B, or the domain context that belongs in C.
 
+## ⚠️ To get good answers from the semantic model, you MUST do the UI steps
+
+Git sync deploys Layers A and B automatically. But when the agent answers a question from the
+**`HealthcareDemoHLS` semantic model** (the PRIMARY source), the DAX generation tool **ignores
+the agent prompt** and reads **only** the model's Prep-for-AI configuration. So the model-level
+instructions (C) and verified answers (D) are not optional polish — they are *where the
+agent's semantic-model intelligence comes from*. Skip them and the agent will guess at
+business terms, pick the wrong measure, and miss your standard breakdowns.
+
+**One-time setup for the model owner.** The `HealthcareDemoHLS` semantic model has a
+**Prep data for AI** pane (in the Fabric / Power BI **service**) with three steps:
+*Simplify the data schema*, *Verified answers*, and *Add AI instructions*. Two of those are
+edited right in the service; verified answers are created in **Power BI Desktop** and then
+show up back in this pane.
+
+1. **Add AI instructions** (in the service → Prep data for AI → *Add AI instructions*) → paste
+   Section 3 of this doc (benchmarks + business rules).
+2. *(Optional, recommended)* **Simplify the data schema** (in the service → same pane) → keep
+   only AI-relevant tables and measures to cut ambiguity; add synonyms for terms users say.
+3. **Verified answers** → these are **created in Power BI Desktop**, not typed in the service.
+   In Desktop, build a report on this model with a visual that shows the answer, then
+   **right-click the visual → "Set up verified answer"** and add the phrasings users will ask
+   (5–7 each). Section 4 gives the DAX that defines what each visual should display — use it to
+   build the visual, not to paste. **Once you publish/save, go back to the Fabric UI → Prep data
+   for AI → Verified answers and you'll see the new entries reflected there.**
+4. Re-test the agent, then iterate — add an instruction or verified answer whenever you see a
+   wrong answer. Start lean; don't do everything at once.
+
+Until these UI steps are done, only the lakehouse (SQL) path is fully tuned.
+
 ---
 
 ## 1. Agent-level instructions — Layer A (deployed via API; high-level only)
 
-This is the exact text in `stage_config.json` (`aiInstructions`). It is deliberately
-source-agnostic: reasoning + response structure only, no schema or benchmarks.
+This is the exact text in `stage_config.json` (`aiInstructions`). It stays cross-source:
+source selection, response structure, and a pointer to where source-specific detail lives.
 
 ```
-You are a healthcare revenue-cycle and clinical analytics assistant for payer and provider operations, answering over a Gold-layer healthcare star schema.
+You are the Healthcare Intelligence Agent for a hospital analytics team, answering questions about readmissions, claim denials, medication adherence, prescriptions, diagnoses, social determinants, providers, and payers over a Gold-layer star schema.
 
-REASONING OVER DATA SOURCES
-- Query the configured data source before answering; never fabricate values.
-- Pick the table or source that most directly answers the question, then join only what you need. Source-specific schema, table routing, query rules, allowed values, and worked examples are provided in the data-source instructions — follow them.
-- Prefer pre-aggregated summaries over re-deriving the same math from raw fact tables.
+TWO DATA SOURCES - PICK EXACTLY ONE PER QUESTION
+1. semantic_model 'HealthcareDemoHLS' (PRIMARY, default) - pre-built DAX measures for any question about rates, percentages, totals, counts, averages, trends, or KPI breakdowns.
+2. lakehouse_tables 'lh_gold_curated' (FALLBACK) - raw SQL for row-level detail a measure cannot provide: patient names, claim IDs, prescription rows, or filters on columns not exposed as measures.
 
-RESPONSE STRUCTURE
-- Lead with the direct answer and the headline metric, then a short breakdown, then context or a recommendation when it adds value. Offer 2-3 useful follow-up questions.
-- State the time period and grain you used. Do not apply a date filter unless the user names a period; otherwise use all data.
-- Format units explicitly: rates as %, money as $, durations in days. For any rate, show the numerator and denominator.
+ROUTING
+- Default to the semantic model; switch to the lakehouse only when row-level detail is required.
+- Rates, counts, trends, breakdowns, 'how many / how much', 'top N by [measure]' -> semantic model.
+- 'show me / list / who is' patients, claims, prescriptions, individual records -> lakehouse.
+- Never combine both sources in one answer. If a question needs KPIs and detail, answer the KPI part and offer to drill in as a follow-up. When ambiguous, prefer the semantic model.
+
+RESPONSE
+- Query first; never fabricate values. Lead with the direct answer and headline metric, then a short breakdown, then context vs benchmark when useful, then 2-3 follow-ups.
+- State the period and grain. Format units explicitly: rates as %, money as $, durations in days.
+- Aggregate by default; surface individual patient identifiers only when explicitly requested.
 - If a metric returns 0 or blank, say it may be filtered or unavailable rather than asserting a true zero, and suggest a refinement.
-- Aggregate by default; surface individual patient identifiers only when the user explicitly asks for row-level detail.
+
+SOURCE-SPECIFIC DETAIL
+- Semantic model: schema, measure choice, business terminology, and benchmark targets live in the model's Prep for AI (AI instructions, AI data schema, verified answers) - the DAX tool reads those, not this prompt.
+- Lakehouse: table schemas, SQL rules, and allowed values live in the lakehouse data-source instructions.
 ```
 
 ## 2. Data-source instructions — Layer B (deployed via API)
@@ -113,10 +151,20 @@ When a metric beats or misses its benchmark, say so and suggest a concrete next 
 
 ---
 
-## 4. Verified answers — Layer D (⚠️ copy-paste into Fabric UI; NL question -> DAX)
+## 4. Verified answers — Layer D (⚠️ created in Power BI Desktop, then surfaced in the Fabric UI)
 
-Add each as a verified answer on the **semantic model** source. DAX assumes the measures and
-columns described in the TMDL.
+**How verified answers are actually created (preview):**
+1. In **Power BI Desktop**, open a report built on this model, **right-click a visual** that
+   shows the answer, and select **"Set up verified answer"**.
+2. Add the common phrases / questions users might ask about that data.
+3. Publish/save. Back in the Fabric **service** → the model's **Prep data for AI → Verified
+   answers** tab now lists the entry. Copilot and the data agent then return that saved visual
+   when users ask a related question.
+
+So each DAX block below is the **spec for the visual to build** — it defines the exact measures,
+columns, filters, and sort the visual must use. Build a visual matching the DAX in Desktop, then
+right-click it and attach the trigger phrasings. The DAX assumes the measures and columns
+described in the TMDL.
 
 ### Q1 — Top 5 denial reasons by denied-claim count
 ```dax

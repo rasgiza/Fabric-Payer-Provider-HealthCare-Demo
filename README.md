@@ -11,6 +11,22 @@ One-click deployment of a complete **Healthcare Payer/Provider Analytics** solut
 
 ---
 
+## 🎬 Recommended Demo Questions
+
+> **For an easy, story-driven demo that showcases both the Fabric Data Agent and the Foundry IQ Knowledge Agent, ask these two questions back-to-back — same patient, same story.**
+
+1. **In the Fabric Data Agent (`HealthcareHLSAgent`):**
+   *"Show me medication adherence for Betty Brown age 83 by drug class."*
+   → Returns per-class PDC, gap days, and adherence category from the gold lakehouse.
+
+2. **In the Foundry IQ Knowledge Agent (`HLSAgent`):**
+   *"Betty Brown was just discharged after a CHF admission with high readmission risk and is non-adherent on multiple chronic medications. What TCM and MTM interventions should her care team take in the next 7 days? Cite the guidelines."*
+   → Returns a cited care plan grounded in the clinical knowledge docs at `lh_gold_curated/Files/healthcare_knowledge/`.
+
+**Why this works:** Q1 shows Fabric's structured-data power; Q2 shows Foundry's reasoning + grounded citations. Together they tell the platform story — *data → decision* — in under 60 seconds.
+
+---
+
 ## Table of Contents
 
 1. [Why This Demo? — The Payer & Provider Pain Points](#why-this-demo--the-payer--provider-pain-points)
@@ -168,7 +184,7 @@ Dual-path design: **Batch ETL** (authoritative, historical) + **Real-Time Intell
 
 ### Solution Architecture
 
-![Provider Healthcare Solution with Microsoft Fabric & AI](diagrams/healthcare-architecture.png)
+![Provider Healthcare Solution with Microsoft Fabric & AI](diagrams/healthcare-architecture.png?v=2)
 
 ### 🔬 Interactive 3D Ontology Knowledge Graph
 
@@ -182,11 +198,13 @@ Dual-path design: **Batch ETL** (authoritative, historical) + **Real-Time Intell
 >
 > To run locally: download [`docs/ontology_graph_3d.html`](docs/ontology_graph_3d.html) and open in any browser.
 
-### 🎬 Interactive 3D Patient Story Demo
+### 🎬 Interactive 3D Patient Story Demos
 
-**[▶ Launch Nancy White Story](https://rasgiza.github.io/Fabric-Payer-Provider-HealthCare-Demo/demo_3d_story/nancy_white_story.html)** — Walk through a real patient journey showing how the ontology agent answers clinical questions about medication adherence, SDOH risk, and care recommendations.
+**[▶ Launch Nancy White Story](https://rasgiza.github.io/Fabric-Payer-Provider-HealthCare-Demo/demo_3d_story/nancy_white_story.html)** — Age 63, Medicare, CHF. 9 drug classes, 8/9 non-adherent, pharmacy desert. How streaming intelligence catches a $42,000 readmission risk in 48 hours instead of 28 days.
 
-> To run locally: download [`demo_3d_story/nancy_white_story.html`](demo_3d_story/nancy_white_story.html) and open in any browser.
+**[▶ Launch Sarah Johnson Story](https://rasgiza.github.io/Fabric-Payer-Provider-HealthCare-Demo/demo_3d_story/sarah_johnson_story.html)** — Age 41, Commercial. 13 providers, opioid + benzo FDA black-box combination, 3 psychiatrists, no PCP. How the ontology surfaces an overdose risk that no dashboard can see.
+
+> Navigate with arrow keys, spacebar, click, or number keys. Press **A** for auto-play.
 
 ### Detailed Data Flow
 
@@ -330,7 +348,18 @@ The solution includes two complementary AI agents:
 - **HealthcareHLSAgent** — SQL-based agent for aggregations, rates, and trends ("What is the denial rate?", "Top 10 providers by cost")
 - **Healthcare Ontology Agent** — Graph traversal agent for entity lookups and relationships ("Tell me about patient PAT0000001", "Who treated this patient?", "Trace claim CLM0009999 from patient to payer")
 
-See **[SAMPLE_QUESTIONS.md](SAMPLE_QUESTIONS.md)** for 80+ copy-paste questions organized by domain and agent.
+See **[SAMPLE_QUESTIONS.md](SAMPLE_QUESTIONS.md)** for 90+ copy-paste questions organized by domain and agent — including a top **[Executive Pain-Point Questions](SAMPLE_QUESTIONS.md#executive-pain-point-questions-boardroom--c-suite)** section (CFO, CMO, CMIO, COO, VP Pop Health, CIO) framed in real-world boardroom language.
+
+#### Recommended Demo Warm-Up Sequence (Graph Ontology Agent)
+
+The Graph Data Agent runs on top of an OpenAI assistant thread + tool-call harness. The first 1–2 calls after the agent is published spin up that thread and load the GQL examples from `aiInstructions` into the LLM's working context. Cold-starting straight into a complex aggregation question can surface as `submit_tool_outputs failed` (BadRequest) or "An error occurred". To get reliable demos, **always warm up with two simple list queries first**:
+
+1. `List 5 providers` — confirms the graph is reachable and primes provider entity.
+2. `Show me 5 patients` — primes patient entity and adherence relationship.
+3. `Which patients have the most non-adherent drug classes?` — the headline aggregation question (uses `MATCH ... FILTER ... LET ... GROUP BY ... ORDER BY ... LIMIT`).
+4. Pick a patient from step 3 and drill in: `Show me adherence details for <First> <Last>, age <N>`.
+
+This gives you both reliability (the assistant thread is warm) and a stronger narrative arc (broad → specific → recommendation).
 
 ### Data Agent Reference
 

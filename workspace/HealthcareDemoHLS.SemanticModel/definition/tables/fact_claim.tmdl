@@ -1,3 +1,4 @@
+/// Claim-level fact table for revenue cycle and denials analytics. Grain: one row per claim (claim_key). Holds billed/allowed/paid amounts, denial flag and reason, denial risk score, days to payment, and appeal outcome. Use for denial rate, collection rate, days-in-A/R, and appeal analysis. Join to dim_payer, dim_provider, dim_patient, and dim_date (claim_date_key).
 table fact_claim
 	lineageTag: 26a77226-bd60-4e98-9e8f-48c929da6dfb
 	sourceLineageTag: [dbo].[fact_claim]
@@ -8,13 +9,14 @@ table fact_claim
 
 		changedProperty = Name
 
+	/// Share of claims that were denied: denied claims / total claims. Returns a ratio 0-1 (display as a percentage).
 	measure 'Denial Rate' =
 			
 			VAR _num = CALCULATE(COUNTROWS(fact_claim), fact_claim[denial_flag] = 1)
 			VAR _den = COUNTROWS(fact_claim)
 			RETURN
 			DIVIDE(_num, _den)
-		formatString: 0
+		formatString: 0.0%
 		lineageTag: e223f179-922c-42c3-a4d4-1ea588c1af49
 
 		changedProperty = Name
@@ -33,17 +35,17 @@ table fact_claim
 
 		annotation PBI_FormatHint = {"isGeneralNumber":true}
 
+	/// Total paid divided by total billed. Returns a ratio 0-1 (display as a percentage).
 	measure 'Collection Rate' =
 			
 			VAR _num = SUM(fact_claim[paid_amount])
 			VAR _den = SUM(fact_claim[billed_amount])
 			RETURN
 			DIVIDE(_num, _den)
+		formatString: 0.0%
 		lineageTag: e96894ae-5311-49ac-bdd4-234bd8c73eb3
 
 		changedProperty = Name
-
-		annotation PBI_FormatHint = {"isGeneralNumber":true}
 
 	measure 'At Risk Revenue' =
 			VAR _result =
@@ -63,6 +65,30 @@ table fact_claim
 		lineageTag: a0fad342-4029-4ff1-9508-28465d83c535
 
 		changedProperty = Name
+
+		annotation PBI_FormatHint = {"isGeneralNumber":true}
+
+	measure 'Avg Days to Payment' = AVERAGE(fact_claim[days_to_payment])
+		lineageTag: a1b2c3d4-4444-4444-8444-000000000001
+
+		annotation PBI_FormatHint = {"isGeneralNumber":true}
+
+	measure 'Net Collection Rate' = AVERAGE(fact_claim[net_collection_rate])
+		lineageTag: a1b2c3d4-4444-4444-8444-000000000002
+
+		annotation PBI_FormatHint = {"isGeneralNumber":true}
+
+	measure 'Appeal Success Rate' =
+			VAR _overturned = CALCULATE(COUNTROWS(fact_claim), fact_claim[appeal_outcome] = "Overturned")
+			VAR _partial = CALCULATE(COUNTROWS(fact_claim), fact_claim[appeal_outcome] = "Partial")
+			VAR _total_appeals = CALCULATE(COUNTROWS(fact_claim), NOT(ISBLANK(fact_claim[appeal_outcome])))
+			RETURN DIVIDE(_overturned + _partial, _total_appeals)
+		lineageTag: a1b2c3d4-4444-4444-8444-000000000003
+
+		annotation PBI_FormatHint = {"isGeneralNumber":true}
+
+	measure 'Total Appeal Recovery' = SUM(fact_claim[appeal_amount_recovered])
+		lineageTag: a1b2c3d4-4444-4444-8444-000000000004
 
 		annotation PBI_FormatHint = {"isGeneralNumber":true}
 
@@ -167,6 +193,7 @@ table fact_claim
 
 		annotation SummarizationSetBy = Automatic
 
+	/// Lifecycle status of the claim (e.g. Paid, Denied, Pending, Appealed).
 	column claim_status
 		dataType: string
 		lineageTag: 3e6ddf66-16fe-4627-8182-e9f11a0400f6
@@ -176,6 +203,7 @@ table fact_claim
 
 		annotation SummarizationSetBy = Automatic
 
+	/// Gross amount charged by the provider for the claim.
 	column billed_amount
 		dataType: double
 		lineageTag: b33cb0be-4d2d-4d02-9345-369173d8a5ad
@@ -187,6 +215,7 @@ table fact_claim
 
 		annotation PBI_FormatHint = {"isGeneralNumber":true}
 
+	/// Contractually allowed amount per the payer agreement.
 	column allowed_amount
 		dataType: double
 		lineageTag: 049e2994-d9eb-475d-b528-ba8ff0c9d56c
@@ -198,6 +227,7 @@ table fact_claim
 
 		annotation PBI_FormatHint = {"isGeneralNumber":true}
 
+	/// Amount actually paid by the payer.
 	column paid_amount
 		dataType: double
 		lineageTag: 37c6498f-0247-444f-8e88-6b9b18d504f9
@@ -209,6 +239,7 @@ table fact_claim
 
 		annotation PBI_FormatHint = {"isGeneralNumber":true}
 
+	/// 1 = claim was denied, 0 = not denied. Denial rate = SUM(denial_flag) / COUNT(claims).
 	column denial_flag
 		dataType: int64
 		formatString: 0
@@ -219,6 +250,7 @@ table fact_claim
 
 		annotation SummarizationSetBy = Automatic
 
+	/// Predicted probability (0-1) that the claim will be denied.
 	column denial_risk_score
 		dataType: double
 		lineageTag: 4e917c56-f4cd-4883-8230-4cca33ef4323
@@ -230,6 +262,7 @@ table fact_claim
 
 		annotation PBI_FormatHint = {"isGeneralNumber":true}
 
+	/// Bucketed denial risk derived from denial_risk_score: High, Medium, or Low.
 	column denial_risk_category
 		dataType: string
 		lineageTag: 4f7a9755-2821-4ff5-a53d-13b4d70dfb77
@@ -239,6 +272,7 @@ table fact_claim
 
 		annotation SummarizationSetBy = Automatic
 
+	/// Standardized reason the claim was denied (e.g. Prior Authorization Required, Medical Necessity, Coding Error, Eligibility). Blank when denial_flag = 0.
 	column primary_denial_reason
 		dataType: string
 		lineageTag: da3863f1-26f8-49f6-8b6f-ee7cbcd7ba86
@@ -256,6 +290,59 @@ table fact_claim
 		sourceColumn: recommended_action
 
 		annotation SummarizationSetBy = Automatic
+
+	/// Days from claim date to payment date; basis for days-in-A/R.
+	column days_to_payment
+		dataType: int64
+		formatString: 0
+		lineageTag: a1b2c3d4-5555-4555-8555-000000000001
+		sourceLineageTag: days_to_payment
+		summarizeBy: sum
+		sourceColumn: days_to_payment
+
+		annotation SummarizationSetBy = Automatic
+
+	column net_collection_rate
+		dataType: double
+		lineageTag: a1b2c3d4-5555-4555-8555-000000000002
+		sourceLineageTag: net_collection_rate
+		summarizeBy: average
+		sourceColumn: net_collection_rate
+
+		annotation SummarizationSetBy = Automatic
+
+		annotation PBI_FormatHint = {"isGeneralNumber":true}
+
+	column appeal_date
+		dataType: dateTime
+		formatString: General Date
+		lineageTag: a1b2c3d4-5555-4555-8555-000000000003
+		sourceLineageTag: appeal_date
+		summarizeBy: none
+		sourceColumn: appeal_date
+
+		annotation SummarizationSetBy = Automatic
+
+	/// Result of a denial appeal (Overturned, Partial, Upheld, Pending). Blank when no appeal was filed.
+	column appeal_outcome
+		dataType: string
+		lineageTag: a1b2c3d4-5555-4555-8555-000000000004
+		sourceLineageTag: appeal_outcome
+		summarizeBy: none
+		sourceColumn: appeal_outcome
+
+		annotation SummarizationSetBy = Automatic
+
+	column appeal_amount_recovered
+		dataType: double
+		lineageTag: a1b2c3d4-5555-4555-8555-000000000005
+		sourceLineageTag: appeal_amount_recovered
+		summarizeBy: sum
+		sourceColumn: appeal_amount_recovered
+
+		annotation SummarizationSetBy = Automatic
+
+		annotation PBI_FormatHint = {"isGeneralNumber":true}
 
 	column _load_timestamp
 		dataType: dateTime

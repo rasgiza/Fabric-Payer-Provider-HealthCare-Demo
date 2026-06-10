@@ -1,0 +1,70 @@
+/// Pre-aggregated denial-appeal outcomes by payer and denial reason. Holds appeal counts, outcomes, and total/average amount recovered. Use for appeal success-rate and recovery analysis (already aggregated).
+table agg_appeal_outcomes
+	lineageTag: a1b2c3d4-9999-4999-8999-000000000001
+	sourceLineageTag: [dbo].[agg_appeal_outcomes]
+
+	column payer_name
+		dataType: string
+		lineageTag: a1b2c3d4-9999-4999-8999-000000000011
+		sourceLineageTag: payer_name
+		summarizeBy: none
+		sourceColumn: payer_name
+
+		annotation SummarizationSetBy = Automatic
+
+	column denial_reason
+		dataType: string
+		lineageTag: a1b2c3d4-9999-4999-8999-000000000012
+		sourceLineageTag: denial_reason
+		summarizeBy: none
+		sourceColumn: denial_reason
+
+		annotation SummarizationSetBy = Automatic
+
+	column appeal_outcome
+		dataType: string
+		lineageTag: a1b2c3d4-9999-4999-8999-000000000013
+		sourceLineageTag: appeal_outcome
+		summarizeBy: none
+		sourceColumn: appeal_outcome
+
+		annotation SummarizationSetBy = Automatic
+
+	column appeal_count
+		dataType: int64
+		formatString: 0
+		lineageTag: a1b2c3d4-9999-4999-8999-000000000014
+		sourceLineageTag: appeal_count
+		summarizeBy: sum
+		sourceColumn: appeal_count
+
+		annotation SummarizationSetBy = Automatic
+
+	column total_amount_recovered
+		dataType: double
+		lineageTag: a1b2c3d4-9999-4999-8999-000000000015
+		sourceLineageTag: total_amount_recovered
+		summarizeBy: sum
+		sourceColumn: total_amount_recovered
+
+		annotation SummarizationSetBy = Automatic
+
+		annotation PBI_FormatHint = {"isGeneralNumber":true}
+
+	column avg_amount_recovered
+		dataType: double
+		lineageTag: a1b2c3d4-9999-4999-8999-000000000016
+		sourceLineageTag: avg_amount_recovered
+		summarizeBy: average
+		sourceColumn: avg_amount_recovered
+
+		annotation SummarizationSetBy = Automatic
+
+		annotation PBI_FormatHint = {"isGeneralNumber":true}
+
+	partition agg_appeal_outcomes = entity
+		mode: directLake
+		source
+			entityName: agg_appeal_outcomes
+			expressionSource: 'DirectLake - lh_gold_curated'
+

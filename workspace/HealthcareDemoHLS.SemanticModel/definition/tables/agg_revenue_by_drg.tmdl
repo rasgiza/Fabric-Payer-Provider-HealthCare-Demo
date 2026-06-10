@@ -1,0 +1,94 @@
+/// Pre-aggregated financial summary by DRG. One row per DRG with encounter count, average charges, cost to deliver, expected reimbursement, margin per case, and margin percentage. Use for service-line profitability (already aggregated).
+table agg_revenue_by_drg
+	lineageTag: a1b2c3d4-7777-4777-8777-000000000001
+	sourceLineageTag: [dbo].[agg_revenue_by_drg]
+
+	column drg_code
+		dataType: string
+		lineageTag: a1b2c3d4-7777-4777-8777-000000000011
+		sourceLineageTag: drg_code
+		summarizeBy: none
+		sourceColumn: drg_code
+
+		annotation SummarizationSetBy = Automatic
+
+	column drg_description
+		dataType: string
+		lineageTag: a1b2c3d4-7777-4777-8777-000000000012
+		sourceLineageTag: drg_description
+		summarizeBy: none
+		sourceColumn: drg_description
+
+		annotation SummarizationSetBy = Automatic
+
+	column encounter_count
+		dataType: int64
+		formatString: 0
+		lineageTag: a1b2c3d4-7777-4777-8777-000000000013
+		sourceLineageTag: encounter_count
+		summarizeBy: sum
+		sourceColumn: encounter_count
+
+		annotation SummarizationSetBy = Automatic
+
+	column avg_charges
+		dataType: double
+		lineageTag: a1b2c3d4-7777-4777-8777-000000000014
+		sourceLineageTag: avg_charges
+		summarizeBy: average
+		sourceColumn: avg_charges
+
+		annotation SummarizationSetBy = Automatic
+
+		annotation PBI_FormatHint = {"isGeneralNumber":true}
+
+	column avg_cost_to_deliver
+		dataType: double
+		lineageTag: a1b2c3d4-7777-4777-8777-000000000015
+		sourceLineageTag: avg_cost_to_deliver
+		summarizeBy: average
+		sourceColumn: avg_cost_to_deliver
+
+		annotation SummarizationSetBy = Automatic
+
+		annotation PBI_FormatHint = {"isGeneralNumber":true}
+
+	column avg_expected_reimbursement
+		dataType: double
+		lineageTag: a1b2c3d4-7777-4777-8777-000000000016
+		sourceLineageTag: avg_expected_reimbursement
+		summarizeBy: average
+		sourceColumn: avg_expected_reimbursement
+
+		annotation SummarizationSetBy = Automatic
+
+		annotation PBI_FormatHint = {"isGeneralNumber":true}
+
+	column margin_per_case
+		dataType: double
+		lineageTag: a1b2c3d4-7777-4777-8777-000000000017
+		sourceLineageTag: margin_per_case
+		summarizeBy: average
+		sourceColumn: margin_per_case
+
+		annotation SummarizationSetBy = Automatic
+
+		annotation PBI_FormatHint = {"isGeneralNumber":true}
+
+	column margin_pct
+		dataType: double
+		lineageTag: a1b2c3d4-7777-4777-8777-000000000018
+		sourceLineageTag: margin_pct
+		summarizeBy: average
+		sourceColumn: margin_pct
+
+		annotation SummarizationSetBy = Automatic
+
+		annotation PBI_FormatHint = {"isGeneralNumber":true}
+
+	partition agg_revenue_by_drg = entity
+		mode: directLake
+		source
+			entityName: agg_revenue_by_drg
+			expressionSource: 'DirectLake - lh_gold_curated'
+

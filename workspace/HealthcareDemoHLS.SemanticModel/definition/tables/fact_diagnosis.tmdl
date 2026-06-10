@@ -1,3 +1,4 @@
+/// Diagnosis fact table linking encounters and patients to ICD diagnosis codes. Grain: one row per diagnosis assigned to an encounter, with sequence and type (principal vs secondary). Join to dim_diagnosis (diagnosis_key) for chronic-condition and comorbidity analysis.
 table fact_diagnosis
 	lineageTag: 58737eb4-8811-404d-a0f5-da20fea8ca83
 	sourceLineageTag: [dbo].[fact_diagnosis]

@@ -1,3 +1,4 @@
+/// Patient dimension (slowly changing, Type 2). One row per patient version with demographics, address, insurance, age, and age group. Filter is_current = 1 to count each patient once on the active record. Contains PHI – access restricted.
 table dim_patient
 	lineageTag: 4561faba-7b31-4169-89fb-e770bc638d2e
 	sourceLineageTag: [dbo].[dim_patient]
@@ -200,6 +201,7 @@ table dim_patient
 
 		annotation SummarizationSetBy = Automatic
 
+	/// 1 = current/active patient record in this Type-2 SCD. Filter is_current = 1 to avoid double-counting historical versions.
 	column is_current
 		dataType: int64
 		formatString: 0

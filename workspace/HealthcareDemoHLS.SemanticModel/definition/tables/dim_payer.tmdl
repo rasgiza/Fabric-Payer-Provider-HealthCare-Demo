@@ -1,3 +1,4 @@
+/// Payer / insurance-plan dimension. One row per payer (payer_key) with payer name, payer type (Commercial, Medicare, Medicaid), plan type, state, network size, and average reimbursement percentage.
 table dim_payer
 	lineageTag: 693330f3-3dff-448d-bff7-eceaabbb3b3d
 	sourceLineageTag: [dbo].[dim_payer]
@@ -28,6 +29,44 @@ table dim_payer
 		sourceColumn: payer_type
 
 		annotation SummarizationSetBy = Automatic
+
+	column plan_type
+		dataType: string
+		lineageTag: a1b2c3d4-6666-4666-8666-000000000001
+		sourceLineageTag: plan_type
+		summarizeBy: none
+		sourceColumn: plan_type
+
+		annotation SummarizationSetBy = Automatic
+
+	column state
+		dataType: string
+		lineageTag: a1b2c3d4-6666-4666-8666-000000000002
+		sourceLineageTag: state
+		summarizeBy: none
+		sourceColumn: state
+
+		annotation SummarizationSetBy = Automatic
+
+	column network_size
+		dataType: string
+		lineageTag: a1b2c3d4-6666-4666-8666-000000000003
+		sourceLineageTag: network_size
+		summarizeBy: none
+		sourceColumn: network_size
+
+		annotation SummarizationSetBy = Automatic
+
+	column avg_reimbursement_pct
+		dataType: double
+		lineageTag: a1b2c3d4-6666-4666-8666-000000000004
+		sourceLineageTag: avg_reimbursement_pct
+		summarizeBy: average
+		sourceColumn: avg_reimbursement_pct
+
+		annotation SummarizationSetBy = Automatic
+
+		annotation PBI_FormatHint = {"isGeneralNumber":true}
 
 	column payer_key
 		dataType: int64

@@ -1,3 +1,4 @@
+/// Medication dimension. One row per drug (medication_key / RxNorm) with brand and generic name, drug class, therapeutic area, route, form, strength, and chronic-medication flag.
 table dim_medication
 	lineageTag: 8659a04a-aa76-4609-a855-f6df2402e3fc
 	sourceLineageTag: [dbo].[dim_medication]
@@ -84,6 +85,7 @@ table dim_medication
 
 		annotation SummarizationSetBy = Automatic
 
+	/// 1 = medication is used to treat a chronic condition.
 	column is_chronic
 		dataType: int64
 		formatString: 0

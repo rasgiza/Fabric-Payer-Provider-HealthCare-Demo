@@ -374,6 +374,29 @@ For the complete agent configuration -- AI instructions, concept-to-table routin
 
 The copy-paste-ready instructions, verified answers, and the API-vs-UI deployment map are in **[HLS_AGENT_PREP_FOR_AI.md](HLS_AGENT_PREP_FOR_AI.md)**.
 
+##### How the model owner applies Prep for AI (one-time, ~15 min)
+
+**How this is structured:** the steps below are the *click-path* (what to open, in what order);
+the actual text and DAX to copy live in **[HLS_AGENT_PREP_FOR_AI.md](HLS_AGENT_PREP_FOR_AI.md)**,
+section by section. Follow the steps here and copy from the matching section there.
+
+Git sync deploys the agent prompt and data-source config automatically, but the model-level
+**Prep for AI** content can't be set through the API — apply it once by hand:
+
+1. **AI instructions** — In the Fabric/Power BI **service**, open the `HealthcareDemoHLS`
+   semantic model → **Prep data for AI** → **Add AI instructions**. Copy the block from
+   **Section 3** of **[HLS_AGENT_PREP_FOR_AI.md](HLS_AGENT_PREP_FOR_AI.md)** and paste it in.
+2. *(Optional)* **Simplify the data schema** — same pane → deselect fields Copilot doesn't need
+   and add synonyms for terms users actually say.
+3. **Verified answers** — these are created in **Power BI Desktop**, not the service. Build a
+   visual that shows the answer (use the DAX in **Section 4** of
+   **[HLS_AGENT_PREP_FOR_AI.md](HLS_AGENT_PREP_FOR_AI.md)** as the spec), then
+   **right-click the visual → "Set up verified answer"** and add the phrasings users will ask.
+   After you publish/save, the entries appear back in the service under **Prep data for AI →
+   Verified answers**.
+4. **Re-test and iterate** — start lean; add an instruction or verified answer whenever you
+   spot a wrong answer.
+
 ### Power BI Dashboard
 
 The **Healthcare Analytics Dashboard** Power BI report is auto-deployed by fabric-cicd from the `workspace/Healthcare Analytics Dashboard.Report/` definition. It includes:

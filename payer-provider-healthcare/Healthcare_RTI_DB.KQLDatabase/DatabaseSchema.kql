@@ -110,7 +110,24 @@
 .alter table rx_events policy streamingingestion enable
 
 // ============================================================================
-// 4. INGESTION MAPPING — JSON mapping for Eventstream Custom Endpoint
+// 4. RETENTION POLICIES — keep raw events 7d, scoring results 30d (demo defaults)
+// Tune for your environment; production payloads typically retain raw 30-90d.
+// ============================================================================
+
+.alter table claims_events policy retention softdelete = 7d recoverability = disabled
+
+.alter table adt_events policy retention softdelete = 7d recoverability = disabled
+
+.alter table rx_events policy retention softdelete = 7d recoverability = disabled
+
+.alter table fraud_scores policy retention softdelete = 30d recoverability = disabled
+
+.alter table care_gap_alerts policy retention softdelete = 30d recoverability = disabled
+
+.alter table highcost_alerts policy retention softdelete = 30d recoverability = disabled
+
+// ============================================================================
+// 5. INGESTION MAPPING — JSON mapping for Eventstream Custom Endpoint
 // ============================================================================
 
 .create-or-alter table claims_events ingestion json mapping 'claims_events_mapping'

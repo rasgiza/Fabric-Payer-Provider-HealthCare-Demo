@@ -1,10 +1,10 @@
 """
 Deploy Power BI Report to Microsoft Fabric
 ============================================
-Deploys the Healthcare Analytics Dashboard report using the Fabric
+Deploys the HealthcareAnalyticsDashboard report using the Fabric
 Report Items API with PBIR (Power BI Interactive Report) format.
 
-The report definition lives in workspace/Healthcare Analytics Dashboard.Report/
+The report definition lives in payer-provider-healthcare/HealthcareAnalyticsDashboard.Report/
 and includes 6 pages with 60+ visuals. The script patches definition.pbir
 with the real Semantic Model ID from the target workspace.
 
@@ -40,12 +40,12 @@ sys.stdout.reconfigure(encoding="utf-8", errors="replace")
 # ============================================================
 FABRIC_API_BASE = "https://api.fabric.microsoft.com/v1"
 
-REPORT_NAME = "Healthcare Analytics Dashboard"
+REPORT_NAME = "HealthcareAnalyticsDashboard"
 SEMANTIC_MODEL_NAME = "HealthcareDemoHLS"
 
 # Report definition on disk (PBIR format)
-# workspace/Healthcare Analytics Dashboard.Report/
-REPORT_DIR = SCRIPT_DIR.parent / "workspace" / "Healthcare Analytics Dashboard.Report"
+# payer-provider-healthcare/HealthcareAnalyticsDashboard.Report/
+REPORT_DIR = SCRIPT_DIR.parent / "payer-provider-healthcare" / "HealthcareAnalyticsDashboard.Report"
 
 
 # ============================================================
@@ -253,7 +253,7 @@ def main():
 
     if not report_dir.exists():
         print(f"  [FAIL] Report directory not found: {report_dir}")
-        print(f"  Expected PBIR definition in: workspace/Healthcare Analytics Dashboard.Report/definition/")
+        print(f"  Expected PBIR definition in: payer-provider-healthcare/HealthcareAnalyticsDashboard.Report/definition/")
         sys.exit(1)
 
     # -- Authenticate --

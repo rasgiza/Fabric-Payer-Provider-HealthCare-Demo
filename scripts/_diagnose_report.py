@@ -4,7 +4,7 @@ from azure.identity import InteractiveBrowserCredential
 
 WORKSPACE_ID = "d6ed5901-0f1d-4a5c-a263-e5f857169a79"
 SM_NAME = "HealthcareDemoHLS"
-REPORT_NAME = "Healthcare Analytics Dashboard"
+REPORT_NAME = "HealthcareAnalyticsDashboard"
 
 cred = InteractiveBrowserCredential(login_hint="admin@MngEnvMCAP661056.onmicrosoft.com")
 token = cred.get_token("https://analysis.windows.net/powerbi/api/.default").token

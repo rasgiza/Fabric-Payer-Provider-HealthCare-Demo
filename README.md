@@ -156,7 +156,7 @@ The launcher creates a deploy lakehouse, downloads the repo, deploys all artifac
 | **Data Agent** | `HealthcareHLSAgent` | Copilot AI agent — lakehouse + semantic model (SQL aggregations) |
 | **Graph Agent** | `Healthcare Ontology Agent` | Copilot AI agent — ontology graph traversal (entity lookups, care pathways) |
 | **Ontology** | `Healthcare_Demo_Ontology_HLS` | GraphQL entity model — **auto-deployed** by Cell 10a (API) |
-| **Power BI Report** | `Healthcare Analytics Dashboard` | 6 pages, 60+ visuals — auto-deployed by fabric-cicd |
+| **Power BI Report** | `HealthcareAnalyticsDashboard` | 6 pages, 60+ visuals — auto-deployed by fabric-cicd |
 | **Eventhouse** ⚡ | `Healthcare_RTI_Eventhouse` | Git-tracked RTI compute engine (`DEPLOY_STREAMING` only) |
 | **KQL Database** ⚡ | `Healthcare_RTI_DB` | Git-tracked with schema (6 tables + streaming policies) (`DEPLOY_STREAMING` only) |
 | **OpsAgent** ⚡ | `HealthcareOpsAgent` | KQL-backed operations agent (`DEPLOY_STREAMING` only) |
@@ -399,7 +399,7 @@ Git sync deploys the agent prompt and data-source config automatically, but the 
 
 ### Power BI Dashboard
 
-The **Healthcare Analytics Dashboard** Power BI report is auto-deployed by fabric-cicd from the `workspace/Healthcare Analytics Dashboard.Report/` definition. It includes:
+The **HealthcareAnalyticsDashboard** Power BI report is auto-deployed by fabric-cicd from the `payer-provider-healthcare/HealthcareAnalyticsDashboard.Report/` definition. It includes:
 
 | Page | Focus | Key Visuals |
 |------|-------|-------------|
@@ -831,7 +831,7 @@ Edit the top cell of `Healthcare_Launcher.ipynb`:
 ├── SAMPLE_QUESTIONS.md                # 80+ copy-paste questions for all agents
 ├── deployment.yaml                    # Optional: CI/CD config
 ├── README.md
-├── workspace/                         # Fabric Git Integration format
+├── payer-provider-healthcare/         # Fabric Git Integration format (jumpstart workspace_path)
 │   ├── lh_bronze_raw.Lakehouse/
 │   ├── lh_silver_stage.Lakehouse/
 │   ├── lh_silver_ods.Lakehouse/

@@ -245,7 +245,7 @@ The model includes 26 measures ready for use in visuals:
 4. The field list shows all 13 tables and 26 measures
 5. Drag fields onto the canvas to build visuals
 6. Use the page layouts above as a guide
-7. **Save** -> name the report (e.g., `Healthcare Analytics Dashboard`)
+7. **Save** -> name the report (e.g., `HealthcareAnalyticsDashboard`)
 
 ### Option B: Build in Power BI Desktop
 

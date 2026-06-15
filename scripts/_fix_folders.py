@@ -17,7 +17,7 @@ items = r.json().get('value', [])
 print("=== Items of interest ===")
 for it in items:
     name = it['displayName']
-    if name in ('HealthcareDemoHLS', 'Healthcare Analytics Dashboard') or it['type'] in ('Report', 'SemanticModel'):
+    if name in ('HealthcareDemoHLS', 'HealthcareAnalyticsDashboard') or it['type'] in ('Report', 'SemanticModel'):
         fid = it.get('folderId', '(none)')
         print(f"  [{it['type']}] {name} (id={it['id']}, folderId={fid})")
 
@@ -41,7 +41,7 @@ for it in items:
     if it['displayName'] == 'HealthcareDemoHLS' and it['type'] == 'SemanticModel':
         target_folder = sm_folder_id
         label = "SM -> Semantic Models folder"
-    elif it['displayName'] == 'Healthcare Analytics Dashboard' and it['type'] == 'Report':
+    elif it['displayName'] == 'HealthcareAnalyticsDashboard' and it['type'] == 'Report':
         target_folder = rpt_folder_id
         label = "Report -> Reports folder"
     else:
@@ -77,7 +77,7 @@ for it in items:
 print("\n=== Verification ===")
 r5 = requests.get(f'{API}/items', headers=H)
 for it in r5.json().get('value', []):
-    if it['displayName'] in ('HealthcareDemoHLS', 'Healthcare Analytics Dashboard'):
+    if it['displayName'] in ('HealthcareDemoHLS', 'HealthcareAnalyticsDashboard'):
         if it['type'] in ('Report', 'SemanticModel'):
             fid = it.get('folderId', '(none)')
             print(f"  [{it['type']}] {it['displayName']} -> folderId={fid}")

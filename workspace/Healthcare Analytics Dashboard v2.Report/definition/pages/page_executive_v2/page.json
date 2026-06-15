@@ -1,8 +1,0 @@
-{
-  "$schema": "https://developer.microsoft.com/json-schemas/fabric/item/report/definition/page/1.0.0/schema.json",
-  "name": "page_executive_v2",
-  "displayName": "Executive Command Center",
-  "displayOption": "FitToPage",
-  "height": 720,
-  "width": 1280
-}

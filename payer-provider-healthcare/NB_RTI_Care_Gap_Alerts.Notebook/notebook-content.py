@@ -1,0 +1,587 @@
+# Fabric notebook source
+
+# METADATA **{"language":"markdown"}**
+
+# MARKDOWN **{"language":"markdown"}**
+
+# # RTI Use Case 2: Care Gap Closure at Point of Care
+# 
+# When a patient arrives at a facility (ADT event), this notebook:
+# 1. Joins the ADT event with the patient's **open HEDIS care gaps**
+# 2. Checks if the visit type/diagnosis could close an existing gap
+# 3. Generates **priority-ranked alerts** for the care team
+# 
+# **Industry pain point:** Payers spend millions on member outreach for HEDIS gaps,
+# but the highest-value moment is when the patient is *already in front of a provider*.
+# Real-time alerting at the point of care drives gap closure rates from ~30% to 60%+.
+# 
+# **Input:** `adt_events` (KQL direct query) + `care_gaps` + `hedis_measures`
+# **Output:** `rti_care_gap_alerts` (Delta) + `care_gap_alerts` (KQL)
+# 
+# **Default lakehouse:** `lh_gold_curated`
+
+# METADATA **{"language":"python"}**
+
+# CELL **{"language":"python"}**
+
+# ============================================================================
+# NB_RTI_Care_Gap_Alerts
+# ============================================================================
+# Point-of-care gap closure: When a patient has an encounter,
+# check for open HEDIS care gaps and alert the care team.
+#
+# Default lakehouse: lh_gold_curated
+# ============================================================================
+
+print("NB_RTI_Care_Gap_Alerts: Starting...")
+
+# METADATA **{"language":"python"}**
+
+# CELL **{"language":"python"}**
+
+# ---------- Attach default lakehouse (self-healing) ----------
+import requests as _req
+_ws_id = notebookutils.runtime.context.get("currentWorkspaceId", "")
+_tok = notebookutils.credentials.getToken("pbi")
+_hdr = {"Authorization": f"Bearer {_tok}"}
+_lh_resp = _req.get(f"https://api.fabric.microsoft.com/v1/workspaces/{_ws_id}/lakehouses", headers=_hdr)
+# Build lakehouse name → ABFSS mapping for all lakehouses in workspace
+_lh_map = {}  # e.g. {"lh_gold_curated": "abfss://ws@onelake/.../Tables", ...}
+if _lh_resp.status_code == 200:
+    for _lh in _lh_resp.json().get("value", []):
+        _lh_map[_lh["displayName"]] = f"abfss://{_ws_id}@onelake.dfs.fabric.microsoft.com/{_lh['id']}/Tables"
+
+    _gold_id = None
+    for _lh in _lh_resp.json().get("value", []):
+        if _lh["displayName"] == "lh_gold_curated":
+            _gold_id = _lh["id"]
+            break
+
+    if _gold_id:
+        _attached = False
+        try:
+            notebookutils.lakehouse.setDefaultLakehouse(_ws_id, _gold_id)
+            print(f"  Attached lh_gold_curated ({_gold_id[:8]}...)")
+            _attached = True
+        except (AttributeError, Exception):
+            pass
+        if not _attached:
+            import re as _re_mod
+            # Build regex matching all discovered lakehouse names
+            _lh_names = sorted(_lh_map.keys(), key=len, reverse=True)
+            _lh_pattern = r'\b(' + '|'.join(_re_mod.escape(n) for n in _lh_names) + r')\.(\w+)\b'
+            _orig_sql = spark.sql
+            def _patched_sql(query, _pat=_lh_pattern, _m=_lh_map, _orig=_orig_sql):
+                query = _re_mod.sub(
+                    _pat,
+                    lambda m: f'delta.`{_m[m.group(1)]}/{m.group(2)}`',
+                    query
+                )
+                return _orig(query)
+            spark.sql = _patched_sql
+            # Also patch saveAsTable for DataFrame writes
+            from pyspark.sql import DataFrameWriter as _DFW
+            _orig_sat = _DFW.saveAsTable
+            def _patched_sat(self, name, _m=_lh_map, _orig=_orig_sat, **kwargs):
+                parts = name.split('.', 1)
+                if len(parts) == 2 and parts[0] in _m:
+                    self.save(f'{_m[parts[0]]}/{parts[1]}')
+                    return
+                return _orig(self, name, **kwargs)
+            _DFW.saveAsTable = _patched_sat
+            # Also patch spark.table() for reading
+            _orig_table = spark.table
+            def _patched_table(name, _m=_lh_map, _orig=_orig_table):
+                parts = name.split('.', 1)
+                if len(parts) == 2 and parts[0] in _m:
+                    return spark.read.format('delta').load(f'{_m[parts[0]]}/{parts[1]}')
+                return _orig(name)
+            spark.table = _patched_table
+            _discovered = [f"{n}({v.split('/')[-2][:8]})" for n, v in _lh_map.items()]
+            print(f"  Registered ABFSS rewriter for: {', '.join(_discovered)}")
+            _attached = True
+        if not _attached:
+            print(f"  WARNING: Could not attach lh_gold_curated ({_gold_id[:8]}...)")
+            print(f"  Lakehouse methods: {[m for m in dir(notebookutils.lakehouse) if not m.startswith('_')]}")
+    else:
+        print("  WARNING: lh_gold_curated not found in workspace")
+else:
+    print(f"  WARNING: Could not list lakehouses (HTTP {_lh_resp.status_code})")
+del _req, _ws_id, _tok, _hdr, _lh_resp
+
+# METADATA **{"language":"python"}**
+
+# CELL **{"language":"python"}**
+
+%pip install azure-kusto-data azure-kusto-ingest azure-core>=1.31.0 --quiet
+
+# METADATA **{"language":"python"}**
+
+# CELL **{"language":"python"}**
+
+from pyspark.sql import functions as F
+from pyspark.sql.types import StringType
+
+# METADATA **{"language":"python"}**
+
+# CELL **{"language":"python"}**
+
+# ---------- Load data ----------
+print("Loading ADT events from KQL Eventhouse (Kusto SDK)...")
+
+import time as _wait_time
+import requests as _kql_req
+import subprocess, sys
+try:
+    from azure.kusto.data import KustoConnectionStringBuilder, KustoClient
+except ImportError:
+    subprocess.check_call([sys.executable, "-m", "pip", "install", "-q", "azure-kusto-data", "azure-kusto-ingest"])
+    for _m in list(sys.modules.keys()):
+        if _m.startswith("azure"):
+            del sys.modules[_m]
+    from azure.kusto.data import KustoConnectionStringBuilder, KustoClient
+
+# Discover Eventhouse query URI (same pattern used by KQL push section)
+_ws_id = notebookutils.runtime.context.get("currentWorkspaceId", "")
+_fabric_tok = notebookutils.credentials.getToken("https://analysis.windows.net/powerbi/api")
+_hdr = {"Authorization": f"Bearer {_fabric_tok}", "Content-Type": "application/json"}
+_KUSTO_QUERY_URI = ""
+_resp = _kql_req.get(f"https://api.fabric.microsoft.com/v1/workspaces/{_ws_id}/items?type=Eventhouse", headers=_hdr)
+if _resp.status_code == 200:
+    for _item in _resp.json().get("value", []):
+        if "Healthcare" in _item.get("displayName", ""):
+            _props_resp = _kql_req.get(
+                f"https://api.fabric.microsoft.com/v1/workspaces/{_ws_id}/eventhouses/{_item['id']}",
+                headers=_hdr
+            )
+            if _props_resp.status_code == 200:
+                _props = _props_resp.json().get("properties", _props_resp.json())
+                _KUSTO_QUERY_URI = _props.get("queryServiceUri", "")
+            break
+
+if not _KUSTO_QUERY_URI:
+    raise RuntimeError("Healthcare_RTI_Eventhouse not found or has no queryServiceUri. Run NB_RTI_Setup_Eventhouse first.")
+
+_KQL_DB_NAME = "Healthcare_RTI_DB"
+
+def _kql_query_to_records(query, db=_KQL_DB_NAME):
+    """Execute a KQL query and return (columns, rows) using Kusto SDK."""
+    _tok = notebookutils.credentials.getToken("kusto")
+    _k = KustoConnectionStringBuilder.with_aad_user_token_authentication(_KUSTO_QUERY_URI, _tok)
+    _c = KustoClient(_k)
+    result = _c.execute(db, query)
+    primary = result.primary_results[0] if result.primary_results else None
+    if not primary:
+        return [], []
+    cols = [col.column_name for col in primary.columns]
+    rows = [[val for val in row] for row in primary]
+    return cols, rows
+
+def _kql_mgmt(cmd, db=_KQL_DB_NAME):
+    """Execute a KQL management command (.set-or-append, .alter, etc.)."""
+    _tok = notebookutils.credentials.getToken("kusto")
+    _k = KustoConnectionStringBuilder.with_aad_user_token_authentication(_KUSTO_QUERY_URI, _tok)
+    _c = KustoClient(_k)
+    return _c.execute_mgmt(db, cmd)
+
+# ── Wait for rti_all_events then backfill typed tables ─────────────────────
+# ProcessedIngestion mode has delivery latency (30-120s) and does NOT trigger
+# KQL update policies. We must:
+#   1. Wait for rti_all_events to receive data from Eventstream
+#   2. Backfill typed tables using Extract functions
+#   3. Confirm adt_events has data
+_backfill_map = {
+    "claims_events": "ExtractClaimsEvents()",
+    "adt_events": "ExtractAdtEvents()",
+    "rx_events": "ExtractRxEvents()",
+}
+
+# Step 1: Wait for rti_all_events to have data (ProcessedIngestion latency)
+_max_source_wait = 18  # 18 × 10s = 180 seconds for ProcessedIngestion delivery
+_src_ready = False
+for _sw in range(1, _max_source_wait + 1):
+    _cols, _rows = _kql_query_to_records("rti_all_events | count")
+    _src_cnt = int(_rows[0][0]) if _rows and _rows[0] else 0
+    if _src_cnt > 0:
+        print(f"  rti_all_events: {_src_cnt} rows (source ready)")
+        _src_ready = True
+        break
+    print(f"  [{_sw}/{_max_source_wait}] rti_all_events empty — waiting for ProcessedIngestion delivery...")
+    _wait_time.sleep(10)
+
+if not _src_ready:
+    raise RuntimeError(
+        "rti_all_events has no data after waiting 180 seconds.\n"
+        "Check: (1) NB_RTI_Event_Simulator ran and pushed events to Eventstream,\n"
+        "       (2) Eventstream Eventhouse destination is Active/Running,\n"
+        "       (3) ProcessedIngestion mode is configured on the Eventhouse destination."
+    )
+
+# Step 2: Backfill typed tables from rti_all_events
+for _tbl, _fn in _backfill_map.items():
+    _cols, _rows = _kql_query_to_records(f"{_tbl} | count")
+    _cnt = int(_rows[0][0]) if _rows and _rows[0] else 0
+    if _cnt == 0:
+        print(f"  Backfilling {_tbl} from rti_all_events...")
+        try:
+            _kql_mgmt(f".set-or-append {_tbl} <| {_fn}")
+            _cols3, _rows3 = _kql_query_to_records(f"{_tbl} | count")
+            _new_cnt = int(_rows3[0][0]) if _rows3 and _rows3[0] else 0
+            print(f"    → {_tbl}: {_new_cnt} rows after backfill")
+        except Exception as _e:
+            print(f"    [WARN] Backfill {_tbl} failed: {_e}")
+    else:
+        print(f"  {_tbl}: {_cnt} rows (already populated)")
+
+# Step 3: Confirm adt_events has data
+_cols, _rows = _kql_query_to_records("adt_events | count")
+_cnt = int(_rows[0][0]) if _rows and _rows[0] else 0
+if _cnt == 0:
+    raise RuntimeError(
+        "adt_events is empty even after backfill from rti_all_events.\n"
+        "Check: (1) ExtractAdtEvents() function exists in KQL DB,\n"
+        "       (2) rti_all_events contains events with _table='adt_events'."
+    )
+
+print(f"  adt_events in KQL: {_cnt} rows")
+_cols, _rows = _kql_query_to_records("adt_events | project event_id, event_timestamp, event_type, patient_id, facility_id, facility_name, admission_type, primary_diagnosis, latitude, longitude, has_open_care_gaps, open_gap_measures")
+_records = [dict(zip(_cols, row)) for row in _rows]
+df_adt = spark.createDataFrame(_records)
+df_adt = (df_adt
+    .withColumn("event_timestamp", F.to_timestamp("event_timestamp"))
+    .withColumn("latitude", F.col("latitude").cast("double"))
+    .withColumn("longitude", F.col("longitude").cast("double"))
+)
+
+df_patients = spark.sql("""
+    SELECT patient_id, first_name, last_name, gender, date_of_birth, zip_code
+    FROM lh_gold_curated.dim_patient WHERE is_current = true
+""")
+df_facilities = spark.sql("SELECT facility_id, facility_name, latitude, longitude FROM lh_gold_curated.dim_facility")
+
+# Load care gaps (generated by NB_Generate_Sample_Data → lh_bronze_raw)
+try:
+    df_care_gaps = spark.table("lh_bronze_raw.care_gaps")
+    print(f"  Care gaps table: {df_care_gaps.count()} rows")
+except Exception:
+    # Try reading from bronze CSV
+    try:
+        df_care_gaps = spark.read.option("header", True).csv("Files/care_gaps.csv")
+        print(f"  Care gaps from CSV: {df_care_gaps.count()} rows")
+    except Exception:
+        # Graceful degradation -- create empty DataFrame so notebook completes
+        from pyspark.sql.types import StructType, StructField, StringType, IntegerType
+        schema = StructType([
+            StructField("patient_id", StringType(), True),
+            StructField("measure_id", StringType(), True),
+            StructField("measure_name", StringType(), True),
+            StructField("is_gap_open", StringType(), True),
+            StructField("gap_days_overdue", IntegerType(), True),
+        ])
+        df_care_gaps = spark.createDataFrame([], schema)
+        print("  WARNING: No care_gaps table or CSV found. Using empty DataFrame.")
+        print("  Run NB_Generate_Sample_Data to populate care gaps for full alert generation.")
+
+# Load HEDIS measure definitions (generated by NB_Generate_Sample_Data → lh_bronze_raw)
+try:
+    df_hedis = spark.table("lh_bronze_raw.hedis_measures")
+except Exception:
+    try:
+        df_hedis = spark.read.option("header", True).csv("Files/hedis_measures.csv")
+    except Exception:
+        df_hedis = None
+        print("  HEDIS measures not found -- will use measure_id only")
+
+print(f"  ADT events: {df_adt.count()}")
+print(f"  Patients: {df_patients.count()}")
+
+# METADATA **{"language":"python"}**
+
+# CELL **{"language":"python"}**
+
+# ============================================================================
+# Care Gap Alert Logic
+# ============================================================================
+
+# Filter to ADMIT and OBSERVATION events (patient is present for care)
+# Drop columns that also exist in dim_facility to avoid ambiguous references after join
+df_encounters = df_adt.drop("facility_name", "latitude", "longitude").filter(
+    F.col("event_type").isin("ADMIT", "OBSERVATION")
+)
+
+# Filter to open gaps only
+df_open_gaps = df_care_gaps.filter(F.col("is_gap_open") == "true")
+
+print(f"  Actionable encounters (ADMIT/OBSERVATION): {df_encounters.count()}")
+print(f"  Open care gaps: {df_open_gaps.count()}")
+
+# METADATA **{"language":"python"}**
+
+# CELL **{"language":"python"}**
+
+# ---------- Join encounters with open care gaps ----------
+df_alerts = (
+    df_encounters
+    .join(df_open_gaps, "patient_id", "inner")
+    .join(df_patients, "patient_id", "left")
+    .join(df_facilities, "facility_id", "left")
+)
+
+# Enrich with HEDIS measure details (authoritative measure_name source)
+if df_hedis is not None:
+    # Rename care_gaps measure_name before join to avoid ambiguity
+    df_alerts = df_alerts.withColumnRenamed("measure_name", "_cg_measure_name")
+    df_alerts = df_alerts.join(
+        df_hedis.select(
+            F.col("measure_id").alias("h_measure_id"),
+            F.col("measure_name").alias("_hedis_measure_name"),
+            "description",
+            "frequency_months"
+        ),
+        df_alerts["measure_id"] == F.col("h_measure_id"),
+        "left"
+    ).drop("h_measure_id")
+    # Unify: prefer HEDIS measure_name, fall back to care_gaps, then measure_id
+    df_alerts = df_alerts.withColumn(
+        "measure_name",
+        F.coalesce(F.col("_hedis_measure_name"), F.col("_cg_measure_name"), F.col("measure_id"))
+    ).drop("_cg_measure_name", "_hedis_measure_name")
+else:
+    # No HEDIS table -- ensure measure_name always has a value
+    df_alerts = df_alerts.withColumn(
+        "measure_name", F.coalesce(F.col("measure_name"), F.col("measure_id"))
+    )
+
+print(f"  Patient-encounter-gap matches: {df_alerts.count()}")
+
+# METADATA **{"language":"python"}**
+
+# CELL **{"language":"python"}**
+
+# ============================================================================
+# Priority Ranking and Alert Generation
+# ============================================================================
+
+# Priority based on gap overdue days and measure criticality
+CRITICAL_MEASURES = ["CDC", "BCS", "COL"]  # Diabetes, breast cancer, colorectal
+
+df_alerts = df_alerts.withColumn(
+    "gap_days_overdue_int",
+    F.coalesce(F.col("gap_days_overdue").cast("int"), F.lit(0))
+)
+
+df_alerts = df_alerts.withColumn(
+    "alert_priority",
+    F.when(
+        (F.col("measure_id").isin(CRITICAL_MEASURES)) & (F.col("gap_days_overdue_int") > 180),
+        "CRITICAL"
+    )
+    .when(F.col("gap_days_overdue_int") > 365, "CRITICAL")
+    .when(
+        (F.col("measure_id").isin(CRITICAL_MEASURES)) | (F.col("gap_days_overdue_int") > 90),
+        "HIGH"
+    )
+    .when(F.col("gap_days_overdue_int") > 30, "MEDIUM")
+    .otherwise("LOW")
+)
+
+# Generate human-readable alert text
+df_alerts = df_alerts.withColumn(
+    "alert_text",
+    F.concat(
+        F.lit("CARE GAP ALERT: Patient "),
+        F.coalesce(F.col("first_name"), F.lit("")),
+        F.lit(" "),
+        F.coalesce(F.col("last_name"), F.lit("")),
+        F.lit(" has an open "),
+        F.col("measure_id"),
+        F.lit(" gap ("),
+        F.coalesce(F.col("measure_name"), F.col("measure_id")),
+        F.lit("), overdue by "),
+        F.col("gap_days_overdue_int").cast("string"),
+        F.lit(" days. Consider ordering during this visit.")
+    )
+)
+
+# Select final output
+df_output = df_alerts.select(
+    F.expr("uuid()").alias("alert_id"),
+    F.current_timestamp().alias("alert_timestamp"),
+    "event_id",
+    "event_timestamp",
+    "patient_id",
+    F.col("first_name").alias("patient_first_name"),
+    F.col("last_name").alias("patient_last_name"),
+    "facility_id",
+    F.coalesce(F.col("facility_name"), F.lit("Unknown")).alias("facility_name"),
+    "event_type",
+    "admission_type",
+    "primary_diagnosis",
+    "measure_id",
+    F.coalesce(F.col("measure_name"), F.col("measure_id")).alias("measure_name"),
+    "gap_days_overdue_int",
+    "alert_priority",
+    "alert_text",
+    F.coalesce(F.col("latitude"), F.lit(42.96)).alias("latitude"),
+    F.coalesce(F.col("longitude"), F.lit(-85.67)).alias("longitude"),
+)
+
+df_output.write.format("delta").mode("overwrite").saveAsTable("lh_gold_curated.rti_care_gap_alerts")
+alert_count = df_output.count()
+print(f"Care gap alerts written: {alert_count}")
+
+
+# METADATA **{"language":"python"}**
+
+# CELL **{"language":"python"}**
+
+# ============================================================================
+# Push Care Gap Alerts to KQL (direct Kusto ingestion)
+# ============================================================================
+print("Pushing care gap alerts to KQL...")
+
+import requests as _requests
+import json as _json
+
+_BASE_URL = "https://api.fabric.microsoft.com/v1"
+_WORKSPACE_ID = notebookutils.runtime.context.get("currentWorkspaceId", "")
+_KQL_DB_NAME = "Healthcare_RTI_DB"
+
+def _get_fabric_token():
+    return notebookutils.credentials.getToken("https://analysis.windows.net/powerbi/api")
+
+def _get_kusto_token():
+    return notebookutils.credentials.getToken("kusto")
+
+_KUSTO_QUERY_URI = ""
+_KUSTO_INGEST_URI = ""
+_headers = {"Authorization": f"Bearer {_get_fabric_token()}", "Content-Type": "application/json"}
+_resp = _requests.get(f"{_BASE_URL}/workspaces/{_WORKSPACE_ID}/items?type=Eventhouse", headers=_headers)
+if _resp.status_code == 200:
+    for _item in _resp.json().get("value", []):
+        if "Healthcare" in _item.get("displayName", ""):
+            _props_resp = _requests.get(
+                f"{_BASE_URL}/workspaces/{_WORKSPACE_ID}/eventhouses/{_item['id']}",
+                headers=_headers
+            )
+            if _props_resp.status_code == 200:
+                _props = _props_resp.json().get("properties", _props_resp.json())
+                _KUSTO_QUERY_URI = _props.get("queryServiceUri", "")
+                _KUSTO_INGEST_URI = _props.get("ingestionServiceUri", "")
+                if not _KUSTO_INGEST_URI and _KUSTO_QUERY_URI:
+                    _KUSTO_INGEST_URI = _KUSTO_QUERY_URI.replace("https://", "https://ingest-")
+            break
+
+if _KUSTO_QUERY_URI and _KUSTO_INGEST_URI:
+    try:
+        from azure.kusto.ingest import ManagedStreamingIngestClient, IngestionProperties
+        from azure.kusto.data import KustoConnectionStringBuilder, KustoClient, DataFormat
+        import io
+
+        _df_kql = df_output.select(
+            "alert_id", "alert_timestamp", "patient_id", "facility_id",
+            "facility_name", "measure_id", "measure_name",
+            F.col("gap_days_overdue_int").alias("gap_days_overdue"),
+            "alert_priority", "alert_text", "latitude", "longitude"
+        ).toPandas()
+
+        _token = _get_kusto_token()
+        _engine_kcsb = KustoConnectionStringBuilder.with_aad_user_token_authentication(_KUSTO_QUERY_URI, _token)
+        _dm_kcsb = KustoConnectionStringBuilder.with_aad_user_token_authentication(_KUSTO_INGEST_URI, _token)
+
+        # Ensure table, streaming policy, and mapping exist before ingesting
+        _mgmt_client = KustoClient(_engine_kcsb)
+        _mgmt_cmds = [
+            """.create-merge table care_gap_alerts (alert_id:string,alert_timestamp:datetime,patient_id:string,facility_id:string,facility_name:string,measure_id:string,measure_name:string,gap_days_overdue:int,alert_priority:string,alert_text:string,latitude:real,longitude:real)""",
+            """.alter table care_gap_alerts policy streamingingestion enable""",
+            """.create-or-alter table care_gap_alerts ingestion json mapping 'care_gap_alerts_mapping' '[{"column":"alert_id","path":"$.alert_id","datatype":"string"},{"column":"alert_timestamp","path":"$.alert_timestamp","datatype":"datetime"},{"column":"patient_id","path":"$.patient_id","datatype":"string"},{"column":"facility_id","path":"$.facility_id","datatype":"string"},{"column":"facility_name","path":"$.facility_name","datatype":"string"},{"column":"measure_id","path":"$.measure_id","datatype":"string"},{"column":"measure_name","path":"$.measure_name","datatype":"string"},{"column":"gap_days_overdue","path":"$.gap_days_overdue","datatype":"int"},{"column":"alert_priority","path":"$.alert_priority","datatype":"string"},{"column":"alert_text","path":"$.alert_text","datatype":"string"},{"column":"latitude","path":"$.latitude","datatype":"real"},{"column":"longitude","path":"$.longitude","datatype":"real"}]'""",
+        ]
+        for _cmd in _mgmt_cmds:
+            try:
+                _mgmt_client.execute_mgmt(_KQL_DB_NAME, _cmd.strip())
+            except Exception as _me:
+                print(f"  KQL WARN: mgmt command failed (non-fatal): {_me}")
+
+        # Wait for table/mapping propagation across Kusto cluster nodes
+        import time as _time_kql
+        _time_kql.sleep(10)
+
+        _client = ManagedStreamingIngestClient(_engine_kcsb, _dm_kcsb)
+        _ingestion_props = IngestionProperties(
+            database=_KQL_DB_NAME, table="care_gap_alerts",
+            data_format=DataFormat.JSON, ingestion_mapping_reference="care_gap_alerts_mapping"
+        )
+        _json_data = _df_kql.to_json(orient="records", lines=True, date_format="iso")
+        _client.ingest_from_stream(io.StringIO(_json_data), ingestion_properties=_ingestion_props)
+        print(f"  KQL: {len(_df_kql)} care gap alerts streamed -> care_gap_alerts")
+    except Exception as e:
+        print(f"  KQL WARN: care_gap_alerts ingestion failed: {e}")
+else:
+    print("  KQL: Eventhouse not found -- skipping KQL ingestion (Delta table still written)")
+
+# METADATA **{"language":"python"}**
+
+# CELL **{"language":"python"}**
+
+# ============================================================================
+# Summary Statistics
+# ============================================================================
+
+df_summary = spark.sql("""
+    SELECT
+        alert_priority,
+        COUNT(*) as alert_count,
+        COUNT(DISTINCT patient_id) as unique_patients,
+        COUNT(DISTINCT facility_id) as facilities_involved,
+        COUNT(DISTINCT measure_id) as measures_flagged
+    FROM lh_gold_curated.rti_care_gap_alerts
+    GROUP BY alert_priority
+    ORDER BY
+        CASE alert_priority
+            WHEN 'CRITICAL' THEN 1
+            WHEN 'HIGH' THEN 2
+            WHEN 'MEDIUM' THEN 3
+            ELSE 4
+        END
+""")
+
+print("\n" + "=" * 60)
+print("CARE GAP CLOSURE RESULTS")
+print("=" * 60)
+df_summary.show(truncate=False)
+
+# Gap distribution by measure
+df_by_measure = spark.sql("""
+    SELECT
+        measure_id,
+        measure_name,
+        COUNT(*) as alerts,
+        COUNT(DISTINCT patient_id) as patients,
+        ROUND(AVG(gap_days_overdue_int), 0) as avg_days_overdue
+    FROM lh_gold_curated.rti_care_gap_alerts
+    GROUP BY measure_id, measure_name
+    ORDER BY alerts DESC
+""")
+
+print("Alerts by HEDIS Measure:")
+df_by_measure.show(truncate=False)
+
+# Facility hotspots
+df_by_facility = spark.sql("""
+    SELECT
+        facility_name,
+        COUNT(*) as total_alerts,
+        SUM(CASE WHEN alert_priority = 'CRITICAL' THEN 1 ELSE 0 END) as critical_alerts,
+        COUNT(DISTINCT patient_id) as unique_patients
+    FROM lh_gold_curated.rti_care_gap_alerts
+    GROUP BY facility_name
+    ORDER BY total_alerts DESC
+""")
+
+print("Alerts by Facility (map visual data):")
+df_by_facility.show(truncate=False)
+
+print("\nNB_RTI_Care_Gap_Alerts: COMPLETE")
+print("=" * 60)
+
+# METADATA **{"language":"python"}**

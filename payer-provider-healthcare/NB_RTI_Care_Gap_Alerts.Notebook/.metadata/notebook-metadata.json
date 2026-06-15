@@ -1,0 +1,16 @@
+{
+  "dependencies": {
+    "lakehouse": {
+      "default_lakehouse": "a1000001-0001-0001-0001-000000000004",
+      "default_lakehouse_name": "lh_gold_curated",
+      "default_lakehouse_workspace_id": "00000000-0000-0000-0000-000000000000",
+      "known_lakehouses": [
+        {
+          "id": "a1000001-0001-0001-0001-000000000004",
+          "displayName": "lh_gold_curated",
+          "isDefault": true
+        }
+      ]
+    }
+  }
+}

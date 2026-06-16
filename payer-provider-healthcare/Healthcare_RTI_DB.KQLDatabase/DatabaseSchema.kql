@@ -114,17 +114,17 @@
 // Tune for your environment; production payloads typically retain raw 30-90d.
 // ============================================================================
 
-.alter table claims_events policy retention softdelete = 7d recoverability = disabled
+.alter table claims_events policy retention '{"SoftDeletePeriod":"7.00:00:00","Recoverability":"Disabled"}'
 
-.alter table adt_events policy retention softdelete = 7d recoverability = disabled
+.alter table adt_events policy retention '{"SoftDeletePeriod":"7.00:00:00","Recoverability":"Disabled"}'
 
-.alter table rx_events policy retention softdelete = 7d recoverability = disabled
+.alter table rx_events policy retention '{"SoftDeletePeriod":"7.00:00:00","Recoverability":"Disabled"}'
 
-.alter table fraud_scores policy retention softdelete = 30d recoverability = disabled
+.alter table fraud_scores policy retention '{"SoftDeletePeriod":"30.00:00:00","Recoverability":"Disabled"}'
 
-.alter table care_gap_alerts policy retention softdelete = 30d recoverability = disabled
+.alter table care_gap_alerts policy retention '{"SoftDeletePeriod":"30.00:00:00","Recoverability":"Disabled"}'
 
-.alter table highcost_alerts policy retention softdelete = 30d recoverability = disabled
+.alter table highcost_alerts policy retention '{"SoftDeletePeriod":"30.00:00:00","Recoverability":"Disabled"}'
 
 // ============================================================================
 // 5. INGESTION MAPPING — JSON mapping for Eventstream Custom Endpoint

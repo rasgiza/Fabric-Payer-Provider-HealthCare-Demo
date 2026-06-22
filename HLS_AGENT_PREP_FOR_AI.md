@@ -100,9 +100,8 @@ lives in `datasource.json`. For the semantic-model source, paste the block below
 
 ```
 Prefer the model's existing measures over re-deriving math:
-  Denial Rate, Collection Rate, Net Collection Rate, Readmission Rate, Avg Days to Payment,
-  Appeal Success Rate, Total Appeal Recovery, Avg PDC Score, Adherent Rate,
-  DRG Margin, Avg Cost Per Encounter.
+  Denial Rate, Collection Rate, Readmission Rate, Avg PDC Score, Adherent Rate,
+  Avg Cost Per Encounter.
 
 Where the facts live:
 - Denials/financials -> fact_claim. denial_flag = 1 means denied; reason in primary_denial_reason
@@ -139,12 +138,6 @@ BENCHMARKS (use for context and recommendations, not as filters):
 - Denial rate < 8%
 - PDC adherent >= 80%
 - Inpatient length of stay 4-6 days
-- RVU attainment >= 95%
-- Board-certified rate >= 85%
-- Documentation score >= 80
-- EHR adoption >= 80%
-- Patient satisfaction >= 4.0
-- Telehealth enabled >= 50%
 
 When a metric beats or misses its benchmark, say so and suggest a concrete next step.
 ```
@@ -227,27 +220,6 @@ CALCULATETABLE(
     dim_patient[last_name]  = "Brown",
     dim_patient[is_current] = 1
 )
-```
-
-### Q6 — Average days in A/R by payer
-```dax
-EVALUATE
-SUMMARIZECOLUMNS(
-    dim_payer[payer_name],
-    "Avg Days to Payment", [Avg Days to Payment]
-)
-ORDER BY [Avg Days to Payment] DESC
-```
-
-### Q7 — Appeal success rate and recovery by payer
-```dax
-EVALUATE
-SUMMARIZECOLUMNS(
-    dim_payer[payer_name],
-    "Appeal Success Rate", [Appeal Success Rate],
-    "Total Appeal Recovery", [Total Appeal Recovery]
-)
-ORDER BY [Appeal Success Rate] DESC
 ```
 
 ---

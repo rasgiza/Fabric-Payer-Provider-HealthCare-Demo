@@ -68,30 +68,6 @@ table fact_claim
 
 		annotation PBI_FormatHint = {"isGeneralNumber":true}
 
-	measure 'Avg Days to Payment' = AVERAGE(fact_claim[days_to_payment])
-		lineageTag: a1b2c3d4-4444-4444-8444-000000000001
-
-		annotation PBI_FormatHint = {"isGeneralNumber":true}
-
-	measure 'Net Collection Rate' = AVERAGE(fact_claim[net_collection_rate])
-		lineageTag: a1b2c3d4-4444-4444-8444-000000000002
-
-		annotation PBI_FormatHint = {"isGeneralNumber":true}
-
-	measure 'Appeal Success Rate' =
-			VAR _overturned = CALCULATE(COUNTROWS(fact_claim), fact_claim[appeal_outcome] = "Overturned")
-			VAR _partial = CALCULATE(COUNTROWS(fact_claim), fact_claim[appeal_outcome] = "Partial")
-			VAR _total_appeals = CALCULATE(COUNTROWS(fact_claim), NOT(ISBLANK(fact_claim[appeal_outcome])))
-			RETURN DIVIDE(_overturned + _partial, _total_appeals)
-		lineageTag: a1b2c3d4-4444-4444-8444-000000000003
-
-		annotation PBI_FormatHint = {"isGeneralNumber":true}
-
-	measure 'Total Appeal Recovery' = SUM(fact_claim[appeal_amount_recovered])
-		lineageTag: a1b2c3d4-4444-4444-8444-000000000004
-
-		annotation PBI_FormatHint = {"isGeneralNumber":true}
-
 	measure 'MTD Claims' = TOTALMTD(COUNTROWS(fact_claim), dim_date[full_date])
 		formatString: 0
 		lineageTag: bb0f05a6-ca09-4b3c-9ab2-9c715ced2db9
@@ -290,59 +266,6 @@ table fact_claim
 		sourceColumn: recommended_action
 
 		annotation SummarizationSetBy = Automatic
-
-	/// Days from claim date to payment date; basis for days-in-A/R.
-	column days_to_payment
-		dataType: int64
-		formatString: 0
-		lineageTag: a1b2c3d4-5555-4555-8555-000000000001
-		sourceLineageTag: days_to_payment
-		summarizeBy: sum
-		sourceColumn: days_to_payment
-
-		annotation SummarizationSetBy = Automatic
-
-	column net_collection_rate
-		dataType: double
-		lineageTag: a1b2c3d4-5555-4555-8555-000000000002
-		sourceLineageTag: net_collection_rate
-		summarizeBy: average
-		sourceColumn: net_collection_rate
-
-		annotation SummarizationSetBy = Automatic
-
-		annotation PBI_FormatHint = {"isGeneralNumber":true}
-
-	column appeal_date
-		dataType: dateTime
-		formatString: General Date
-		lineageTag: a1b2c3d4-5555-4555-8555-000000000003
-		sourceLineageTag: appeal_date
-		summarizeBy: none
-		sourceColumn: appeal_date
-
-		annotation SummarizationSetBy = Automatic
-
-	/// Result of a denial appeal (Overturned, Partial, Upheld, Pending). Blank when no appeal was filed.
-	column appeal_outcome
-		dataType: string
-		lineageTag: a1b2c3d4-5555-4555-8555-000000000004
-		sourceLineageTag: appeal_outcome
-		summarizeBy: none
-		sourceColumn: appeal_outcome
-
-		annotation SummarizationSetBy = Automatic
-
-	column appeal_amount_recovered
-		dataType: double
-		lineageTag: a1b2c3d4-5555-4555-8555-000000000005
-		sourceLineageTag: appeal_amount_recovered
-		summarizeBy: sum
-		sourceColumn: appeal_amount_recovered
-
-		annotation SummarizationSetBy = Automatic
-
-		annotation PBI_FormatHint = {"isGeneralNumber":true}
 
 	column _load_timestamp
 		dataType: dateTime

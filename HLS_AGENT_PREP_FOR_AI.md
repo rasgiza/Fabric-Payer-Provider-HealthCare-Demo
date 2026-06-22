@@ -114,8 +114,8 @@ Where the facts live:
   adherence_category already buckets it. drug_class and therapeutic_area are on this table.
 
 Aggregated (agg_*) tables are already rolled up — never also sum the matching fact table for
-the same measure (avoids double counting). Use agg_readmission_by_date / agg_days_in_ar /
-agg_revenue_by_drg / agg_appeal_outcomes for trend and summary questions.
+the same measure (avoids double counting). Use agg_readmission_by_date and
+agg_medication_adherence for trend and summary questions.
 
 Join keys (group by the dimension attribute, not the key):
   *_date_key   -> dim_date[date_key]

@@ -56,7 +56,7 @@
 # auxiliary files directly from the public mirror).
 GITHUB_OWNER  = "rasgiza"
 GITHUB_REPO   = "Fabric-Payer-Provider-HealthCare-Demo"
-GITHUB_BRANCH = "v1.0.0"   # tag pinned by the fabric-jumpstart catalog entry
+GITHUB_BRANCH = "v1.0.1"   # tag pinned by the fabric-jumpstart catalog entry
 
 # Post-deploy options
 UPLOAD_KNOWLEDGE_DOCS = True   # Fetch healthcare_knowledge/*.md and upload to lh_gold_curated

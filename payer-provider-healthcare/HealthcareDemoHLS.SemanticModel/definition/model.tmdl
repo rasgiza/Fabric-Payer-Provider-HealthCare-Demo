@@ -25,7 +25,6 @@ ref table dim_payer
 ref table fact_encounter
 ref table dim_diagnosis
 ref table agg_readmission_by_date
-ref table agg_revenue_by_drg
-ref table agg_days_in_ar
-ref table agg_appeal_outcomes
+
+ref culture en-US
 

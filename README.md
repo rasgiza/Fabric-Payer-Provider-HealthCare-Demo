@@ -11,9 +11,13 @@ One-click deployment of a complete **Healthcare Payer/Provider Analytics** solut
 
 ---
 
-## 🎬 Recommended Demo Questions
+## 🎬 Demo Playbook
 
-> **For an easy, story-driven demo that showcases both the Fabric Data Agent and the Foundry IQ Knowledge Agent, ask these two questions back-to-back — same patient, same story.**
+> **Two short, story-driven demos that showcase the platform in under 60 seconds. Start here.**
+
+### Two-question headline demo — same patient, same story
+
+Ask these two questions back-to-back in the two agents:
 
 1. **In the Fabric Data Agent (`HealthcareHLSAgent`):**
    *"Show me medication adherence for Betty Brown age 83 by drug class."*
@@ -25,39 +29,62 @@ One-click deployment of a complete **Healthcare Payer/Provider Analytics** solut
 
 **Why this works:** Q1 shows Fabric's structured-data power; Q2 shows Foundry's reasoning + grounded citations. Together they tell the platform story — *data → decision* — in under 60 seconds.
 
+### Graph agent warm-up sequence — run before any ontology demo
+
+The Graph Data Agent runs on top of an OpenAI assistant thread + tool-call harness. The first 1–2 calls after the agent is published spin up that thread and load the GQL examples from `aiInstructions` into the LLM's working context. Cold-starting straight into a complex aggregation question can surface as `submit_tool_outputs failed` (BadRequest) or "An error occurred". To get reliable demos, **always warm up with two simple list queries first**:
+
+1. `List 5 providers` — confirms the graph is reachable and primes provider entity.
+2. `Show me 5 patients` — primes patient entity and adherence relationship.
+3. `Which patients have the most non-adherent drug classes?` — the headline aggregation question (uses `MATCH ... FILTER ... LET ... GROUP BY ... ORDER BY ... LIMIT`).
+4. Pick a patient from step 3 and drill in: `Show me adherence details for <First> <Last>, age <N>`.
+
+This gives you both reliability (the assistant thread is warm) and a stronger narrative arc (broad → specific → recommendation).
+
 ---
 
 ## Table of Contents
 
-1. [Why This Demo? — The Payer & Provider Pain Points](#why-this-demo--the-payer--provider-pain-points)
-2. [Quick Start](#quick-start)
-3. [What Gets Deployed](#what-gets-deployed)
+1. [🎬 Demo Playbook](#-demo-playbook)
+   - [Two-question headline demo](#two-question-headline-demo--same-patient-same-story)
+   - [Graph agent warm-up sequence](#graph-agent-warm-up-sequence--run-before-any-ontology-demo)
+2. [Why This Demo? — The Payer & Provider Pain Points](#why-this-demo--the-payer--provider-pain-points)
+3. [Quick Start](#quick-start)
+4. [What Gets Deployed](#what-gets-deployed)
    - [Data Volumes (Default)](#data-volumes-default)
-4. [Architecture](#architecture)
-5. [Deployment Flow](#deployment-flow)
+5. [Architecture](#architecture)
+   - [Solution Architecture](#solution-architecture)
+   - [Interactive 3D Ontology Knowledge Graph](#-interactive-3d-ontology-knowledge-graph)
+   - [Interactive 3D Patient Story Demos](#-interactive-3d-patient-story-demos)
+   - [Detailed Data Flow](#detailed-data-flow)
+6. [Deployment Flow](#deployment-flow)
    - [What happens when you click "Run All"](#what-happens-when-you-click-run-all)
-   - [Deployment Stages Detail](#deployment-stages-detail)
-6. [After Deployment](#after-deployment)
+   - [Deployment Stages (Cell 3)](#deployment-stages-cell-3)
+7. [After Deployment](#after-deployment)
    - [Explore the Data](#explore-the-data)
    - [Sample Questions — Data Agents](#sample-questions--data-agents)
    - [Data Agent Reference](#data-agent-reference)
    - [Power BI Dashboard](#power-bi-dashboard)
-7. [Real-Time Intelligence (RTI)](#real-time-intelligence-rti--3-payerprovider-use-cases)
-   - [Claims Fraud Detection](#use-case-1-claims-fraud-detection)
-   - [Care Gap Closure](#use-case-2-care-gap-closure-at-point-of-care)
-   - [High-Cost Member Trajectory](#use-case-3-high-cost-member-trajectory)
-   - [RTI Data Tables](#rti-data-tables)
-   - [RTI Ingestion — Two Approaches](#rti-ingestion--two-approaches)
-   - [Operations Agent](#use-case-4--operations-agent-healthcareopsagent)
-8. [Ontology & Graph Model (Automated)](#ontology--graph-model-automated)
-9. [Data Agents](#data-agents)
-10. [Data Activator / Reflex Setup](#set-up-data-activator-alerts-manual--15-min)
-10. [Run Incremental Loads](#run-incremental-loads)
-11. [Configuration Options](#configuration-options)
-12. [Prerequisites](#prerequisites)
-13. [Repository Structure](#repository-structure)
-14. [Troubleshooting](#troubleshooting)
-15. [Credits](#credits)
+   - [Azure AI Foundry (Optional)](#azure-ai-foundry-optional)
+8. [🧠 Make It AI-Ready (Prep for AI)](#-make-it-ai-ready-prep-for-ai)
+   - [Built to Microsoft best practices](#built-to-microsoft-best-practices)
+   - [How the model owner applies Prep for AI](#how-the-model-owner-applies-prep-for-ai-one-time-15-min)
+9. [Data Agents — Setup & Reference](#data-agents--setup--reference)
+   - [HealthcareHLSAgent (SQL agent)](#healthcarehlsagent-sql-agent--auto-deployed)
+   - [Ontology Agent (graph) — manual setup](#ontology-agent-graph--manual-setup)
+10. [Real-Time Intelligence (RTI)](#real-time-intelligence-rti--3-payerprovider-use-cases)
+    - [Claims Fraud Detection](#use-case-1-claims-fraud-detection)
+    - [Care Gap Closure](#use-case-2-care-gap-closure-at-point-of-care)
+    - [High-Cost Member Trajectory](#use-case-3-high-cost-member-trajectory)
+    - [RTI Data Tables](#rti-data-tables)
+    - [RTI Ingestion Architecture](#rti-ingestion-architecture)
+    - [Operations Agent](#use-case-4--operations-agent-healthcareopsagent)
+11. [Set Up Data Activator Alerts](#set-up-data-activator-alerts-manual--15-min)
+12. [Run Incremental Loads](#run-incremental-loads)
+13. [Configuration Options](#configuration-options)
+14. [Prerequisites](#prerequisites)
+15. [Repository Structure](#repository-structure)
+16. [Troubleshooting](#troubleshooting)
+17. [Credits](#credits)
 
 ---
 
@@ -350,52 +377,13 @@ The solution includes two complementary AI agents:
 
 See **[SAMPLE_QUESTIONS.md](SAMPLE_QUESTIONS.md)** for 90+ copy-paste questions organized by domain and agent — including a top **[Executive Pain-Point Questions](SAMPLE_QUESTIONS.md#executive-pain-point-questions-boardroom--c-suite)** section (CFO, CMO, CMIO, COO, VP Pop Health, CIO) framed in real-world boardroom language.
 
-#### Recommended Demo Warm-Up Sequence (Graph Ontology Agent)
-
-The Graph Data Agent runs on top of an OpenAI assistant thread + tool-call harness. The first 1–2 calls after the agent is published spin up that thread and load the GQL examples from `aiInstructions` into the LLM's working context. Cold-starting straight into a complex aggregation question can surface as `submit_tool_outputs failed` (BadRequest) or "An error occurred". To get reliable demos, **always warm up with two simple list queries first**:
-
-1. `List 5 providers` — confirms the graph is reachable and primes provider entity.
-2. `Show me 5 patients` — primes patient entity and adherence relationship.
-3. `Which patients have the most non-adherent drug classes?` — the headline aggregation question (uses `MATCH ... FILTER ... LET ... GROUP BY ... ORDER BY ... LIMIT`).
-4. Pick a patient from step 3 and drill in: `Show me adherence details for <First> <Last>, age <N>`.
-
-This gives you both reliability (the assistant thread is warm) and a stronger narrative arc (broad → specific → recommendation).
+> **Demoing the graph agent?** Run the **[Graph agent warm-up sequence](#graph-agent-warm-up-sequence--run-before-any-ontology-demo)** in the Demo Playbook first — it prevents cold-start errors.
 
 ### Data Agent Reference
 
 For the complete agent configuration -- AI instructions, concept-to-table routing, SQL rules, few-shot examples, knowledge base, and customization guide -- see **[DATA_AGENT_GUIDE.md](DATA_AGENT_GUIDE.md)**.
 
-#### Built to Microsoft best practices
-
-`HealthcareHLSAgent` and its `HealthcareDemoHLS` semantic model follow Microsoft's published guidance: **[Semantic model best practices for data agent](https://learn.microsoft.com/en-us/fabric/data-science/semantic-model-best-practices#prep-for-ai-make-semantic-model-ai-ready)** and **[Prepare your data for AI](https://learn.microsoft.com/en-us/power-bi/create-reports/copilot-prepare-data-ai)**.
-
-- **Keep agent instructions cross-source and high-level.** The DAX generation tool ignores data-agent-level instructions when querying a semantic model, so model-specific guidance belongs in **Prep for AI** (AI instructions, AI data schema, verified answers) on the model itself. The agent prompt is kept thin: response formatting, cross-source routing, and tone only. Start lean and add context iteratively.
-- **Make the semantic model AI-ready.** Tables, columns, and measures carry descriptions; model-level Prep-for-AI instructions and verified answers are documented for the model owner to apply in the Power BI UI (they can't be set through the agent API).
-
-The copy-paste-ready instructions, verified answers, and the API-vs-UI deployment map are in **[HLS_AGENT_PREP_FOR_AI.md](HLS_AGENT_PREP_FOR_AI.md)**.
-
-##### How the model owner applies Prep for AI (one-time, ~15 min)
-
-**How this is structured:** the steps below are the *click-path* (what to open, in what order);
-the actual text and DAX to copy live in **[HLS_AGENT_PREP_FOR_AI.md](HLS_AGENT_PREP_FOR_AI.md)**,
-section by section. Follow the steps here and copy from the matching section there.
-
-Git sync deploys the agent prompt and data-source config automatically, but the model-level
-**Prep for AI** content can't be set through the API — apply it once by hand:
-
-1. **AI instructions** — In the Fabric/Power BI **service**, open the `HealthcareDemoHLS`
-   semantic model → **Prep data for AI** → **Add AI instructions**. Copy the block from
-   **Section 3** of **[HLS_AGENT_PREP_FOR_AI.md](HLS_AGENT_PREP_FOR_AI.md)** and paste it in.
-2. *(Optional)* **Simplify the data schema** — same pane → deselect fields Copilot doesn't need
-   and add synonyms for terms users actually say.
-3. **Verified answers** — these are created in **Power BI Desktop**, not the service. Build a
-   visual that shows the answer (use the DAX in **Section 4** of
-   **[HLS_AGENT_PREP_FOR_AI.md](HLS_AGENT_PREP_FOR_AI.md)** as the spec), then
-   **right-click the visual → "Set up verified answer"** and add the phrasings users will ask.
-   After you publish/save, the entries appear back in the service under **Prep data for AI →
-   Verified answers**.
-4. **Re-test and iterate** — start lean; add an instruction or verified answer whenever you
-   spot a wrong answer.
+> **Making the model AI-ready?** See the dedicated **[Make It AI-Ready (Prep for AI)](#-make-it-ai-ready-prep-for-ai)** section below for the best-practice rationale and the one-time model-owner click-path.
 
 ### Power BI Dashboard
 
@@ -419,6 +407,103 @@ For customization guidance (26 DAX measures, formatting tips, Direct Lake best p
 To set up the **Foundry Orchestrator Agent** that combines the Fabric Data Agent with a Knowledge Base (21 clinical documents indexed via Azure AI Search) and web search for hybrid clinical decision support -- see **[FOUNDRY_IQ_SETUP_GUIDE.md](FOUNDRY_IQ_SETUP_GUIDE.md)**.
 
 For troubleshooting hybrid query failures (compound questions, instruction truncation, fewshot phrasing issues) -- see **[FOUNDRY_ORCHESTRATOR_TROUBLESHOOTING.md](FOUNDRY_ORCHESTRATOR_TROUBLESHOOTING.md)**.
+
+---
+
+## 🧠 Make It AI-Ready (Prep for AI)
+
+> **This is the one step you can't skip if you want trustworthy AI answers.** Git sync deploys the agent prompt and data-source config automatically, but the model-level **Prep for AI** content (AI instructions, AI data schema, verified answers) **can't be set through the API** — the model owner applies it once by hand.
+
+### Built to Microsoft best practices
+
+`HealthcareHLSAgent` and its `HealthcareDemoHLS` semantic model follow Microsoft's published guidance: **[Semantic model best practices for data agent](https://learn.microsoft.com/en-us/fabric/data-science/semantic-model-best-practices#prep-for-ai-make-semantic-model-ai-ready)** and **[Prepare your data for AI](https://learn.microsoft.com/en-us/power-bi/create-reports/copilot-prepare-data-ai)**.
+
+- **Keep agent instructions cross-source and high-level.** The DAX generation tool ignores data-agent-level instructions when querying a semantic model, so model-specific guidance belongs in **Prep for AI** (AI instructions, AI data schema, verified answers) on the model itself. The agent prompt is kept thin: response formatting, cross-source routing, and tone only. Start lean and add context iteratively.
+- **Make the semantic model AI-ready.** Tables, columns, and measures carry descriptions; model-level Prep-for-AI instructions and verified answers are documented for the model owner to apply in the Power BI UI (they can't be set through the agent API).
+
+The copy-paste-ready instructions, verified answers, and the API-vs-UI deployment map are in **[HLS_AGENT_PREP_FOR_AI.md](HLS_AGENT_PREP_FOR_AI.md)**.
+
+### How the model owner applies Prep for AI (one-time, ~15 min)
+
+**How this is structured:** the steps below are the *click-path* (what to open, in what order);
+the actual text and DAX to copy live in **[HLS_AGENT_PREP_FOR_AI.md](HLS_AGENT_PREP_FOR_AI.md)**,
+section by section. Follow the steps here and copy from the matching section there.
+
+1. **AI instructions** — In the Fabric/Power BI **service**, open the `HealthcareDemoHLS`
+   semantic model → **Prep data for AI** → **Add AI instructions**. Copy the block from
+   **Section 3** of **[HLS_AGENT_PREP_FOR_AI.md](HLS_AGENT_PREP_FOR_AI.md)** and paste it in.
+2. *(Optional)* **Simplify the data schema** — same pane → deselect fields Copilot doesn't need
+   and add synonyms for terms users actually say.
+3. **Verified answers** — these are created in **Power BI Desktop**, not the service. Build a
+   visual that shows the answer (use the DAX in **Section 4** of
+   **[HLS_AGENT_PREP_FOR_AI.md](HLS_AGENT_PREP_FOR_AI.md)** as the spec), then
+   **right-click the visual → "Set up verified answer"** and add the phrasings users will ask.
+   After you publish/save, the entries appear back in the service under **Prep data for AI →
+   Verified answers**.
+4. **Re-test and iterate** — start lean; add an instruction or verified answer whenever you
+   spot a wrong answer.
+
+---
+
+## Data Agents — Setup & Reference
+
+### HealthcareHLSAgent (SQL agent) — auto-deployed
+
+The **HealthcareHLSAgent** (SQL agent) is deployed programmatically by the launcher — no manual setup required. It connects to the `HealthcareDemoHLS` semantic model and includes AI instructions and data source configuration automatically.
+
+To test it, open the agent in your workspace and try a sample question:
+- *"What is the overall denial rate by payer?"*
+- *"Show me the top 10 providers by total billed amount"*
+- *"Which patients have the highest readmission risk?"*
+
+See **[SAMPLE_QUESTIONS.md](SAMPLE_QUESTIONS.md)** for 80+ tested questions across all domains.
+
+### Ontology Agent (graph) — manual setup
+
+The **HealthcareHLSOntology Agent** (graph agent) must be created manually in the Fabric UI — it cannot be fully deployed via API.
+
+**Step 1: Create the Agent**
+
+1. In your workspace → **+ New item** → **Data agent**
+
+   ![Data agent card](docs/images/agent-new-item.png)
+
+2. Name it `HealthcareHLSOntology Agent` → click **Create**
+
+   ![Create data agent dialog](docs/images/agent-create-dialog.png)
+
+**Step 2: Add the Data Source**
+
+1. Click **Add Data** → **Data source**
+
+   ![Add Data dropdown](docs/images/agent-add-data-source.png)
+
+2. Browse to your workspace → select the ontology **`Healthcare_Demo_Ontology_HLS`** (Graph model)
+
+   ![Select ontology graph](docs/images/agent-select-ontology.png)
+
+3. The agent will connect to the graph model (12 entities, 18 relationships)
+
+**Step 3: Configure AI Instructions**
+
+1. Click **Agent instructions** (top toolbar)
+
+   ![Agent instructions panel](docs/images/agent-instructions.png)
+
+2. Copy the AI instructions text from **[DATA_AGENT_INSTRUCTIONS.md → Section 2a](DATA_AGENT_INSTRUCTIONS.md#2-healthcare-ontology-agent-graph-agent)** — AI Instructions
+3. Paste into the instructions text box → click **Apply**
+
+> These instructions tell the agent about the ontology entities, relationships, and graph traversal patterns for healthcare queries.
+
+**Step 4: Test the Agent**
+
+1. In the agent chat panel, try a sample question:
+   - *"Which providers treat patients covered by Aetna?"*
+   - *"Show the care pathway for patient P-1001"*
+   - *"What prescriptions are linked to claims denied for medical necessity?"*
+2. See **[SAMPLE_QUESTIONS.md → Graph Agent](SAMPLE_QUESTIONS.md#graph-agent-healthcare-ontology-agent)** section for more questions
+
+> **Before you demo the graph agent**, run the **[Graph agent warm-up sequence](#graph-agent-warm-up-sequence--run-before-any-ontology-demo)** in the Demo Playbook to avoid cold-start errors.
 
 ---
 
@@ -584,64 +669,6 @@ After `Healthcare_Launcher` completes, the Operations Agent is created with goal
 2. Or via API: update the definition with `"shouldRun": true`
 
 > **Note:** The agent monitors 6 KQL tables (claims_events, adt_events, rx_events, fraud_scores, care_gap_alerts, highcost_alerts). Make sure RTI pipelines have run at least once so the tables contain data.
-
----
-
-### Data Agents
-
-The **HealthcareHLSAgent** (SQL agent) is deployed programmatically by the launcher — no manual setup required. It connects to the `HealthcareDemoHLS` semantic model and includes AI instructions and data source configuration automatically.
-
-To test it, open the agent in your workspace and try a sample question:
-- *"What is the overall denial rate by payer?"*
-- *"Show me the top 10 providers by total billed amount"*
-- *"Which patients have the highest readmission risk?"*
-
-See **[SAMPLE_QUESTIONS.md](SAMPLE_QUESTIONS.md)** for 80+ tested questions across all domains.
-
-#### Data Agent — Ontology As Source
-
-The **HealthcareHLSOntology Agent** (graph agent) must be created manually in the Fabric UI — it cannot be fully deployed via API.
-
-**Step 1: Create the Agent**
-
-1. In your workspace → **+ New item** → **Data agent**
-
-   ![Data agent card](docs/images/agent-new-item.png)
-
-2. Name it `HealthcareHLSOntology Agent` → click **Create**
-
-   ![Create data agent dialog](docs/images/agent-create-dialog.png)
-
-**Step 2: Add the Data Source**
-
-1. Click **Add Data** → **Data source**
-
-   ![Add Data dropdown](docs/images/agent-add-data-source.png)
-
-2. Browse to your workspace → select the ontology **`Healthcare_Demo_Ontology_HLS`** (Graph model)
-
-   ![Select ontology graph](docs/images/agent-select-ontology.png)
-
-3. The agent will connect to the graph model (12 entities, 18 relationships)
-
-**Step 3: Configure AI Instructions**
-
-1. Click **Agent instructions** (top toolbar)
-
-   ![Agent instructions panel](docs/images/agent-instructions.png)
-
-2. Copy the AI instructions text from **[DATA_AGENT_INSTRUCTIONS.md → Section 2a](DATA_AGENT_INSTRUCTIONS.md#2-healthcare-ontology-agent-graph-agent)** — AI Instructions
-3. Paste into the instructions text box → click **Apply**
-
-> These instructions tell the agent about the ontology entities, relationships, and graph traversal patterns for healthcare queries.
-
-**Step 4: Test the Agent**
-
-1. In the agent chat panel, try a sample question:
-   - *"Which providers treat patients covered by Aetna?"*
-   - *"Show the care pathway for patient P-1001"*
-   - *"What prescriptions are linked to claims denied for medical necessity?"*
-2. See **[SAMPLE_QUESTIONS.md → Graph Agent](SAMPLE_QUESTIONS.md#graph-agent-healthcare-ontology-agent)** section for more questions
 
 ---
 

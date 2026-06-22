@@ -1,4 +1,4 @@
-/// Encounter-level fact table for clinical and cost analytics. Grain: one row per patient encounter (encounter_key) across inpatient, emergency, and outpatient settings. Holds length of stay, total charges, total cost, DRG, readmission flag and risk. Use for readmission rate, cost per encounter, and DRG margin. Join to dim_patient, dim_provider, and dim_date (encounter_date_key).
+/// Encounter-level fact table for clinical and cost analytics. Grain: one row per patient encounter (encounter_key) across inpatient, emergency, and outpatient settings. Holds length of stay, total charges, total cost, readmission flag and risk. Use for readmission rate and cost per encounter. Join to dim_patient, dim_provider, and dim_date (encounter_date_key).
 table fact_encounter
 	lineageTag: 303e9d71-a1fa-4663-a8f3-e659324de32e
 	sourceLineageTag: [dbo].[fact_encounter]
@@ -87,24 +87,6 @@ table fact_encounter
 
 	measure 'Total Cost' = SUM(fact_encounter[total_cost])
 		lineageTag: a1b2c3d4-2222-4222-8222-000000000001
-
-		annotation PBI_FormatHint = {"isGeneralNumber":true}
-
-	measure 'Avg DRG Weight' = AVERAGE(fact_encounter[drg_weight])
-		lineageTag: a1b2c3d4-2222-4222-8222-000000000010
-
-		annotation PBI_FormatHint = {"isGeneralNumber":true}
-
-	measure 'Total Expected Reimbursement' = SUM(fact_encounter[expected_reimbursement])
-		lineageTag: a1b2c3d4-2222-4222-8222-000000000011
-
-		annotation PBI_FormatHint = {"isGeneralNumber":true}
-
-	measure 'DRG Margin' =
-			VAR _reimburse = [Total Expected Reimbursement]
-			VAR _cost = [Total Cost]
-			RETURN DIVIDE(_reimburse - _cost, _reimburse)
-		lineageTag: a1b2c3d4-2222-4222-8222-000000000012
 
 		annotation PBI_FormatHint = {"isGeneralNumber":true}
 
@@ -291,47 +273,6 @@ table fact_encounter
 		sourceColumn: readmission_risk_category
 
 		annotation SummarizationSetBy = Automatic
-
-	column drg_code
-		dataType: string
-		lineageTag: a1b2c3d4-3333-4333-8333-000000000001
-		sourceLineageTag: drg_code
-		summarizeBy: none
-		sourceColumn: drg_code
-
-		annotation SummarizationSetBy = Automatic
-
-	column drg_description
-		dataType: string
-		lineageTag: a1b2c3d4-3333-4333-8333-000000000002
-		sourceLineageTag: drg_description
-		summarizeBy: none
-		sourceColumn: drg_description
-
-		annotation SummarizationSetBy = Automatic
-
-	/// CMS DRG relative weight; higher = more resource-intensive case.
-	column drg_weight
-		dataType: double
-		lineageTag: a1b2c3d4-3333-4333-8333-000000000003
-		sourceLineageTag: drg_weight
-		summarizeBy: sum
-		sourceColumn: drg_weight
-
-		annotation SummarizationSetBy = Automatic
-
-		annotation PBI_FormatHint = {"isGeneralNumber":true}
-
-	column expected_reimbursement
-		dataType: double
-		lineageTag: a1b2c3d4-3333-4333-8333-000000000004
-		sourceLineageTag: expected_reimbursement
-		summarizeBy: sum
-		sourceColumn: expected_reimbursement
-
-		annotation SummarizationSetBy = Automatic
-
-		annotation PBI_FormatHint = {"isGeneralNumber":true}
 
 	column _load_timestamp
 		dataType: dateTime

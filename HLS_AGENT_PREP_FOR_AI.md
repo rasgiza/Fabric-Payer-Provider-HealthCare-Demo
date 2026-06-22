@@ -27,9 +27,12 @@ carries `///` table, column, and measure descriptions (DirectLake on `lh_gold_cu
 | **C. Prep for AI — AI data schema** (field subset Copilot may use) — *Section 3* | Semantic model → *Prep data for AI → Simplify the data schema* | ⚠️ **Service UI only** |
 | **D. Prep for AI — AI instructions** (business context + rules) — *Section 4* | Semantic model → *Prep data for AI → Add AI instructions* | ⚠️ **Service UI only** |
 | **E. Prep for AI — Verified answers** (trigger phrases → approved visual) — *Section 5* | Built in **Power BI Desktop** (right-click visual → *Set up a verified answer*); surfaces in service *Prep data for AI → Verified answers* | ⚠️ **Desktop + service UI** |
+| **F. Q&A linguistic schema** (synonyms — e.g. "bounce-backs"→readmissions, "compliance"→PDC) | `HealthcareDemoHLS.SemanticModel/definition/cultures/en-US.tmdl` | ✅ **Git sync** |
 
 **Why the split:** the three Prep for AI features (C, D, E) **cannot be set through the API
-today**, so they're documented here to configure in the UI by hand. Keep A intentionally thin —
+today**, so they're documented here to configure in the UI by hand. Layer **F** (synonyms) is
+the one model-intelligence artifact that *is* Git-deployable — it ships in TMDL and helps both
+the agent and plain Copilot/Q&A map everyday phrasing to the right measure. Keep A intentionally thin —
 it should only tell the agent *how to reason over the sources and shape its answers*, never
 repeat the lakehouse SQL detail that belongs in B, or the model context that belongs in C–E.
 
@@ -267,9 +270,68 @@ SUMMARIZECOLUMNS(agg_medication_adherence[drug_class], "Avg PDC", [Avg PDC Score
 SUMMARIZECOLUMNS(fact_encounter[encounter_type], "Avg LOS", [Avg Length of Stay])
 ```
 
+### VA6 — Generic fill rate by pharmacy type
+- **Trigger phrases:** "Generic fill rate" · "Generic dispensing rate" · "Generic rate by pharmacy" · "How much do we fill generic?" · "GDR by pharmacy type"
+- **Visual:** Bar chart. Axis = `fact_prescription[pharmacy_type]`, Value = **Generic Fill Rate** (%), add a constant line at the overall rate, sort descending.
+- **Available-to-users filter:** `dim_medication[therapeutic_area]`.
+```dax
+-- reference
+SUMMARIZECOLUMNS(fact_prescription[pharmacy_type], "Generic Fill Rate", [Generic Fill Rate])
+```
+
+### VA7 — Payer mix
+- **Trigger phrases:** "What's our payer mix?" · "Payer mix" · "Claims by payer type" · "Revenue by payer" · "Breakdown by payer"
+- **Visual:** Donut/stacked bar. Legend/Axis = `dim_payer[payer_type]`, Value = **Total Paid** (and optionally **Total Claims** as a second view).
+- **Available-to-users filter:** `dim_date[year]`.
+```dax
+-- reference
+SUMMARIZECOLUMNS(dim_payer[payer_type], "Total Paid", [Total Paid], "Total Claims", [Total Claims])
+```
+
+### VA8 — Chronic-condition patient counts
+- **Trigger phrases:** "How many patients have chronic conditions?" · "Chronic condition counts" · "Patients with chronic conditions" · "Chronic patients by condition" · "Top chronic conditions"
+- **Visual:** Bar chart. Axis = `dim_diagnosis[icd_category]`, Value = **Patients with Chronic Conditions**, sort descending (top N).
+- **Available-to-users filter:** `dim_diagnosis[is_chronic]`.
+```dax
+-- reference
+SUMMARIZECOLUMNS(dim_diagnosis[icd_category], "Patients with Chronic Conditions", [Patients with Chronic Conditions])
+```
+
 ---
 
-## 6. Fixed earlier — formatString display bug
+## 6. Evaluation question set (regression test)
+
+Use this to sanity-check the agent (and plain Copilot/Q&A) after any change to the model,
+the AI data schema, AI instructions, verified answers, or the synonym schema. Ask each
+question; confirm the answer uses the **expected measure** at the **expected grain**. If a
+question that should hit a verified answer instead free-forms a different visual, the trigger
+phrases need tuning. Every measure/column below exists in the model.
+
+| # | Question | Expected measure / source | Expected grain | Linked VA |
+|---|----------|---------------------------|----------------|-----------|
+| Q1 | "What's our overall denial rate?" | `[Denial Rate]` (fact_claim) | single value | VA2 |
+| Q2 | "Show denial rate by payer" | `[Denial Rate]` × `dim_payer[payer_name]` | by payer | VA2 |
+| Q3 | "What's the 30-day readmission rate?" | `[Readmission Rate]` (fact_encounter) | single value | VA3 |
+| Q4 | "Readmission rate by month" | `[Readmission Rate]` × `dim_date[month_name]` | monthly trend | VA3 |
+| Q5 | "Which drug classes have the lowest adherence?" | `[Avg PDC Score]` × `agg_medication_adherence[drug_class]` | by drug class, asc | VA4 |
+| Q6 | "Average length of stay for inpatients" | `[Avg Length of Stay]` × `fact_encounter[encounter_type]` | by encounter type | VA5 |
+| Q7 | "What's our generic fill rate?" | `[Generic Fill Rate]` (fact_prescription) | single value | VA6 |
+| Q8 | "What's our payer mix?" | `[Total Paid]` × `dim_payer[payer_type]` | by payer type | VA7 |
+| Q9 | "How many patients have chronic conditions?" | `[Patients with Chronic Conditions]` | single value | VA8 |
+| Q10 | "Top chronic conditions by patient count" | `[Patients with Chronic Conditions]` × `dim_diagnosis[icd_category]` | top N | VA8 |
+| Q11 | "What's our collection rate?" | `[Collection Rate]` (fact_claim) | single value | — |
+| Q12 | "Total revenue at risk from denials" | `[At Risk Revenue]` (fact_claim) | single value | — |
+| Q13 | "Average cost per encounter" | `[Avg Cost Per Encounter]` (fact_encounter) | single value | — |
+| Q14 | "How many patients do we have?" | `[Total Patients]` (dim_patient) | single value | — |
+| Q15 | "What share of patients are chronic?" | `[Chronic Rate]` (dim_patient) | single value | — |
+
+**Pass criteria:** correct measure chosen (not a manual SUM/AVERAGE of a raw column),
+correct grain, and ratios shown as **%** (not 0). Synonyms make Q3/Q5/Q7 resolvable even
+when a user says "bounce-backs", "compliance", or "generic rate".
+
+---
+
+## 7. Fixed earlier — formatString display bug
 
 `fact_claim` measures **Denial Rate** and **Collection Rate** returned correct ratios (0–1)
 but had `formatString: 0`, so the UI rounded them to a whole number and they displayed as

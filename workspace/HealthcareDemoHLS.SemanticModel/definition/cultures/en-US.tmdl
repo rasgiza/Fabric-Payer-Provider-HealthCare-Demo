@@ -1,0 +1,211 @@
+cultureInfo en-US
+
+	linguisticMetadata = ```
+		{
+		  "Version": "1.0.0",
+		  "Language": "en-US",
+		  "DynamicImprovement": "HighConfidence",
+		  "Entities": {
+		    "fact_claim.Total Claims": {
+		      "Definition": { "Binding": { "ConceptualEntity": "fact_claim", "ConceptualProperty": "Total Claims" } },
+		      "State": "Generated",
+		      "Terms": [
+		        { "claims": {} },
+		        { "claim count": {} },
+		        { "number of claims": {} },
+		        { "claim volume": {} }
+		      ]
+		    },
+		    "fact_claim.Denial Rate": {
+		      "Definition": { "Binding": { "ConceptualEntity": "fact_claim", "ConceptualProperty": "Denial Rate" } },
+		      "State": "Generated",
+		      "Terms": [
+		        { "denial rate": {} },
+		        { "denials": {} },
+		        { "denied claims rate": {} },
+		        { "rejection rate": {} },
+		        { "reject rate": {} }
+		      ]
+		    },
+		    "fact_claim.Collection Rate": {
+		      "Definition": { "Binding": { "ConceptualEntity": "fact_claim", "ConceptualProperty": "Collection Rate" } },
+		      "State": "Generated",
+		      "Terms": [
+		        { "collection rate": {} },
+		        { "collections": {} },
+		        { "net collection rate": {} },
+		        { "yield": {} }
+		      ]
+		    },
+		    "fact_claim.Total Billed": {
+		      "Definition": { "Binding": { "ConceptualEntity": "fact_claim", "ConceptualProperty": "Total Billed" } },
+		      "State": "Generated",
+		      "Terms": [
+		        { "billed": {} },
+		        { "gross charges": {} },
+		        { "billed amount": {} },
+		        { "charges billed": {} }
+		      ]
+		    },
+		    "fact_claim.Total Paid": {
+		      "Definition": { "Binding": { "ConceptualEntity": "fact_claim", "ConceptualProperty": "Total Paid" } },
+		      "State": "Generated",
+		      "Terms": [
+		        { "paid": {} },
+		        { "reimbursement": {} },
+		        { "payments": {} },
+		        { "amount paid": {} }
+		      ]
+		    },
+		    "fact_claim.At Risk Revenue": {
+		      "Definition": { "Binding": { "ConceptualEntity": "fact_claim", "ConceptualProperty": "At Risk Revenue" } },
+		      "State": "Generated",
+		      "Terms": [
+		        { "at risk revenue": {} },
+		        { "revenue at risk": {} },
+		        { "denied dollars": {} },
+		        { "write-offs": {} },
+		        { "write offs": {} }
+		      ]
+		    },
+		    "fact_claim.Avg Denial Risk": {
+		      "Definition": { "Binding": { "ConceptualEntity": "fact_claim", "ConceptualProperty": "Avg Denial Risk" } },
+		      "State": "Generated",
+		      "Terms": [
+		        { "denial risk": {} },
+		        { "risk of denial": {} },
+		        { "average denial risk": {} }
+		      ]
+		    },
+		    "fact_encounter.Total Encounters": {
+		      "Definition": { "Binding": { "ConceptualEntity": "fact_encounter", "ConceptualProperty": "Total Encounters" } },
+		      "State": "Generated",
+		      "Terms": [
+		        { "encounters": {} },
+		        { "visits": {} },
+		        { "admissions": {} },
+		        { "encounter count": {} }
+		      ]
+		    },
+		    "fact_encounter.Readmission Rate": {
+		      "Definition": { "Binding": { "ConceptualEntity": "fact_encounter", "ConceptualProperty": "Readmission Rate" } },
+		      "State": "Generated",
+		      "Terms": [
+		        { "readmission rate": {} },
+		        { "readmissions": {} },
+		        { "bounce-backs": {} },
+		        { "bounce backs": {} },
+		        { "30-day readmission rate": {} }
+		      ]
+		    },
+		    "fact_encounter.Avg Length of Stay": {
+		      "Definition": { "Binding": { "ConceptualEntity": "fact_encounter", "ConceptualProperty": "Avg Length of Stay" } },
+		      "State": "Generated",
+		      "Terms": [
+		        { "length of stay": {} },
+		        { "los": {} },
+		        { "average stay": {} },
+		        { "days in hospital": {} }
+		      ]
+		    },
+		    "fact_encounter.Avg Cost Per Encounter": {
+		      "Definition": { "Binding": { "ConceptualEntity": "fact_encounter", "ConceptualProperty": "Avg Cost Per Encounter" } },
+		      "State": "Generated",
+		      "Terms": [
+		        { "cost per encounter": {} },
+		        { "cost per visit": {} },
+		        { "average encounter cost": {} },
+		        { "unit cost": {} }
+		      ]
+		    },
+		    "fact_encounter.PMPM": {
+		      "Definition": { "Binding": { "ConceptualEntity": "fact_encounter", "ConceptualProperty": "PMPM" } },
+		      "State": "Generated",
+		      "Terms": [
+		        { "pmpm": {} },
+		        { "per member per month": {} },
+		        { "per-member-per-month cost": {} }
+		      ]
+		    },
+		    "dim_patient.Total Patients": {
+		      "Definition": { "Binding": { "ConceptualEntity": "dim_patient", "ConceptualProperty": "Total Patients" } },
+		      "State": "Generated",
+		      "Terms": [
+		        { "patients": {} },
+		        { "members": {} },
+		        { "lives": {} },
+		        { "patient count": {} }
+		      ]
+		    },
+		    "dim_patient.Chronic Rate": {
+		      "Definition": { "Binding": { "ConceptualEntity": "dim_patient", "ConceptualProperty": "Chronic Rate" } },
+		      "State": "Generated",
+		      "Terms": [
+		        { "chronic rate": {} },
+		        { "chronic prevalence": {} },
+		        { "percent chronic": {} }
+		      ]
+		    },
+		    "agg_medication_adherence.Avg PDC Score": {
+		      "Definition": { "Binding": { "ConceptualEntity": "agg_medication_adherence", "ConceptualProperty": "Avg PDC Score" } },
+		      "State": "Generated",
+		      "Terms": [
+		        { "pdc": {} },
+		        { "adherence": {} },
+		        { "medication adherence": {} },
+		        { "compliance": {} },
+		        { "proportion of days covered": {} }
+		      ]
+		    },
+		    "agg_medication_adherence.Adherent Rate": {
+		      "Definition": { "Binding": { "ConceptualEntity": "agg_medication_adherence", "ConceptualProperty": "Adherent Rate" } },
+		      "State": "Generated",
+		      "Terms": [
+		        { "adherent rate": {} },
+		        { "percent adherent": {} },
+		        { "adherence rate": {} }
+		      ]
+		    },
+		    "fact_prescription.Total Fills": {
+		      "Definition": { "Binding": { "ConceptualEntity": "fact_prescription", "ConceptualProperty": "Total Fills" } },
+		      "State": "Generated",
+		      "Terms": [
+		        { "fills": {} },
+		        { "prescriptions": {} },
+		        { "scripts": {} },
+		        { "prescription fills": {} }
+		      ]
+		    },
+		    "fact_prescription.Generic Fill Rate": {
+		      "Definition": { "Binding": { "ConceptualEntity": "fact_prescription", "ConceptualProperty": "Generic Fill Rate" } },
+		      "State": "Generated",
+		      "Terms": [
+		        { "generic fill rate": {} },
+		        { "generic rate": {} },
+		        { "generic dispensing rate": {} },
+		        { "gdr": {} }
+		      ]
+		    },
+		    "fact_prescription.Patient Copay Total": {
+		      "Definition": { "Binding": { "ConceptualEntity": "fact_prescription", "ConceptualProperty": "Patient Copay Total" } },
+		      "State": "Generated",
+		      "Terms": [
+		        { "copay": {} },
+		        { "patient copay": {} },
+		        { "out of pocket": {} },
+		        { "patient cost share": {} }
+		      ]
+		    },
+		    "fact_diagnosis.Patients with Chronic Conditions": {
+		      "Definition": { "Binding": { "ConceptualEntity": "fact_diagnosis", "ConceptualProperty": "Patients with Chronic Conditions" } },
+		      "State": "Generated",
+		      "Terms": [
+		        { "chronic patients": {} },
+		        { "patients with chronic conditions": {} },
+		        { "chronically ill patients": {} }
+		      ]
+		    }
+		  }
+		}
+		```
+		contentType: json

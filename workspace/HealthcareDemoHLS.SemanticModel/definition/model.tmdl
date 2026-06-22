@@ -26,3 +26,5 @@ ref table fact_encounter
 ref table dim_diagnosis
 ref table agg_readmission_by_date
 
+ref culture en-US
+

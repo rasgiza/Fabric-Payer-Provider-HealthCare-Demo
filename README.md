@@ -48,6 +48,7 @@ This gives you both reliability (the assistant thread is warm) and a stronger na
    - [Two-question headline demo](#two-question-headline-demo--same-patient-same-story)
    - [Graph agent warm-up sequence](#graph-agent-warm-up-sequence--run-before-any-ontology-demo)
 2. [Why This Demo? — The Payer & Provider Pain Points](#why-this-demo--the-payer--provider-pain-points)
+   - [Full provider use-case catalog →](PROVIDER_USE_CASES.md)
 3. [Quick Start](#quick-start)
 4. [What Gets Deployed](#what-gets-deployed)
    - [Data Volumes (Default)](#data-volumes-default)

@@ -48,6 +48,7 @@ This gives you both reliability (the assistant thread is warm) and a stronger na
    - [Two-question headline demo](#two-question-headline-demo--same-patient-same-story)
    - [Graph agent warm-up sequence](#graph-agent-warm-up-sequence--run-before-any-ontology-demo)
 2. [Why This Demo? — The Payer & Provider Pain Points](#why-this-demo--the-payer--provider-pain-points)
+   - [Full provider use-case catalog →](PROVIDER_USE_CASES.md)
 3. [Quick Start](#quick-start)
 4. [What Gets Deployed](#what-gets-deployed)
    - [Data Volumes (Default)](#data-volumes-default)
@@ -91,6 +92,8 @@ This gives you both reliability (the assistant thread is warm) and a stronger na
 ## Why This Demo? — The Payer & Provider Pain Points
 
 Healthcare payers and providers face compounding operational challenges that erode revenue, increase regulatory risk, and compromise patient outcomes. This demo addresses **six critical pain points** that cost the U.S. healthcare system billions annually:
+
+> **📋 Full provider use-case catalog:** For the complete, industry-wide set of provider use cases — across revenue cycle, value-based care, population health, clinical operations, program integrity, and self-service AI — and exactly which demo asset solves each one, see **[PROVIDER_USE_CASES.md](PROVIDER_USE_CASES.md)**.
 
 ### 1. Claim Denials Are Draining Revenue
 

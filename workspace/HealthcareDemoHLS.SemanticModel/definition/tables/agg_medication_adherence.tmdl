@@ -15,18 +15,16 @@ table agg_medication_adherence
 			VAR _den = COUNTROWS(agg_medication_adherence)
 			RETURN
 			DIVIDE(_num, _den)
+		formatString: 0.0%
 		lineageTag: dd5956b5-efa3-4979-b611-3dff26a65e89
 
 		changedProperty = Name
 
-		annotation PBI_FormatHint = {"isGeneralNumber":true}
-
 	measure 'Avg PDC Score' = AVERAGE(agg_medication_adherence[pdc_score])
+		formatString: 0.0%
 		lineageTag: be7bf71e-d69d-4e9e-92bb-9df398e33a67
 
 		changedProperty = Name
-
-		annotation PBI_FormatHint = {"isGeneralNumber":true}
 
 	column patient_key
 		dataType: int64

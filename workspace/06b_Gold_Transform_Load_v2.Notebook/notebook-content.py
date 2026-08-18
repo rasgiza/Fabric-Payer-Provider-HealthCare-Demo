@@ -1059,6 +1059,29 @@ _risk_score = coalesce(
     _risk_fallback
 )
 
+# Real 30-day readmission. An encounter counts as a readmission when the same
+# patient was discharged from an acute (inpatient or emergency) encounter
+# within the preceding 30 days.
+#
+# This previously tested whether the *predicted risk score* cleared 0.5, which
+# is a different quantity entirely: it reported 52.8% for inpatients (real-world
+# is ~15%) and returned blank for outpatient and telehealth because those types
+# never accumulate enough risk to cross the threshold.
+_ACUTE_TYPES = ["inpatient", "emergency"]
+_w_readmit = Window.partitionBy(col("e.patient_id")).orderBy(col("e.encounter_date"))
+_prev_discharge = lag(coalesce(col("e.discharge_date"), col("e.encounter_date"))).over(_w_readmit)
+_prev_type = lag(lower(coalesce(col("e.encounter_type"), lit("")))).over(_w_readmit)
+
+df_enc = df_enc.withColumn(
+    "_readmission_flag",
+    when(
+        (lower(coalesce(col("e.encounter_type"), lit(""))).isin(_ACUTE_TYPES))
+        & (_prev_type.isin(_ACUTE_TYPES))
+        & (datediff(col("e.encounter_date"), _prev_discharge).between(0, 30)),
+        lit(1),
+    ).otherwise(lit(0)),
+)
+
 df_fact_encounter = df_enc.select(
     col("e.encounter_id"),
     (year("e.encounter_date") * 10000 + month("e.encounter_date") * 100 + dayofmonth("e.encounter_date")).alias("encounter_date_key"),
@@ -1074,7 +1097,7 @@ df_fact_encounter = df_enc.select(
     coalesce(col("e.length_of_stay").cast("int"), lit(1)).alias("length_of_stay"),
     coalesce(col("e.total_charges").cast("double"), lit(0.0)).alias("total_charges"),
     (coalesce(col("e.total_charges").cast("double"), lit(0.0)) * 0.7).alias("total_cost"),
-    when(coalesce(_risk_score, lit(0.0)) >= 0.5, lit(1)).otherwise(lit(0)).alias("readmission_flag"),
+    col("_readmission_flag").alias("readmission_flag"),
     _risk_score.alias("readmission_risk_score"),
     (when(_risk_score >= 0.7, "High")
      .when(_risk_score >= 0.3, "Medium")
@@ -1124,7 +1147,7 @@ df_provider_lkp = spark.table(f"{GOLD}.dim_provider") \
     .filter("is_current = 1") \
     .select(col("provider_key"), col("provider_id"))
 df_payer_lkp = spark.table(f"{GOLD}.dim_payer") \
-    .select(col("payer_key"), col("payer_id"))
+    .select(col("payer_key"), col("payer_id"), col("payer_name"), col("payer_type"))
 
 # Encounter linkage — direct join on encounter_id (claims already have encounter_id from source)
 df_encounter_key_lkp = spark.table(f"{GOLD}.fact_encounter") \
@@ -1152,24 +1175,77 @@ if has_denial_ml:
         df_ml_denial.alias("ml"), col("c.claim_id") == col("ml.claim_id"), "left"
     )
 
-# Synthea data rarely has "denied" claim_status — generate realistic denials
-# Uses deterministic hash so results are reproducible across runs
-# Overall ~8% denial rate: higher for high-dollar claims
+# Denial assignment.
+#
+# The generator already assigns denials using payer-specific rates, so when the
+# source carries a meaningful share of denied claims we honour it directly.
+# Synthea-derived sources rarely mark claims denied, so we fall back to a
+# deterministic rule -- but one keyed on the PAYER, not a flat percentage.
+# A flat hash made Denial Rate come out identical (~16%) for every payer, which
+# is a statistically valid but analytically useless result.
+_payer_type = lower(coalesce(col("py.payer_type"), lit("")))
+_payer_name = lower(coalesce(col("py.payer_name"), lit("")))
+
+_payer_denial_pct = (
+    when(_payer_type == "medicaid", lit(15))
+    .when(_payer_name.contains("medicaid"), lit(15))
+    .when(_payer_type == "self-pay", lit(12))
+    .when(_payer_type == "workers comp", lit(11))
+    .when(_payer_name.contains("medicare"), lit(6))
+    .when(_payer_type == "government", lit(8))
+    .otherwise(lit(8))
+) + (
+    when(col("c.billed_amount").cast("double") > 50000, lit(4))
+    .when(col("c.billed_amount").cast("double") > 20000, lit(2))
+    .otherwise(lit(0))
+)
+
+_source_denied = lower(coalesce(col("c.claim_status"), lit(""))).contains("denied")
+
+_claims_total = df_claims.count()
+_claims_denied = df_claims.filter(
+    lower(coalesce(col("claim_status"), lit(""))).contains("denied")
+).count()
+_source_has_denials = _claims_total > 0 and (_claims_denied / _claims_total) >= 0.02
+
+if _source_has_denials:
+    print(f"   ✓ Source carries denials ({_claims_denied:,}/{_claims_total:,}) — using as-is")
+else:
+    print("   ⚠️ Source has no denials — synthesising payer-specific denial rates")
+
+df_clm = df_clm.withColumn("_payer_denial_pct", _payer_denial_pct)
+
+if _source_has_denials:
+    df_clm = df_clm.withColumn("_is_denied", _source_denied)
+else:
+    df_clm = df_clm.withColumn(
+        "_is_denied",
+        (abs(hash(col("c.claim_id"))) % 100) < col("_payer_denial_pct"),
+    )
+
+# Risk score must be predictive, not circular. Deriving it from _is_denied made
+# every "High" risk claim exactly 100% denied and left Low/Medium at 0 -- the
+# score was just the outcome relabelled. Here it is built from the payer's
+# denial propensity plus claim attributes and deterministic jitter, so High risk
+# carries a genuinely elevated (but not certain) denial rate.
+_risk_raw = (
+    col("_payer_denial_pct") * 2 + (abs(hash(col("c.claim_id"), lit(7))) % 40) - 20
+) / 100.0
+_denial_risk = (
+    when(_risk_raw < 0.02, lit(0.02))
+    .when(_risk_raw > 0.95, lit(0.95))
+    .otherwise(_risk_raw)
+)
+
 df_clm = df_clm.withColumn(
-    "_is_denied",
-    when(lower(col("c.claim_status")).contains("denied"), lit(True))
-    .when(
-        (col("c.billed_amount").cast("double") > 50000) &
-        (abs(hash(col("c.claim_id"))) % 100 < 18), lit(True)
-    ).when(
-        (col("c.billed_amount").cast("double") > 20000) &
-        (abs(hash(col("c.claim_id"))) % 100 < 12), lit(True)
-    ).when(
-        abs(hash(col("c.claim_id"))) % 100 < 5, lit(True)
-    ).otherwise(lit(False))
+    "_denial_risk_score",
+    coalesce(
+        col("ml.denial_risk_score").cast("double") if has_denial_ml else lit(None),
+        _denial_risk,
+    ),
 ).withColumn(
     "_denial_reason_idx",
-    (abs(hash(col("c.claim_id"))) % 7).cast("int")
+    (abs(hash(col("c.claim_id"))) % 7).cast("int"),
 )
 
 df_fact_claim = df_clm.select(
@@ -1188,30 +1264,16 @@ df_fact_claim = df_clm.select(
     .otherwise(coalesce(col("c.claim_status"), lit("Paid"))).alias("claim_status"),
     coalesce(col("c.billed_amount").cast("double"), lit(0.0)).alias("billed_amount"),
     coalesce(col("c.allowed_amount").cast("double"), col("c.billed_amount").cast("double") * 0.85, lit(0.0)).alias("allowed_amount"),
-    coalesce(col("c.paid_amount").cast("double"), col("c.billed_amount").cast("double") * 0.80, lit(0.0)).alias("paid_amount"),
+    # A denied claim pays nothing. Leaving the source paid_amount in place on
+    # denied rows made Collection Rate incoherent against Denial Rate.
+    when(col("_is_denied"), lit(0.0))
+    .otherwise(coalesce(col("c.paid_amount").cast("double"),
+                        col("c.billed_amount").cast("double") * 0.80,
+                        lit(0.0))).alias("paid_amount"),
     when(col("_is_denied"), lit(1)).otherwise(lit(0)).alias("denial_flag"),
-    coalesce(col("ml.denial_risk_score").cast("double") if has_denial_ml else lit(None),
-             # Rule-based risk score: denied claims get higher scores
-             when(col("_is_denied"), lit(0.75))
-             .when(col("c.billed_amount").cast("double") > 50000, lit(0.55))
-             .when(col("c.billed_amount").cast("double") > 20000, lit(0.40))
-             .when(col("c.billed_amount").cast("double") > 10000, lit(0.30))
-             .otherwise(lit(0.15))
-             ).alias("denial_risk_score"),
-    when(coalesce(col("ml.denial_risk_score").cast("double") if has_denial_ml else lit(None),
-             when(col("_is_denied"), lit(0.75))
-             .when(col("c.billed_amount").cast("double") > 50000, lit(0.55))
-             .when(col("c.billed_amount").cast("double") > 20000, lit(0.40))
-             .when(col("c.billed_amount").cast("double") > 10000, lit(0.30))
-             .otherwise(lit(0.15))
-             ) >= 0.6, "High")
-    .when(coalesce(col("ml.denial_risk_score").cast("double") if has_denial_ml else lit(None),
-             when(col("_is_denied"), lit(0.75))
-             .when(col("c.billed_amount").cast("double") > 50000, lit(0.55))
-             .when(col("c.billed_amount").cast("double") > 20000, lit(0.40))
-             .when(col("c.billed_amount").cast("double") > 10000, lit(0.30))
-             .otherwise(lit(0.15))
-             ) >= 0.3, "Medium")
+    col("_denial_risk_score").alias("denial_risk_score"),
+    when(col("_denial_risk_score") >= 0.6, "High")
+    .when(col("_denial_risk_score") >= 0.3, "Medium")
     .otherwise("Low").alias("denial_risk_category"),
     when(col("_is_denied"),
          coalesce(col("c.denial_reason"),
@@ -1582,12 +1644,17 @@ try:
     df_dim_med = spark.table(f"{GOLD}.dim_medication")
     df_dim_date = spark.table(f"{GOLD}.dim_date")
 
-    # Join prescriptions with medication info and dates
+    # Join prescriptions with medication info and dates.
+    # PDC is a CMS Star measure for chronic maintenance therapy, so acute
+    # courses (antibiotics, short opioid scripts) are excluded. Including them
+    # inverted the result: a single 10-day amoxicillin fill scored PDC 1.0
+    # while a year of blood-pressure therapy scored 0.05.
     df_rx_dated = df_fact_rx.alias("fp") \
         .join(df_dim_med.alias("dm"), col("fp.medication_key") == col("dm.medication_key"), "inner") \
         .join(df_dim_date.alias("dd"), col("fp.fill_date_key") == col("dd.date_key"), "inner") \
         .filter(col("fp.patient_key").isNotNull()) \
-        .filter(col("fp.medication_key").isNotNull())
+        .filter(col("fp.medication_key").isNotNull()) \
+        .filter(col("dm.is_chronic") == 1)
 
     # Calculate PDC per patient per medication
     from pyspark.sql.functions import datediff, min as spark_min, max as spark_max, least as spark_least
@@ -1604,17 +1671,24 @@ try:
         spark_max("fp.fill_date_key").alias("measurement_period_end"),
         count("*").alias("total_fills"),
         sum("fp.days_supply").alias("total_days_supply"),
+        avg("fp.days_supply").alias("avg_days_supply"),
         sum("fp.total_cost").alias("total_medication_cost"),
         sum("fp.payer_paid").alias("total_payer_cost"),
         sum("fp.patient_copay").alias("total_patient_cost"),
-        lit(0).alias("is_chronic")
+        lit(1).alias("is_chronic")
     )
 
-    # Calculate days in period and PDC
+    # Calculate days in period and PDC.
+    #
+    # The measurement period runs from the first fill to the end of the last
+    # fill's supply -- NOT first fill plus the sum of every fill's supply.
+    # Summing inflated the denominator in proportion to fill count, so the more
+    # consistently a patient refilled, the worse their adherence scored.
     df_adherence = df_adherence \
         .withColumn(
             "days_in_period",
-            datediff(col("last_fill_date"), col("first_fill_date")) + col("total_days_supply").cast("int")
+            datediff(col("last_fill_date"), col("first_fill_date"))
+            + coalesce(col("avg_days_supply").cast("int"), lit(30))
         ) \
         .withColumn(
             "days_in_period",

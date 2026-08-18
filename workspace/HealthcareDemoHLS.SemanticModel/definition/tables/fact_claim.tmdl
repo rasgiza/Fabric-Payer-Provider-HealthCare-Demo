@@ -22,18 +22,16 @@ table fact_claim
 		changedProperty = Name
 
 	measure 'Total Billed' = SUM(fact_claim[billed_amount])
+		formatString: \$#,0;(\$#,0);\$#,0
 		lineageTag: b538499e-70f9-4ff3-941e-2a0a8026d96d
 
 		changedProperty = Name
 
-		annotation PBI_FormatHint = {"isGeneralNumber":true}
-
 	measure 'Total Paid' = SUM(fact_claim[paid_amount])
+		formatString: \$#,0;(\$#,0);\$#,0
 		lineageTag: 9b5a2d0e-4bc3-42d8-b829-a3ceebb2d0fa
 
 		changedProperty = Name
-
-		annotation PBI_FormatHint = {"isGeneralNumber":true}
 
 	/// Total paid divided by total billed. Returns a ratio 0-1 (display as a percentage).
 	measure 'Collection Rate' =
@@ -55,11 +53,10 @@ table fact_claim
 						|| fact_claim[denial_risk_category] = "Medium"
 				)
 			RETURN IF(ISBLANK(_result), 0, _result)
+		formatString: \$#,0;(\$#,0);\$#,0
 		lineageTag: a6a466d3-36d3-4a12-9a2a-1fddc232bd31
 
 		changedProperty = Name
-
-		annotation PBI_FormatHint = {"isGeneralNumber":true}
 
 	measure 'Avg Denial Risk' = AVERAGE(fact_claim[denial_risk_score])
 		lineageTag: a0fad342-4029-4ff1-9508-28465d83c535

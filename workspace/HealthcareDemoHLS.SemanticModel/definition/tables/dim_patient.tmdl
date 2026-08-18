@@ -19,9 +19,8 @@ table dim_patient
 
 	measure 'Chronic Rate' =
 			DIVIDE([Chronic Patients], [Total Patients])
+		formatString: 0.0%
 		lineageTag: a1b2c3d4-1111-4111-8111-000000000002
-
-		annotation PBI_FormatHint = {"isGeneralNumber":true}
 
 	measure 'Avg Patient Age' = AVERAGE(dim_patient[age])
 		lineageTag: a1b2c3d4-1111-4111-8111-000000000003

@@ -10,32 +10,29 @@ table fact_prescription
 		changedProperty = Name
 
 	measure 'Total Rx Cost' = SUM(fact_prescription[total_cost])
+		formatString: \$#,0;(\$#,0);\$#,0
 		lineageTag: fb436e57-c420-4d5e-b7b9-9d4ac6f10ad8
 
 		changedProperty = Name
 
 	measure 'Avg Rx Cost Per Fill' = DIVIDE([Total Rx Cost], [Total Fills])
+		formatString: \$#,0;(\$#,0);\$#,0
 		lineageTag: a1b2c3d4-4444-4444-8444-000000000001
-
-		annotation PBI_FormatHint = {"isGeneralNumber":true}
 
 	measure 'Generic Fill Rate' =
 			VAR _generic = CALCULATE(COUNTROWS(fact_prescription), fact_prescription[is_generic] = 1)
 			VAR _total = COUNTROWS(fact_prescription)
 			RETURN DIVIDE(_generic, _total)
+		formatString: 0.0%
 		lineageTag: a1b2c3d4-4444-4444-8444-000000000002
 
-		annotation PBI_FormatHint = {"isGeneralNumber":true}
-
 	measure 'Payer Rx Cost' = SUM(fact_prescription[payer_paid])
+		formatString: \$#,0;(\$#,0);\$#,0
 		lineageTag: a1b2c3d4-4444-4444-8444-000000000003
 
-		annotation PBI_FormatHint = {"isGeneralNumber":true}
-
 	measure 'Patient Copay Total' = SUM(fact_prescription[patient_copay])
+		formatString: \$#,0;(\$#,0);\$#,0
 		lineageTag: a1b2c3d4-4444-4444-8444-000000000004
-
-		annotation PBI_FormatHint = {"isGeneralNumber":true}
 
 	column prescription_id
 		dataType: string

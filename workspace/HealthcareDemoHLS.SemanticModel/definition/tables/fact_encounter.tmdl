@@ -15,7 +15,7 @@ table fact_encounter
 			VAR _den = COUNTROWS(fact_encounter)
 			RETURN
 			DIVIDE(_num, _den)
-		formatString: 0
+		formatString: 0.0%
 		lineageTag: c0c1fbeb-970c-460f-8ac7-f928b3e8508b
 
 		changedProperty = Name
@@ -53,18 +53,16 @@ table fact_encounter
 		annotation PBI_FormatHint = {"isGeneralNumber":true}
 
 	measure 'Total Charges' = SUM(fact_encounter[total_charges])
+		formatString: \$#,0;(\$#,0);\$#,0
 		lineageTag: 360e14e2-8054-44b7-b18e-d55aeb0645d7
 
 		changedProperty = Name
 
-		annotation PBI_FormatHint = {"isGeneralNumber":true}
-
 	measure 'PY Charges' = CALCULATE(SUM(fact_encounter[total_charges]), SAMEPERIODLASTYEAR(dim_date[full_date]))
+		formatString: \$#,0;(\$#,0);\$#,0
 		lineageTag: 357957c2-34c8-4f51-8d09-5ea5f4af92fd
 
 		changedProperty = Name
-
-		annotation PBI_FormatHint = {"isGeneralNumber":true}
 
 	measure 'YoY Charge Growth' =
 			
@@ -72,23 +70,20 @@ table fact_encounter
 			VAR _py = [PY Charges]
 			RETURN
 			DIVIDE(_cy - _py, _py)
+		formatString: 0.0%
 		lineageTag: 4f1da77a-1795-4ebb-8963-84253873fcaa
 
 		changedProperty = Name
 
-		annotation PBI_FormatHint = {"isGeneralNumber":true}
-
 	measure 'YTD Charges' = TOTALYTD(SUM(fact_encounter[total_charges]), dim_date[full_date])
+		formatString: \$#,0;(\$#,0);\$#,0
 		lineageTag: 64699830-c28a-460b-a524-23513a31762c
 
 		changedProperty = Name
 
-		annotation PBI_FormatHint = {"isGeneralNumber":true}
-
 	measure 'Total Cost' = SUM(fact_encounter[total_cost])
+		formatString: \$#,0;(\$#,0);\$#,0
 		lineageTag: a1b2c3d4-2222-4222-8222-000000000001
-
-		annotation PBI_FormatHint = {"isGeneralNumber":true}
 
 	measure 'PMPM' =
 			VAR _encounter_cost = SUM(fact_encounter[total_cost])
@@ -101,9 +96,8 @@ table fact_encounter
 		annotation PBI_FormatHint = {"isGeneralNumber":true}
 
 	measure 'Avg Cost Per Encounter' = DIVIDE([Total Cost], [Total Encounters])
+		formatString: \$#,0;(\$#,0);\$#,0
 		lineageTag: a1b2c3d4-2222-4222-8222-000000000003
-
-		annotation PBI_FormatHint = {"isGeneralNumber":true}
 
 	measure 'Inpatient Encounters' = CALCULATE(COUNTROWS(fact_encounter), fact_encounter[encounter_type] = "Inpatient")
 		formatString: 0
@@ -118,9 +112,8 @@ table fact_encounter
 			VAR _adherent_score = [Adherent Rate]
 			VAR _denial_score = 1 - [Denial Rate]
 			RETURN DIVIDE(_readmit_score + _adherent_score + _denial_score, 3)
+		formatString: 0.0%
 		lineageTag: a1b2c3d4-2222-4222-8222-000000000006
-
-		annotation PBI_FormatHint = {"isGeneralNumber":true}
 
 	column encounter_id
 		dataType: string

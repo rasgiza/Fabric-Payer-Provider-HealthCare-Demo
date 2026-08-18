@@ -59,8 +59,9 @@ NUM_ENCOUNTERS = NUM_PATIENTS * 10  # ~10 encounters per patient
 NUM_CLAIMS = NUM_ENCOUNTERS
 NUM_PRESCRIPTIONS = int(NUM_ENCOUNTERS * 2.5)
 
-# Dynamic date range: 2 years back from today through tomorrow
-DATA_END_DATE = datetime.now() + timedelta(days=1)
+# Dynamic date range: 2 years back from today. The end date is clamped to
+# today so trend visuals never show future-dated encounters.
+DATA_END_DATE = datetime.now()
 DATA_START_DATE = DATA_END_DATE - timedelta(days=730)
 
 print(f"Generating data for {NUM_PATIENTS} patients, {NUM_ENCOUNTERS} encounters")
@@ -97,8 +98,21 @@ ADMISSION_TYPES = ["Emergency", "Elective", "Urgent", "Newborn", "Trauma"]
 DISCHARGE_DISPOSITIONS = ["Home", "SNF", "Rehab", "Home Health", "Expired", "AMA", "Transfer"]
 CLAIM_TYPES = ["Professional", "Institutional", "Pharmacy"]
 CLAIM_STATUSES = ["Submitted", "Pending", "Approved", "Denied", "Paid", "Appealed"]
-DENIAL_REASONS = [None, "Prior Auth Required", "Not Medically Necessary", "Duplicate Claim",
-                  "Invalid Code", "Coverage Expired", "Out of Network", "Missing Documentation"]
+CLAIM_STATUSES_NOT_DENIED = ["Submitted", "Pending", "Approved", "Paid", "Appealed"]
+
+# Canonical denial reasons. These strings must match the fallback labels in
+# 06b_Gold_Transform_Load_v2 exactly — when they drifted apart the gold table
+# ended up with both "Prior Auth Required" and "Prior Authorization Required"
+# (and both "Invalid Code" and "Coding Error") as separate categories.
+DENIAL_REASONS = ["Prior Authorization Required", "Not Medically Necessary",
+                  "Coding Error", "Coverage Expired", "Duplicate Claim",
+                  "Out of Network", "Missing Documentation"]
+
+# Shared ZIP pool. dim_patient.zip_code joins to dim_sdoh.zip_code, so patients
+# must be assigned ZIPs that actually exist in the SDOH reference table.
+# Previously patients drew from all of 48000-49999 while SDOH only held a
+# 70-ZIP sample, leaving ~97% of encounters with no social-risk attribution.
+MI_ZIP_POOL = [str(z) for z in random.sample(range(48001, 49972), 200)]
 
 MEDICATIONS = [
     {"rxnorm_code": "314076", "medication_name": "Lisinopril 10 MG Oral Tablet", "generic_name": "Lisinopril", "drug_class": "ACE Inhibitor", "therapeutic_area": "Cardiovascular", "route": "Oral", "form": "Tablet", "strength": "10 MG", "avg_cost": 12.00, "days_supply_typical": 30, "is_chronic": True},
@@ -196,19 +210,24 @@ CPT_CODES = [
     {"code": "99396", "description": "Preventive visit, established patient, 40-64", "category": "Preventive", "avg_charge": 300.00},
 ]
 
+# denial_rate drives how often each payer denies a claim. Payer and claim
+# status used to be drawn independently, which made Denial Rate statistically
+# identical (~16%) for every payer and left "which payers deny the most?"
+# with no answer. The spread below reflects published industry patterns:
+# Medicaid and self-pay deny hardest, Medicare FFS the least.
 PAYERS = [
-    {"payer_id": "PAY001", "payer_name": "Blue Cross Blue Shield of Michigan", "payer_type": "Commercial", "plan_type": "PPO", "state": "MI", "network_size": "Large", "avg_reimbursement_pct": 0.82},
-    {"payer_id": "PAY002", "payer_name": "Priority Health", "payer_type": "Commercial", "plan_type": "HMO", "state": "MI", "network_size": "Medium", "avg_reimbursement_pct": 0.78},
-    {"payer_id": "PAY003", "payer_name": "Medicare Part A", "payer_type": "Government", "plan_type": "FFS", "state": "Federal", "network_size": "National", "avg_reimbursement_pct": 0.65},
-    {"payer_id": "PAY004", "payer_name": "Medicare Part B", "payer_type": "Government", "plan_type": "FFS", "state": "Federal", "network_size": "National", "avg_reimbursement_pct": 0.60},
-    {"payer_id": "PAY005", "payer_name": "Medicaid Michigan", "payer_type": "Government", "plan_type": "Managed", "state": "MI", "network_size": "Medium", "avg_reimbursement_pct": 0.45},
-    {"payer_id": "PAY006", "payer_name": "United Healthcare", "payer_type": "Commercial", "plan_type": "PPO", "state": "National", "network_size": "Large", "avg_reimbursement_pct": 0.80},
-    {"payer_id": "PAY007", "payer_name": "Aetna", "payer_type": "Commercial", "plan_type": "EPO", "state": "National", "network_size": "Large", "avg_reimbursement_pct": 0.79},
-    {"payer_id": "PAY008", "payer_name": "Cigna", "payer_type": "Commercial", "plan_type": "PPO", "state": "National", "network_size": "Large", "avg_reimbursement_pct": 0.81},
-    {"payer_id": "PAY009", "payer_name": "Humana", "payer_type": "Commercial", "plan_type": "HMO", "state": "National", "network_size": "Medium", "avg_reimbursement_pct": 0.76},
-    {"payer_id": "PAY010", "payer_name": "Self-Pay", "payer_type": "Self-Pay", "plan_type": "None", "state": "N/A", "network_size": "N/A", "avg_reimbursement_pct": 1.00},
-    {"payer_id": "PAY011", "payer_name": "Tricare", "payer_type": "Government", "plan_type": "Managed", "state": "Federal", "network_size": "National", "avg_reimbursement_pct": 0.70},
-    {"payer_id": "PAY012", "payer_name": "Workers Compensation MI", "payer_type": "Workers Comp", "plan_type": "State", "state": "MI", "network_size": "State", "avg_reimbursement_pct": 0.85},
+    {"payer_id": "PAY001", "payer_name": "Blue Cross Blue Shield of Michigan", "payer_type": "Commercial", "plan_type": "PPO", "state": "MI", "network_size": "Large", "avg_reimbursement_pct": 0.82, "denial_rate": 0.068},
+    {"payer_id": "PAY002", "payer_name": "Priority Health", "payer_type": "Commercial", "plan_type": "HMO", "state": "MI", "network_size": "Medium", "avg_reimbursement_pct": 0.78, "denial_rate": 0.081},
+    {"payer_id": "PAY003", "payer_name": "Medicare Part A", "payer_type": "Government", "plan_type": "FFS", "state": "Federal", "network_size": "National", "avg_reimbursement_pct": 0.65, "denial_rate": 0.056},
+    {"payer_id": "PAY004", "payer_name": "Medicare Part B", "payer_type": "Government", "plan_type": "FFS", "state": "Federal", "network_size": "National", "avg_reimbursement_pct": 0.60, "denial_rate": 0.053},
+    {"payer_id": "PAY005", "payer_name": "Medicaid Michigan", "payer_type": "Government", "plan_type": "Managed", "state": "MI", "network_size": "Medium", "avg_reimbursement_pct": 0.45, "denial_rate": 0.149},
+    {"payer_id": "PAY006", "payer_name": "United Healthcare", "payer_type": "Commercial", "plan_type": "PPO", "state": "National", "network_size": "Large", "avg_reimbursement_pct": 0.80, "denial_rate": 0.090},
+    {"payer_id": "PAY007", "payer_name": "Aetna", "payer_type": "Commercial", "plan_type": "EPO", "state": "National", "network_size": "Large", "avg_reimbursement_pct": 0.79, "denial_rate": 0.074},
+    {"payer_id": "PAY008", "payer_name": "Cigna", "payer_type": "Commercial", "plan_type": "PPO", "state": "National", "network_size": "Large", "avg_reimbursement_pct": 0.81, "denial_rate": 0.071},
+    {"payer_id": "PAY009", "payer_name": "Humana", "payer_type": "Commercial", "plan_type": "HMO", "state": "National", "network_size": "Medium", "avg_reimbursement_pct": 0.76, "denial_rate": 0.084},
+    {"payer_id": "PAY010", "payer_name": "Self-Pay", "payer_type": "Self-Pay", "plan_type": "None", "state": "N/A", "network_size": "N/A", "avg_reimbursement_pct": 1.00, "denial_rate": 0.118},
+    {"payer_id": "PAY011", "payer_name": "Tricare", "payer_type": "Government", "plan_type": "Managed", "state": "Federal", "network_size": "National", "avg_reimbursement_pct": 0.70, "denial_rate": 0.074},
+    {"payer_id": "PAY012", "payer_name": "Workers Compensation MI", "payer_type": "Workers Comp", "plan_type": "State", "state": "MI", "network_size": "State", "avg_reimbursement_pct": 0.85, "denial_rate": 0.105},
 ]
 
 MALE_FIRST_NAMES = ["James", "John", "Robert", "Michael", "William", "David", "Richard", "Joseph",
@@ -260,7 +279,7 @@ def generate_patients(n):
         ln = random.choice(LAST_NAMES)
         dob = fake.date_of_birth(minimum_age=18, maximum_age=90)
         city = random.choice(CITIES_MI)
-        zipcode = f"{random.randint(48000, 49999)}"
+        zipcode = random.choice(MI_ZIP_POOL)
         patients.append({
             "patient_id": pid,
             "first_name": fn,
@@ -362,6 +381,17 @@ def generate_encounters(n, patient_ids, provider_ids):
     icd_weights = [0.15, 0.12, 0.10, 0.08, 0.07, 0.06, 0.06, 0.05, 0.04, 0.04,
                    0.03, 0.03, 0.03, 0.03, 0.02, 0.02, 0.02, 0.02, 0.02, 0.01]
 
+    # Chronic conditions belong to the patient, not the visit. Drawing a
+    # diagnosis independently per encounter meant that across ~10 encounters
+    # each every patient eventually picked up a chronic code, pushing Chronic
+    # Rate to 99.95%. Instead, decide once per patient whether they carry a
+    # chronic condition; everyone else only ever presents with acute codes.
+    chronic_codes = {c["code"] for c in ICD_CODES if c.get("is_chronic")}
+    acute_pairs = [(c, w) for c, w in zip(icd_list, icd_weights) if c not in chronic_codes]
+    acute_list = [c for c, _ in acute_pairs]
+    acute_weights = [w for _, w in acute_pairs]
+    chronic_patients = {pid for pid in patient_ids if random.random() < 0.38}
+
     for i in range(n):
         eid = f"ENC{i+1:08d}"
         pid = random.choice(patient_ids)
@@ -381,7 +411,10 @@ def generate_encounters(n, patient_ids, provider_ids):
             los = 0
 
         discharge_date = admit_date + timedelta(days=los)
-        primary_icd = random.choices(icd_list, weights=icd_weights)[0]
+        if pid in chronic_patients:
+            primary_icd = random.choices(icd_list, weights=icd_weights)[0]
+        else:
+            primary_icd = random.choices(acute_list, weights=acute_weights)[0]
 
         if enc_type in ("Inpatient", "Observation"):
             base_charge = random.uniform(5000, 80000)
@@ -433,13 +466,29 @@ def generate_claims(encounters_df):
     for _, enc in encounters_df.iterrows():
         cid = enc["encounter_id"].replace("ENC", "CLM")
         claim_type = random.choice(CLAIM_TYPES)
-        payer = random.choice(payer_ids)
+        payer_info = random.choice(PAYERS)
+        payer = payer_info["payer_id"]
         cpt = random.choice(cpt_list)
         billed = enc["total_charges"]
         allowed = round(billed * random.uniform(0.5, 0.9), 2)
         paid = round(allowed * random.uniform(0.6, 0.95), 2)
-        status = random.choices(CLAIM_STATUSES, weights=[0.05, 0.05, 0.30, 0.08, 0.50, 0.02])[0]
-        denial = random.choice(DENIAL_REASONS) if status == "Denied" else None
+
+        # Denial propensity is driven by the payer, with a surcharge on
+        # high-dollar claims. Payer and status were previously independent
+        # draws, so every payer denied at the same rate.
+        denial_p = payer_info["denial_rate"]
+        if billed > 50000:
+            denial_p += 0.04
+        elif billed > 20000:
+            denial_p += 0.02
+
+        if random.random() < denial_p:
+            status = "Denied"
+            denial = random.choice(DENIAL_REASONS)
+        else:
+            status = random.choices(CLAIM_STATUSES_NOT_DENIED,
+                                    weights=[0.05, 0.05, 0.32, 0.56, 0.02])[0]
+            denial = None
 
         submit_date = datetime.strptime(enc["discharge_date"], "%Y-%m-%d") + timedelta(days=random.randint(1, 14))
         process_date = submit_date + timedelta(days=random.randint(7, 45))
@@ -665,9 +714,13 @@ STATES_CONFIG = {
 def generate_sdoh():
     sdoh_data = []
     for state, config in STATES_CONFIG.items():
-        zips = list(config["zips"])
-        sample_size = min(70, len(zips))
-        selected = random.sample(zips, sample_size)
+        if state == "MI":
+            # Must cover every ZIP assigned to a patient, otherwise the
+            # dim_patient -> dim_sdoh relationship drops those encounters.
+            selected = [int(z) for z in MI_ZIP_POOL]
+        else:
+            zips = list(config["zips"])
+            selected = random.sample(zips, min(70, len(zips)))
         for z in selected:
             locale = random.choices(
                 ["Urban", "Suburban", "Rural"],

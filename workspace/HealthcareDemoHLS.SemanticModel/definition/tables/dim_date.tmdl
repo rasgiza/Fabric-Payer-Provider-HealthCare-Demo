@@ -28,10 +28,10 @@ table dim_date
 		formatString: 0
 		lineageTag: c5f40f8a-cb3c-4f7e-9a18-f33d5a75ee10
 		sourceLineageTag: day_of_week
-		summarizeBy: sum
+		summarizeBy: none
 		sourceColumn: day_of_week
 
-		annotation SummarizationSetBy = Automatic
+		annotation SummarizationSetBy = User
 
 	column day_name
 		dataType: string
@@ -39,48 +39,49 @@ table dim_date
 		sourceLineageTag: day_name
 		summarizeBy: none
 		sourceColumn: day_name
+		sortByColumn: day_of_week
 
-		annotation SummarizationSetBy = Automatic
+		annotation SummarizationSetBy = User
 
 	column day_of_month
 		dataType: int64
 		formatString: 0
 		lineageTag: e10a9380-c49f-4a41-9143-6c48d0bea497
 		sourceLineageTag: day_of_month
-		summarizeBy: sum
+		summarizeBy: none
 		sourceColumn: day_of_month
 
-		annotation SummarizationSetBy = Automatic
+		annotation SummarizationSetBy = User
 
 	column day_of_year
 		dataType: int64
 		formatString: 0
 		lineageTag: 76d025ab-efee-4db7-9566-c62b588f55e9
 		sourceLineageTag: day_of_year
-		summarizeBy: sum
+		summarizeBy: none
 		sourceColumn: day_of_year
 
-		annotation SummarizationSetBy = Automatic
+		annotation SummarizationSetBy = User
 
 	column week_of_year
 		dataType: int64
 		formatString: 0
 		lineageTag: 4fa93e98-03db-4b1e-8c84-5a7c35960bc9
 		sourceLineageTag: week_of_year
-		summarizeBy: sum
+		summarizeBy: none
 		sourceColumn: week_of_year
 
-		annotation SummarizationSetBy = Automatic
+		annotation SummarizationSetBy = User
 
 	column month_number
 		dataType: int64
 		formatString: 0
 		lineageTag: bfece1fd-9f69-44bf-9f2a-5b964c5ac243
 		sourceLineageTag: month_number
-		summarizeBy: sum
+		summarizeBy: none
 		sourceColumn: month_number
 
-		annotation SummarizationSetBy = Automatic
+		annotation SummarizationSetBy = User
 
 	column month_name
 		dataType: string
@@ -88,28 +89,29 @@ table dim_date
 		sourceLineageTag: month_name
 		summarizeBy: none
 		sourceColumn: month_name
+		sortByColumn: month_number
 
-		annotation SummarizationSetBy = Automatic
+		annotation SummarizationSetBy = User
 
 	column quarter
 		dataType: int64
 		formatString: 0
 		lineageTag: 5f777778-03af-4c87-9518-a81f7f8ff705
 		sourceLineageTag: quarter
-		summarizeBy: sum
+		summarizeBy: none
 		sourceColumn: quarter
 
-		annotation SummarizationSetBy = Automatic
+		annotation SummarizationSetBy = User
 
 	column year
 		dataType: int64
 		formatString: 0
 		lineageTag: 68603dcc-9657-4797-80b2-89675ca258c6
 		sourceLineageTag: year
-		summarizeBy: sum
+		summarizeBy: none
 		sourceColumn: year
 
-		annotation SummarizationSetBy = Automatic
+		annotation SummarizationSetBy = User
 
 	column is_weekend
 		dataType: int64
@@ -136,7 +138,7 @@ table dim_date
 		formatString: 0
 		lineageTag: f355d275-bd09-4e08-85dc-a9dbf3f30352
 		sourceLineageTag: fiscal_year
-		summarizeBy: sum
+		summarizeBy: none
 		sourceColumn: fiscal_year
 
 		annotation SummarizationSetBy = Automatic

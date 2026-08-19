@@ -26,7 +26,7 @@ carries `///` table, column, and measure descriptions (DirectLake on `lh_gold_cu
 | **B. Lakehouse data-source instructions** (SQL schema, rules, values) | `.../datasource.json` | ✅ API / Git sync |
 | **C. Prep for AI — AI data schema** (field subset Copilot may use) — *Section 3* | Semantic model → *Prep data for AI → Simplify the data schema* | ⚠️ **Service UI only** |
 | **D. Prep for AI — AI instructions** (business context + rules) — *Section 4* | Semantic model → *Prep data for AI → Add AI instructions* | ⚠️ **Service UI only** |
-| **E. Prep for AI — Verified answers** (trigger phrases → approved visual) — *Section 5* | Built in **Power BI Desktop** (right-click visual → *Set up a verified answer*); surfaces in service *Prep data for AI → Verified answers* | ⚠️ **Desktop + service UI** |
+| **E. Prep for AI — Verified answers** (trigger phrases → approved visual) — *Section 5* | Right-click a report visual → *Set up a verified answer (preview)*. Works in the **Power BI service** directly on a published report, and in **Power BI Desktop**. Surfaces in *Prep data for AI → Verified answers* | ⚠️ **Service or Desktop UI** |
 | **F. Q&A linguistic schema** (synonyms — e.g. "bounce-backs"→readmissions, "compliance"→PDC) | `HealthcareDemoHLS.SemanticModel/definition/cultures/en-US.tmdl` | ✅ **Git sync** |
 
 **Why the split:** the three Prep for AI features (C, D, E) **cannot be set through the API
@@ -53,9 +53,11 @@ There are three features — do them in this order:
    hide keys, timestamps, and PII. Use the KEEP/EXCLUDE lists in **Section 3**.
 2. **Add AI instructions** (service UI) → paste the block in **Section 4** (business context,
    terminology, measure-first rules, join rules, benchmarks).
-3. **Verified answers** (built in **Power BI Desktop**) → for each entry in **Section 5**, build
-   the described visual, right-click it → **Set up a verified answer**, add the trigger phrases,
-   **Apply**, then publish. They then appear under Prep data for AI → Verified answers.
+3. **Verified answers** → for each entry in **Section 5**, build the described visual on a report
+   over this model, right-click the visual header → **Set up a verified answer (preview)**, add
+   the trigger phrases, **Apply**. This works directly in the **Power BI service** on a published
+   report (no Desktop round-trip needed) and also in Desktop. They then appear under Prep data
+   for AI → Verified answers.
 4. Re-test the agent and iterate — add an instruction or verified answer whenever you see a
    wrong answer. Start lean; don't do everything at once.
 
@@ -201,15 +203,16 @@ When a metric beats or misses its benchmark, say so and suggest a concrete next 
 
 ---
 
-## 5. Verified answers — *Verified answers* (⚠️ built in Power BI Desktop)
+## 5. Verified answers — *Verified answers*
 
 A **verified answer = trigger phrases + one approved report visual + optional filters.** It is
 **not** a query and **not** a text answer. You build the visual once; Copilot returns that exact
 human-approved visual whenever a user's prompt matches a trigger phrase.
 
 **How to create each one:**
-1. In **Power BI Desktop** (a report on this model), build the visual described under **Visual**.
-2. Right-click the visual header → **Set up a verified answer**.
+1. On a report over this model — in the **Power BI service** or in **Power BI Desktop** — build
+   the visual described under **Visual**.
+2. Right-click the visual header → **Set up a verified answer (preview)**.
 3. Add the **Trigger phrases** listed (aim for 5–7; users phrase things differently and Copilot
    also matches semantically — don't swap the measure or fields, just reword).
 4. Add the **Available-to-users filter** so one verified answer covers many slices (the filter

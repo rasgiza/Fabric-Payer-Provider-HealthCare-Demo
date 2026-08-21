@@ -1271,6 +1271,28 @@ df_clm = df_clm.withColumn(
     .otherwise(lit(None)),
 )
 
+# Canonicalise the label. fact_claim has more than one writer --
+# NB_Generate_Sample_Data, NB_Generate_Incremental_Data, and the denial ML
+# output each supply denial_reason independently, and each keeps its own copy
+# of the reason list. Those copies have drifted before: the incremental
+# generator wrote "Prior Auth Required" and "Invalid Code" while the base
+# generator wrote "Prior Authorization Required" and "Coding Error", which
+# surfaced as nine denial categories with two near-duplicate pairs. Rather
+# than trusting every writer to stay in step, gold is the single point where
+# the vocabulary is fixed. Unknown values pass through untouched so a genuinely
+# new reason stays visible instead of being silently swallowed.
+df_clm = df_clm.withColumn(
+    "_resolved_denial_reason",
+    when(col("_resolved_denial_reason").isin("Prior Auth Required", "Prior Authorization"),
+         lit("Prior Authorization Required"))
+    .when(col("_resolved_denial_reason").isin("Invalid Code", "Coding"), lit("Coding Error"))
+    .when(col("_resolved_denial_reason") == "Not Medically Nec", lit("Not Medically Necessary"))
+    .when(col("_resolved_denial_reason") == "Duplicate", lit("Duplicate Claim"))
+    .when(col("_resolved_denial_reason").isin("Out-of-Network", "OON"), lit("Out of Network"))
+    .when(col("_resolved_denial_reason") == "Missing Docs", lit("Missing Documentation"))
+    .otherwise(col("_resolved_denial_reason")),
+)
+
 df_fact_claim = df_clm.select(
     col("c.claim_id"),
     (year("c.claim_date") * 10000 + month("c.claim_date") * 100 + dayofmonth("c.claim_date")).alias("claim_date_key"),
@@ -1300,14 +1322,14 @@ df_fact_claim = df_clm.select(
     .otherwise("Low").alias("denial_risk_category"),
     col("_resolved_denial_reason").alias("primary_denial_reason"),
     # Derived from the resolved reason, so the action always matches the reason.
-    # The legacy labels are mapped too, in case older bronze rows are still
-    # present from before NB_Generate_Incremental_Data was corrected.
+    # Safe to match on canonical labels only -- _resolved_denial_reason was
+    # normalised above.
     when(col("_resolved_denial_reason").isNull(), lit(None))
-    .when(col("_resolved_denial_reason").isin("Prior Authorization Required", "Prior Auth Required"),
+    .when(col("_resolved_denial_reason") == "Prior Authorization Required",
           lit("Obtain prior authorization and resubmit"))
     .when(col("_resolved_denial_reason") == "Not Medically Necessary",
           lit("Submit additional clinical documentation"))
-    .when(col("_resolved_denial_reason").isin("Coding Error", "Invalid Code"),
+    .when(col("_resolved_denial_reason") == "Coding Error",
           lit("Correct coding and resubmit"))
     .when(col("_resolved_denial_reason") == "Coverage Expired",
           lit("Verify eligibility and resubmit"))

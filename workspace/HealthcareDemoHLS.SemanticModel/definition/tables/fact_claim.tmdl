@@ -9,15 +9,11 @@ table fact_claim
 
 		changedProperty = Name
 
-	/// Share of ADJUDICATED claims that were denied: denied claims / claims the payer has decided (Paid, Approved, Denied, Appealed). Claims still in Submitted or Pending are excluded from the denominator because they cannot yet be denied -- including them understates the rate and makes it drift as the pending backlog changes. Returns a ratio 0-1 (display as a percentage).
+	/// Denied claims divided by ALL claims in context, matching the standard revenue-cycle definition of denial rate (denials over total claims submitted). The denominator includes claims still in Submitted or Pending that the payer has not yet decided, so a large un-adjudicated backlog pulls the rate down. To measure denials per decision instead, filter claim_status to Paid, Approved, Denied, Appealed. Returns a ratio 0-1 (display as a percentage).
 	measure 'Denial Rate' =
 			
 			VAR _num = CALCULATE(COUNTROWS(fact_claim), fact_claim[denial_flag] = 1)
-			VAR _den =
-				CALCULATE(
-					COUNTROWS(fact_claim),
-					KEEPFILTERS(fact_claim[claim_status] IN {"Paid", "Approved", "Denied", "Appealed"})
-				)
+			VAR _den = COUNTROWS(fact_claim)
 			RETURN
 			DIVIDE(_num, _den)
 		formatString: 0.0%
@@ -37,18 +33,8 @@ table fact_claim
 
 		changedProperty = Name
 
-	/// Total paid divided by total billed, across ADJUDICATED claims only (Paid, Approved, Denied, Appealed). Claims still in Submitted or Pending have a billed amount but no payment decision yet, so counting them would understate collections and make the measure move whenever the backlog moves. Returns a ratio 0-1 (display as a percentage).
-	measure 'Collection Rate' =
-			
-			VAR _adjudicated =
-				CALCULATETABLE(
-					fact_claim,
-					KEEPFILTERS(fact_claim[claim_status] IN {"Paid", "Approved", "Denied", "Appealed"})
-				)
-			VAR _num = SUMX(_adjudicated, fact_claim[paid_amount])
-			VAR _den = SUMX(_adjudicated, fact_claim[billed_amount])
-			RETURN
-			DIVIDE(_num, _den)
+	/// Total paid divided by total billed across ALL claims in context -- the gross collection rate. Claims still in Submitted or Pending carry a billed amount but no payment yet, so they sit in the denominator with a zero numerator and drag the rate down. To measure collections per decision instead, filter claim_status to Paid, Approved, Denied, Appealed. Returns a ratio 0-1 (display as a percentage).
+	measure 'Collection Rate' = DIVIDE(SUM(fact_claim[paid_amount]), SUM(fact_claim[billed_amount]))
 		formatString: 0.0%
 		lineageTag: e96894ae-5311-49ac-bdd4-234bd8c73eb3
 
@@ -221,7 +207,7 @@ table fact_claim
 
 		annotation PBI_FormatHint = {"isGeneralNumber":true}
 
-	/// 1 = claim was denied, 0 = not denied. Only adjudicated claims can carry a 1. To compute a denial rate use the [Denial Rate] measure -- it divides by adjudicated claims (Paid, Approved, Denied, Appealed), NOT by all claims. Dividing by all claims understates the rate because Submitted and Pending claims have not been decided yet.
+	/// 1 = claim was denied, 0 = not denied. Only adjudicated claims can carry a 1; Submitted and Pending claims are always 0 because the payer has not decided them yet. Prefer the [Denial Rate] measure over computing this by hand -- it is denied claims / all claims, the standard revenue-cycle definition.
 	column denial_flag
 		dataType: int64
 		formatString: 0

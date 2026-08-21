@@ -1248,6 +1248,29 @@ df_clm = df_clm.withColumn(
     (abs(hash(col("c.claim_id"))) % 7).cast("int"),
 )
 
+# Resolve the denial reason ONCE, then derive recommended_action from the
+# resolved value. Previously primary_denial_reason was taken from the source
+# row (coalesce below) while recommended_action was built from
+# _denial_reason_idx -- a hash of claim_id. The two were computed
+# independently, so six times out of seven they disagreed: a claim denied for
+# "Prior Authorization Required" carried "Verify not a duplicate claim" as its
+# next step. Anyone who works a denial queue spots that instantly.
+df_clm = df_clm.withColumn(
+    "_resolved_denial_reason",
+    when(col("_is_denied"),
+         coalesce(col("c.denial_reason"),
+                  col("ml.primary_denial_reason") if has_denial_ml else lit(None),
+                  # Deterministic reason assignment for synthetic denials
+                  when(col("_denial_reason_idx") == 0, lit("Prior Authorization Required"))
+                  .when(col("_denial_reason_idx") == 1, lit("Not Medically Necessary"))
+                  .when(col("_denial_reason_idx") == 2, lit("Coding Error"))
+                  .when(col("_denial_reason_idx") == 3, lit("Coverage Expired"))
+                  .when(col("_denial_reason_idx") == 4, lit("Duplicate Claim"))
+                  .when(col("_denial_reason_idx") == 5, lit("Out of Network"))
+                  .otherwise(lit("Missing Documentation"))))
+    .otherwise(lit(None)),
+)
+
 df_fact_claim = df_clm.select(
     col("c.claim_id"),
     (year("c.claim_date") * 10000 + month("c.claim_date") * 100 + dayofmonth("c.claim_date")).alias("claim_date_key"),
@@ -1275,27 +1298,27 @@ df_fact_claim = df_clm.select(
     when(col("_denial_risk_score") >= 0.6, "High")
     .when(col("_denial_risk_score") >= 0.3, "Medium")
     .otherwise("Low").alias("denial_risk_category"),
-    when(col("_is_denied"),
-         coalesce(col("c.denial_reason"),
-                  col("ml.primary_denial_reason") if has_denial_ml else lit(None),
-                  # Deterministic reason assignment for synthetic denials
-                  when(col("_denial_reason_idx") == 0, lit("Prior Authorization Required"))
-                  .when(col("_denial_reason_idx") == 1, lit("Not Medically Necessary"))
-                  .when(col("_denial_reason_idx") == 2, lit("Coding Error"))
-                  .when(col("_denial_reason_idx") == 3, lit("Coverage Expired"))
-                  .when(col("_denial_reason_idx") == 4, lit("Duplicate Claim"))
-                  .when(col("_denial_reason_idx") == 5, lit("Out of Network"))
-                  .otherwise(lit("Missing Documentation"))))
-    .otherwise(lit(None)).alias("primary_denial_reason"),
-    when(col("_is_denied"),
-        when(col("_denial_reason_idx") == 0, lit("Obtain prior authorization and resubmit"))
-        .when(col("_denial_reason_idx") == 1, lit("Submit additional clinical documentation"))
-        .when(col("_denial_reason_idx") == 2, lit("Correct coding and resubmit"))
-        .when(col("_denial_reason_idx") == 3, lit("Verify eligibility and resubmit"))
-        .when(col("_denial_reason_idx") == 4, lit("Verify not a duplicate claim"))
-        .when(col("_denial_reason_idx") == 5, lit("Verify network status or obtain authorization"))
-        .otherwise(coalesce(col("ml.recommended_action") if has_denial_ml else lit(None), lit("Gather missing documentation and resubmit")))
-    ).otherwise(lit(None)).alias("recommended_action"),
+    col("_resolved_denial_reason").alias("primary_denial_reason"),
+    # Derived from the resolved reason, so the action always matches the reason.
+    # The legacy labels are mapped too, in case older bronze rows are still
+    # present from before NB_Generate_Incremental_Data was corrected.
+    when(col("_resolved_denial_reason").isNull(), lit(None))
+    .when(col("_resolved_denial_reason").isin("Prior Authorization Required", "Prior Auth Required"),
+          lit("Obtain prior authorization and resubmit"))
+    .when(col("_resolved_denial_reason") == "Not Medically Necessary",
+          lit("Submit additional clinical documentation"))
+    .when(col("_resolved_denial_reason").isin("Coding Error", "Invalid Code"),
+          lit("Correct coding and resubmit"))
+    .when(col("_resolved_denial_reason") == "Coverage Expired",
+          lit("Verify eligibility and resubmit"))
+    .when(col("_resolved_denial_reason") == "Duplicate Claim",
+          lit("Verify not a duplicate claim"))
+    .when(col("_resolved_denial_reason") == "Out of Network",
+          lit("Verify network status or obtain authorization"))
+    .when(col("_resolved_denial_reason") == "Missing Documentation",
+          lit("Gather missing documentation and resubmit"))
+    .otherwise(coalesce(col("ml.recommended_action") if has_denial_ml else lit(None),
+                        lit("Review denial and resubmit"))).alias("recommended_action"),
     current_timestamp().alias("_load_timestamp")
 ).dropDuplicates(["claim_id"])
 

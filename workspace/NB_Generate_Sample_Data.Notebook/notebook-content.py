@@ -108,6 +108,15 @@ DENIAL_REASONS = ["Prior Authorization Required", "Not Medically Necessary",
                   "Coding Error", "Coverage Expired", "Duplicate Claim",
                   "Out of Network", "Missing Documentation"]
 
+# Denial reasons were previously drawn with random.choice(), i.e. uniformly.
+# That produced seven categories all sitting between 13% and 15% -- a flat
+# distribution with no signal. Asking "why are denials occurring?" returned a
+# confident conclusion drawn from pure noise, which is exactly the failure mode
+# the demo is supposed to warn against. These weights follow the real-world
+# shape: documentation and prior-auth dominate, duplicates are a thin tail.
+# Order matches DENIAL_REASONS above.
+DENIAL_REASON_WEIGHTS = [21, 13, 18, 11, 5, 8, 24]
+
 # Shared ZIP pool. dim_patient.zip_code joins to dim_sdoh.zip_code, so patients
 # must be assigned ZIPs that actually exist in the SDOH reference table.
 # Previously patients drew from all of 48000-49999 while SDOH only held a
@@ -484,7 +493,8 @@ def generate_claims(encounters_df):
 
         if random.random() < denial_p:
             status = "Denied"
-            denial = random.choice(DENIAL_REASONS)
+            denial = random.choices(DENIAL_REASONS,
+                                    weights=DENIAL_REASON_WEIGHTS)[0]
         else:
             status = random.choices(CLAIM_STATUSES_NOT_DENIED,
                                     weights=[0.05, 0.05, 0.32, 0.56, 0.02])[0]
@@ -492,6 +502,43 @@ def generate_claims(encounters_df):
 
         submit_date = datetime.strptime(enc["discharge_date"], "%Y-%m-%d") + timedelta(days=random.randint(1, 14))
         process_date = submit_date + timedelta(days=random.randint(7, 45))
+
+        # --- Claim lifecycle consistency -------------------------------------
+        # Two defects fixed here, both of which produced answers no revenue
+        # cycle analyst would accept.
+        #
+        # 1. DATA_END_DATE clamped encounters but never clamped claims, so
+        #    claims trailed up to 59 days past the last encounter as a
+        #    near-empty tail. An agent asked a question with no explicit time
+        #    window picks "the latest month", lands in that tail, and answers
+        #    from one or two rows -- e.g. "Self-Pay denial rate is 100%, 1 of
+        #    1 claim". A claim submitted after the data ends simply hasn't
+        #    happened yet, so it must not exist.
+        #
+        # 2. claim_status was decorative: every claim carried a process_date
+        #    and a paid_amount regardless of status, so a "Submitted" claim
+        #    looked fully adjudicated and an un-adjudicated claim reported a
+        #    patient responsibility nobody had determined yet. State, dates,
+        #    and money now agree.
+        if submit_date > DATA_END_DATE:
+            continue
+
+        if process_date > DATA_END_DATE:
+            # Submitted, but the payer hasn't come back yet as of the data
+            # end date. Preserve the Denied/not-denied draw for the appeal
+            # tables downstream, but the outcome isn't known yet.
+            status = "Pending"
+            denial = None
+
+        if status in ("Submitted", "Pending"):
+            process_date = None          # not adjudicated -> no decision date
+            paid = 0.0                   # nothing has been paid
+            patient_resp = 0.0           # nobody has determined this yet
+        elif status == "Denied":
+            paid = 0.0
+            patient_resp = billed        # denied -> falls to the patient
+        else:                            # Approved / Paid / Appealed
+            patient_resp = round(billed - paid, 2)
 
         claims.append({
             "claim_id": cid,
@@ -504,11 +551,11 @@ def generate_claims(encounters_df):
             "primary_diagnosis_code": enc["primary_diagnosis_code"],
             "service_date": enc["admit_date"],
             "submit_date": submit_date.strftime("%Y-%m-%d"),
-            "process_date": process_date.strftime("%Y-%m-%d"),
+            "process_date": process_date.strftime("%Y-%m-%d") if process_date else None,
             "billed_amount": billed,
             "allowed_amount": allowed,
-            "paid_amount": paid if status != "Denied" else 0,
-            "patient_responsibility": round(billed - paid if status != "Denied" else billed, 2),
+            "paid_amount": paid,
+            "patient_responsibility": patient_resp,
             "claim_status": status,
             "denial_reason": denial,
         })

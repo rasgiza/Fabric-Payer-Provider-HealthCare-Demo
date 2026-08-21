@@ -72,9 +72,20 @@ CLAIM_TYPES = ["Professional", "Institutional", "Pharmacy"]
 CLAIM_STATUSES_APPROVED = ["Approved", "Paid"]
 CLAIM_STATUSES_DENIED = ["Denied", "Appealed"]
 DENIAL_REASONS = [
-    "Prior Auth Required", "Not Medically Necessary", "Duplicate Claim",
-    "Invalid Code", "Coverage Expired", "Out of Network", "Missing Documentation"
+    "Prior Authorization Required", "Not Medically Necessary", "Duplicate Claim",
+    "Coding Error", "Coverage Expired", "Out of Network", "Missing Documentation"
 ]
+
+# These labels MUST stay byte-identical to NB_Generate_Sample_Data and to the
+# fallback CASE in 06b_Gold_Transform_Load_v2. They had drifted to
+# "Prior Auth Required" and "Invalid Code", which meant one incremental run
+# split the gold denial-reason breakdown into nine categories with two
+# near-duplicate pairs sitting next to each other.
+# Weights mirror the base generator (reordered to match the list above):
+# documentation and prior-auth dominate, duplicates are a thin tail. Drawing
+# uniformly with random.choice() put all seven reasons within ~1.5 points of
+# each other, which reads as noise rather than a finding.
+DENIAL_REASON_WEIGHTS = [21, 13, 5, 18, 11, 8, 24]
 PAYERS = [
     {"payer_id": "PAY001", "name": "Blue Cross Blue Shield of Michigan", "type": "Commercial", "contract_rate": 0.85},
     {"payer_id": "PAY002", "name": "Aetna", "type": "Commercial", "contract_rate": 0.80},
@@ -299,7 +310,8 @@ def generate_claims_incr(num, encounters_df, next_id):
         is_denied = random.choices([0, 1], weights=[0.92, 0.08])[0]
         if is_denied:
             status = random.choice(CLAIM_STATUSES_DENIED)
-            denial = random.choice(DENIAL_REASONS)
+            denial = random.choices(DENIAL_REASONS,
+                                    weights=DENIAL_REASON_WEIGHTS)[0]
             paid = 0
         else:
             status = random.choice(CLAIM_STATUSES_APPROVED)
@@ -308,6 +320,29 @@ def generate_claims_incr(num, encounters_df, next_id):
 
         service_date = datetime.strptime(enc_row["admit_date"], "%Y-%m-%d")
         submit_date = service_date + timedelta(days=random.randint(1, 5))
+        process_date = submit_date + timedelta(days=random.randint(14, 45))
+
+        # Lifecycle consistency -- mirrors NB_Generate_Sample_Data.
+        # This function generates claims for encounters that just happened, so
+        # submit_date + 14-45 days always landed in the FUTURE. Every run
+        # therefore appended a thin tail of future-dated claims, and any agent
+        # asked a question without an explicit time window would pick "the
+        # latest month" and answer from a handful of rows. A claim the payer
+        # hasn't decided yet is Pending: no decision date, no payment, and no
+        # patient responsibility determined.
+        _now = datetime.now()
+        if process_date > _now:
+            status = "Pending"
+            denial = None
+            paid = 0.0
+            process_date = None
+
+        if status in ("Submitted", "Pending"):
+            patient_resp = 0.0
+        elif denial is not None:
+            patient_resp = billed          # denied -> falls to the patient
+        else:
+            patient_resp = round(billed - paid, 2)
 
         claims.append({
             "claim_id": clm_id,
@@ -320,11 +355,11 @@ def generate_claims_incr(num, encounters_df, next_id):
             "primary_diagnosis_code": enc_row["primary_diagnosis_code"],
             "service_date": service_date.strftime("%Y-%m-%d"),
             "submit_date": submit_date.strftime("%Y-%m-%d"),
-            "process_date": (submit_date + timedelta(days=random.randint(14, 45))).strftime("%Y-%m-%d"),
+            "process_date": process_date.strftime("%Y-%m-%d") if process_date else None,
             "billed_amount": billed,
             "allowed_amount": allowed,
             "paid_amount": paid,
-            "patient_responsibility": round(billed - paid if paid > 0 else billed * 0.2, 2),
+            "patient_responsibility": patient_resp,
             "claim_status": status,
             "denial_reason": denial,
         })

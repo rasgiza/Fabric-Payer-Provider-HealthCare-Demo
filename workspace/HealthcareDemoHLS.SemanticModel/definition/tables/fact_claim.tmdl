@@ -9,11 +9,15 @@ table fact_claim
 
 		changedProperty = Name
 
-	/// Share of claims that were denied: denied claims / total claims. Returns a ratio 0-1 (display as a percentage).
+	/// Share of ADJUDICATED claims that were denied: denied claims / claims the payer has decided (Paid, Approved, Denied, Appealed). Claims still in Submitted or Pending are excluded from the denominator because they cannot yet be denied -- including them understates the rate and makes it drift as the pending backlog changes. Returns a ratio 0-1 (display as a percentage).
 	measure 'Denial Rate' =
 			
 			VAR _num = CALCULATE(COUNTROWS(fact_claim), fact_claim[denial_flag] = 1)
-			VAR _den = COUNTROWS(fact_claim)
+			VAR _den =
+				CALCULATE(
+					COUNTROWS(fact_claim),
+					KEEPFILTERS(fact_claim[claim_status] IN {"Paid", "Approved", "Denied", "Appealed"})
+				)
 			RETURN
 			DIVIDE(_num, _den)
 		formatString: 0.0%
@@ -33,11 +37,16 @@ table fact_claim
 
 		changedProperty = Name
 
-	/// Total paid divided by total billed. Returns a ratio 0-1 (display as a percentage).
+	/// Total paid divided by total billed, across ADJUDICATED claims only (Paid, Approved, Denied, Appealed). Claims still in Submitted or Pending have a billed amount but no payment decision yet, so counting them would understate collections and make the measure move whenever the backlog moves. Returns a ratio 0-1 (display as a percentage).
 	measure 'Collection Rate' =
 			
-			VAR _num = SUM(fact_claim[paid_amount])
-			VAR _den = SUM(fact_claim[billed_amount])
+			VAR _adjudicated =
+				CALCULATETABLE(
+					fact_claim,
+					KEEPFILTERS(fact_claim[claim_status] IN {"Paid", "Approved", "Denied", "Appealed"})
+				)
+			VAR _num = SUMX(_adjudicated, fact_claim[paid_amount])
+			VAR _den = SUMX(_adjudicated, fact_claim[billed_amount])
 			RETURN
 			DIVIDE(_num, _den)
 		formatString: 0.0%
@@ -166,7 +175,7 @@ table fact_claim
 
 		annotation SummarizationSetBy = Automatic
 
-	/// Lifecycle status of the claim (e.g. Paid, Denied, Pending, Appealed).
+	/// Lifecycle status of the claim. One of: Submitted, Pending, Approved, Paid, Denied, Appealed. ADJUDICATED (the payer has made a decision) = Paid, Approved, Denied, Appealed -- these have a process date, a paid amount, and a determined patient responsibility. OPEN / not yet adjudicated = Submitted, Pending -- these have no process date, no payment, and no patient responsibility yet. Rate measures should use the adjudicated set as the denominator. "Claims needing attention" or "outstanding claims" means Denied claims plus claims still in Submitted or Pending.
 	column claim_status
 		dataType: string
 		lineageTag: 3e6ddf66-16fe-4627-8182-e9f11a0400f6
@@ -212,7 +221,7 @@ table fact_claim
 
 		annotation PBI_FormatHint = {"isGeneralNumber":true}
 
-	/// 1 = claim was denied, 0 = not denied. Denial rate = SUM(denial_flag) / COUNT(claims).
+	/// 1 = claim was denied, 0 = not denied. Only adjudicated claims can carry a 1. To compute a denial rate use the [Denial Rate] measure -- it divides by adjudicated claims (Paid, Approved, Denied, Appealed), NOT by all claims. Dividing by all claims understates the rate because Submitted and Pending claims have not been decided yet.
 	column denial_flag
 		dataType: int64
 		formatString: 0

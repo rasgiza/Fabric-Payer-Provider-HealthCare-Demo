@@ -2,54 +2,9 @@
   "$schema": "https://developer.microsoft.com/json-schemas/fabric/item/dataAgent/definition/fewShots/1.0.0/schema.json",
   "fewShots": [
     {
-      "id": "82dbb2a1-e86f-4492-b092-8021f4c00712",
-      "question": "How many encounters are in each readmission risk category?",
-      "query": "SELECT readmission_risk_category, COUNT(*) as encounter_count FROM fact_encounter GROUP BY readmission_risk_category ORDER BY encounter_count DESC"
-    },
-    {
-      "id": "f857bfb3-aa82-4115-84d3-8a25aa0209b3",
-      "question": "What is the distribution of readmission risk?",
-      "query": "SELECT readmission_risk_category, COUNT(*) as encounter_count, CAST(COUNT(*) AS FLOAT) / (SELECT COUNT(*) FROM fact_encounter) * 100 as pct FROM fact_encounter GROUP BY readmission_risk_category ORDER BY encounter_count DESC"
-    },
-    {
-      "id": "ed41187c-11da-47df-affa-41d0db01bbca",
-      "question": "Show me the top 10 patients with highest readmission risk scores",
-      "query": "SELECT TOP 10 dp.first_name, dp.last_name, dp.age, fe.encounter_id, fe.encounter_type, fe.readmission_risk_score, fe.readmission_risk_category, fe.length_of_stay, fe.discharge_disposition FROM fact_encounter fe JOIN dim_patient dp ON fe.patient_key = dp.patient_key AND dp.is_current = 1 ORDER BY fe.readmission_risk_score DESC"
-    },
-    {
       "id": "73a71cae-7a6c-4a9f-9839-325b075dccf0",
       "question": "List patients with high readmission risk scores above 0.7",
       "query": "SELECT dp.first_name, dp.last_name, dp.age, dp.age_group, fe.encounter_id, fe.encounter_type, fe.discharge_disposition, fe.readmission_risk_score, fe.readmission_risk_category, fe.length_of_stay FROM fact_encounter fe JOIN dim_patient dp ON fe.patient_key = dp.patient_key AND dp.is_current = 1 WHERE fe.readmission_risk_score > 0.7 ORDER BY fe.readmission_risk_score DESC"
-    },
-    {
-      "id": "66588247-177c-4b4a-9bce-22b34fd1f6cf",
-      "question": "List patients with high readmission risk",
-      "query": "SELECT dp.first_name, dp.last_name, dp.age, dp.age_group, fe.encounter_id, fe.encounter_type, fe.discharge_disposition, fe.readmission_risk_score, fe.readmission_risk_category, fe.length_of_stay FROM fact_encounter fe JOIN dim_patient dp ON fe.patient_key = dp.patient_key AND dp.is_current = 1 WHERE fe.readmission_risk_category = 'High' ORDER BY fe.readmission_risk_score DESC"
-    },
-    {
-      "id": "24a677d4-2a3a-4b0f-b64f-5eda69169a9c",
-      "question": "What is the average readmission risk score by encounter type?",
-      "query": "SELECT encounter_type, COUNT(*) as total_encounters, AVG(readmission_risk_score) as avg_risk_score, SUM(CASE WHEN readmission_risk_category = 'High' THEN 1 ELSE 0 END) as high_risk_count, SUM(readmission_flag) as actual_readmissions FROM fact_encounter GROUP BY encounter_type ORDER BY avg_risk_score DESC"
-    },
-    {
-      "id": "211679dd-9e57-4a02-9018-4fc6fe024479",
-      "question": "What is our current readmission rate?",
-      "query": "SELECT SUM(total_encounters) AS eligible_discharges, SUM(actual_readmissions) AS readmissions, CAST(SUM(actual_readmissions) AS FLOAT) / NULLIF(SUM(total_encounters), 0) * 100 AS readmission_rate_pct FROM agg_readmission_by_date"
-    },
-    {
-      "id": "d39d1e52-6ff6-464f-9430-d137868c070c",
-      "question": "Show me readmission trends by month",
-      "query": "SELECT dd.month_name, dd.year, dd.month_number, SUM(ar.total_encounters) as total_encounters, SUM(ar.actual_readmissions) as readmissions, CAST(SUM(ar.actual_readmissions) AS FLOAT) / NULLIF(SUM(ar.total_encounters), 0) * 100 as readmission_rate_pct FROM agg_readmission_by_date ar JOIN dim_date dd ON ar.encounter_date_key = dd.date_key GROUP BY dd.month_name, dd.year, dd.month_number ORDER BY dd.year, dd.month_number"
-    },
-    {
-      "id": "cc18ed0a-ec91-401e-9c73-0ee676237423",
-      "question": "Which encounter types have the highest readmission rates?",
-      "query": "SELECT encounter_type, SUM(total_encounters) as total_encounters, SUM(actual_readmissions) as readmissions, CAST(SUM(actual_readmissions) AS FLOAT) / NULLIF(SUM(total_encounters), 0) * 100 as readmission_rate_pct, AVG(avg_risk_score) as avg_risk_score FROM agg_readmission_by_date GROUP BY encounter_type ORDER BY readmission_rate_pct DESC"
-    },
-    {
-      "id": "190cbf4b-e6de-454d-be76-6a8fc185b055",
-      "question": "What is our overall denial rate?",
-      "query": "SELECT COUNT(*) as total_claims, COUNT(CASE WHEN denial_flag = 1 THEN 1 END) as total_denials, CAST(COUNT(CASE WHEN denial_flag = 1 THEN 1 END) AS FLOAT) / NULLIF(COUNT(*), 0) * 100 as denial_rate_pct, SUM(CASE WHEN denial_flag = 1 THEN billed_amount ELSE 0 END) as denied_dollars, SUM(billed_amount) as total_billed FROM fact_claim"
     },
     {
       "id": "4376a389-2719-4afa-aaa5-5f2386da6a99",
@@ -62,44 +17,14 @@
       "query": "SELECT fc.claim_id, dp.first_name, dp.last_name, py.payer_name, fc.billed_amount, fc.denial_risk_score, fc.recommended_action FROM fact_claim fc JOIN dim_patient dp ON fc.patient_key = dp.patient_key AND dp.is_current = 1 JOIN dim_payer py ON fc.payer_key = py.payer_key WHERE fc.denial_risk_category = 'High' AND fc.claim_status = 'Pending' ORDER BY fc.denial_risk_score DESC"
     },
     {
-      "id": "607669a7-e39a-4456-bff4-80f32949f6d9",
-      "question": "Show me denial rates by payer",
-      "query": "SELECT py.payer_name, py.payer_type, COUNT(*) as total_claims, COUNT(CASE WHEN fc.denial_flag = 1 THEN 1 END) as denied_claims, CAST(COUNT(CASE WHEN fc.denial_flag = 1 THEN 1 END) AS FLOAT) / NULLIF(COUNT(*), 0) * 100 as denial_rate_pct, SUM(CASE WHEN fc.denial_flag = 1 THEN fc.billed_amount ELSE 0 END) as denied_dollars FROM fact_claim fc JOIN dim_payer py ON fc.payer_key = py.payer_key GROUP BY py.payer_name, py.payer_type ORDER BY denial_rate_pct DESC"
-    },
-    {
-      "id": "c6c87b9d-a42c-4c0b-8025-7627a5314509",
-      "question": "What are the top denial reasons and their financial impact?",
-      "query": "SELECT primary_denial_reason, COUNT(*) as denial_count, SUM(billed_amount) as total_billed_amount, AVG(billed_amount) as avg_claim_amount FROM fact_claim WHERE denial_flag = 1 GROUP BY primary_denial_reason ORDER BY denial_count DESC"
-    },
-    {
-      "id": "c854c77f-d490-4052-91e6-c7facf849da3",
-      "question": "Which encounters are linked to denied claims?",
-      "query": "SELECT TOP 20 fc.claim_id, fe.encounter_id, fe.encounter_type, fe.discharge_disposition, fe.length_of_stay, dp.first_name, dp.last_name, fc.billed_amount, fc.claim_status, fc.primary_denial_reason FROM fact_claim fc JOIN fact_encounter fe ON fc.encounter_key = fe.encounter_key JOIN dim_patient dp ON fc.patient_key = dp.patient_key AND dp.is_current = 1 WHERE fc.denial_flag = 1 ORDER BY fc.billed_amount DESC"
-    },
-    {
       "id": "dd71fcb8-3685-4ffc-94cf-ee329942ab6c",
       "question": "Show me denied claims with their primary diagnosis",
       "query": "SELECT TOP 20 fc.claim_id, dp.first_name, dp.last_name, dd_diag.icd_code, dd_diag.icd_description, fc.billed_amount, fc.primary_denial_reason, fe.encounter_type, fe.length_of_stay FROM fact_claim fc JOIN fact_encounter fe ON fc.encounter_key = fe.encounter_key JOIN fact_diagnosis fd ON fe.encounter_key = fd.encounter_key AND fd.diagnosis_type = 'principal' JOIN dim_diagnosis dd_diag ON fd.diagnosis_key = dd_diag.diagnosis_key JOIN dim_patient dp ON fc.patient_key = dp.patient_key AND dp.is_current = 1 WHERE fc.denial_flag = 1 ORDER BY fc.billed_amount DESC"
     },
     {
-      "id": "92e0f261-06e9-40a0-a1cf-1e6705c16163",
-      "question": "How many claims are in each denial risk category?",
-      "query": "SELECT denial_risk_category, COUNT(*) as claim_count, SUM(billed_amount) as total_billed, AVG(denial_risk_score) as avg_risk_score FROM fact_claim GROUP BY denial_risk_category ORDER BY claim_count DESC"
-    },
-    {
-      "id": "30c5433e-2944-4b50-8aaa-13ca8a442c37",
-      "question": "Which providers have the most denied claims? Show me names, counts, and denial rates",
-      "query": "SELECT dpr.display_name, dpr.specialty, COUNT(*) as total_claims, SUM(CASE WHEN fc.denial_flag = 1 THEN 1 ELSE 0 END) as denial_count, CAST(SUM(CASE WHEN fc.denial_flag = 1 THEN 1 ELSE 0 END) AS FLOAT) / NULLIF(COUNT(*), 0) * 100 as denial_rate_pct, SUM(CASE WHEN fc.denial_flag = 1 THEN fc.billed_amount ELSE 0 END) as denied_amount FROM fact_claim fc JOIN dim_provider dpr ON fc.provider_key = dpr.provider_key AND dpr.is_current = 1 GROUP BY dpr.display_name, dpr.specialty ORDER BY denial_count DESC"
-    },
-    {
       "id": "ca06a520-b67e-4d52-b2de-6b0efa57673c",
       "question": "Which providers are driving a specific denial reason?",
       "query": "SELECT dpr.display_name, dpr.specialty, fc.primary_denial_reason, COUNT(*) as denied_claims, SUM(fc.billed_amount) as denied_dollars FROM fact_claim fc JOIN dim_provider dpr ON fc.provider_key = dpr.provider_key AND dpr.is_current = 1 WHERE fc.denial_flag = 1 GROUP BY dpr.display_name, dpr.specialty, fc.primary_denial_reason ORDER BY denied_claims DESC"
-    },
-    {
-      "id": "38c435b7-b7c2-4db6-95fc-13a2e0f5a253",
-      "question": "Give me patient names both male and female with their care manager",
-      "query": "SELECT CONCAT(dp.first_name, ' ', dp.last_name) AS patient_name, dp.gender, dpr.display_name AS care_manager, dpr.specialty FROM dim_patient dp JOIN fact_encounter fe ON dp.patient_key = fe.patient_key JOIN dim_provider dpr ON fe.provider_key = dpr.provider_key AND dpr.is_current = 1 WHERE dp.is_current = 1 ORDER BY dp.last_name"
     },
     {
       "id": "4d0ba805-d5f6-479a-ac5f-cffafb7ced3b",
@@ -112,29 +37,9 @@
       "query": "SELECT age_group, COUNT(*) as patient_count, COUNT(CASE WHEN gender = 'Male' THEN 1 END) as male_count, COUNT(CASE WHEN gender = 'Female' THEN 1 END) as female_count FROM dim_patient WHERE is_current = 1 GROUP BY age_group ORDER BY patient_count DESC"
     },
     {
-      "id": "8b2894a1-45a5-48d9-889f-663145339cb1",
-      "question": "Show me members who are non-adherent to their medications",
-      "query": "SELECT dp.first_name, dp.last_name, dp.age, dm.medication_name, dm.drug_class, ma.pdc_score, ma.adherence_category, ma.gap_days, ma.total_fills FROM agg_medication_adherence ma JOIN dim_patient dp ON ma.patient_key = dp.patient_key AND dp.is_current = 1 JOIN dim_medication dm ON ma.medication_key = dm.medication_key WHERE ma.adherence_category = 'Non-Adherent' ORDER BY ma.pdc_score ASC"
-    },
-    {
-      "id": "d7ab0bb2-8e53-4430-a659-0e73c69f1a7e",
-      "question": "Show me medication adherence rates by drug class",
-      "query": "SELECT dm.drug_class, dm.therapeutic_area, COUNT(*) as member_medication_pairs, AVG(ma.pdc_score) as avg_pdc, SUM(CASE WHEN ma.adherence_category = 'Adherent' THEN 1 ELSE 0 END) as adherent_count, SUM(CASE WHEN ma.adherence_category = 'Non-Adherent' THEN 1 ELSE 0 END) as non_adherent_count, CAST(SUM(CASE WHEN ma.adherence_category = 'Adherent' THEN 1 ELSE 0 END) AS FLOAT) / NULLIF(COUNT(*), 0) * 100 as adherence_rate_pct FROM agg_medication_adherence ma JOIN dim_medication dm ON ma.medication_key = dm.medication_key GROUP BY dm.drug_class, dm.therapeutic_area ORDER BY avg_pdc ASC"
-    },
-    {
-      "id": "fec3cc85-2d04-4d78-b9c3-4e587799e84a",
-      "question": "How many patients are adherent vs non-adherent?",
-      "query": "SELECT adherence_category, COUNT(DISTINCT patient_key) as patient_count FROM agg_medication_adherence GROUP BY adherence_category ORDER BY patient_count DESC"
-    },
-    {
       "id": "f5a162c9-b126-4591-b3e6-caeb9a2f23cd",
       "question": "Which patients with chronic conditions are non-adherent to their medications?",
       "query": "SELECT dp.first_name, dp.last_name, dp.age, dm.medication_name, dm.drug_class, ma.pdc_score, ma.adherence_category, ma.gap_days FROM agg_medication_adherence ma JOIN dim_patient dp ON ma.patient_key = dp.patient_key AND dp.is_current = 1 JOIN dim_medication dm ON ma.medication_key = dm.medication_key WHERE ma.is_chronic = 1 AND ma.adherence_category = 'Non-Adherent' ORDER BY ma.pdc_score ASC"
-    },
-    {
-      "id": "33f4d4ea-5814-4d14-bf2d-39d70af38171",
-      "question": "Show me prescription costs broken down by drug class",
-      "query": "SELECT dm.drug_class, dm.therapeutic_area, COUNT(*) as total_fills, SUM(fp.total_cost) as total_cost, SUM(fp.payer_paid) as payer_cost, SUM(fp.patient_copay) as patient_cost, AVG(fp.days_supply) as avg_days_supply FROM fact_prescription fp JOIN dim_medication dm ON fp.medication_key = dm.medication_key GROUP BY dm.drug_class, dm.therapeutic_area ORDER BY total_cost DESC"
     },
     {
       "id": "bfcdfb9c-be45-48b3-9897-bf1dc7f202c2",
@@ -147,79 +52,9 @@
       "query": "SELECT dd.icd_code, dd.icd_description, dd.icd_category, dd.is_chronic, COUNT(*) as diagnosis_count FROM fact_diagnosis fd JOIN dim_diagnosis dd ON fd.diagnosis_key = dd.diagnosis_key GROUP BY dd.icd_code, dd.icd_description, dd.icd_category, dd.is_chronic ORDER BY diagnosis_count DESC"
     },
     {
-      "id": "aa7e858c-1dde-44b3-87f9-63668dd855ca",
-      "question": "Which chronic conditions are most prevalent?",
-      "query": "SELECT dd.icd_code, dd.icd_description, dd.icd_category, COUNT(DISTINCT fd.patient_key) as unique_patients, COUNT(*) as diagnosis_count FROM fact_diagnosis fd JOIN dim_diagnosis dd ON fd.diagnosis_key = dd.diagnosis_key WHERE dd.is_chronic = 1 GROUP BY dd.icd_code, dd.icd_description, dd.icd_category ORDER BY unique_patients DESC"
-    },
-    {
       "id": "af94559f-1f58-4683-99f3-8e6b388f503b",
       "question": "Show me members living in high social vulnerability zip codes",
       "query": "SELECT dp.first_name, dp.last_name, dp.age, dp.city, dp.zip_code, s.risk_tier, s.social_vulnerability_index, s.poverty_rate, s.food_desert_flag, s.transportation_score, s.median_household_income FROM dim_patient dp JOIN dim_sdoh s ON dp.zip_code = s.zip_code WHERE dp.is_current = 1 AND s.risk_tier = 'High' ORDER BY s.social_vulnerability_index DESC"
-    },
-    {
-      "id": "2cb4fc2e-4be5-4e5f-bb3c-3e9915df3009",
-      "question": "How does SDOH risk tier affect readmission risk?",
-      "query": "SELECT s.risk_tier as sdoh_risk_tier, COUNT(*) as total_encounters, AVG(fe.readmission_risk_score) as avg_risk_score, SUM(fe.readmission_flag) as actual_readmissions, CAST(SUM(fe.readmission_flag) AS FLOAT) / NULLIF(COUNT(*), 0) * 100 as readmission_rate_pct FROM fact_encounter fe JOIN dim_patient dp ON fe.patient_key = dp.patient_key AND dp.is_current = 1 JOIN dim_sdoh s ON dp.zip_code = s.zip_code GROUP BY s.risk_tier ORDER BY avg_risk_score DESC"
-    },
-    {
-      "id": "56feabf5-4fe6-48bf-9dfe-780f9db95490",
-      "question": "What is the average length of stay by encounter type?",
-      "query": "SELECT encounter_type, AVG(length_of_stay) as avg_length_of_stay, COUNT(*) as total_encounters, SUM(total_charges) as total_charges FROM fact_encounter GROUP BY encounter_type ORDER BY avg_length_of_stay DESC"
-    },
-    {
-      "id": "1d37132e-958c-4f39-a7e9-3273745c9fa2",
-      "question": "What is the average length of stay for high-risk vs low-risk patients?",
-      "query": "SELECT readmission_risk_category, AVG(length_of_stay) as avg_length_of_stay, COUNT(*) as total_encounters, AVG(readmission_risk_score) as avg_risk_score, SUM(total_charges) as total_charges FROM fact_encounter GROUP BY readmission_risk_category ORDER BY avg_length_of_stay DESC"
-    },
-    {
-      "id": "b5d12926-1817-4643-9e2f-e28e9316a2d8",
-      "question": "Which payers have the highest readmission rates?",
-      "query": "SELECT py.payer_name, py.payer_type, COUNT(*) as total_encounters, SUM(fe.readmission_flag) as readmissions, CAST(SUM(fe.readmission_flag) AS FLOAT) / NULLIF(COUNT(*), 0) * 100 as readmission_rate_pct, AVG(fe.readmission_risk_score) as avg_risk_score FROM fact_encounter fe JOIN fact_claim fc ON fe.encounter_key = fc.encounter_key JOIN dim_payer py ON fc.payer_key = py.payer_key GROUP BY py.payer_name, py.payer_type ORDER BY readmission_rate_pct DESC"
-    },
-    {
-      "id": "7eab4051-410e-4b99-aee8-ff5e09b8373b",
-      "question": "Show me readmitted patients with their social risk and adherence data",
-      "query": "SELECT dp.first_name, dp.last_name, dp.zip_code, s.risk_tier as sdoh_risk, s.poverty_rate, s.social_vulnerability_index, fe.encounter_type, fe.readmission_risk_score, ma.pdc_score, ma.adherence_category, dm.drug_class FROM fact_encounter fe JOIN dim_patient dp ON fe.patient_key = dp.patient_key AND dp.is_current = 1 LEFT JOIN dim_sdoh s ON dp.zip_code = s.zip_code LEFT JOIN agg_medication_adherence ma ON dp.patient_key = ma.patient_key LEFT JOIN dim_medication dm ON ma.medication_key = dm.medication_key WHERE fe.readmission_flag = 1 ORDER BY fe.readmission_risk_score DESC"
-    },
-    {
-      "id": "27b938cd-c7f2-4680-ab0c-5a776ac4de64",
-      "question": "Show me high-risk patients who are also medication non-adherent",
-      "query": "SELECT DISTINCT dp.first_name, dp.last_name, dp.age, fe.readmission_risk_score, fe.readmission_risk_category, ma.pdc_score, ma.adherence_category, dm.drug_class FROM fact_encounter fe JOIN dim_patient dp ON fe.patient_key = dp.patient_key AND dp.is_current = 1 JOIN agg_medication_adherence ma ON dp.patient_key = ma.patient_key JOIN dim_medication dm ON ma.medication_key = dm.medication_key WHERE fe.readmission_risk_category = 'High' AND ma.adherence_category = 'Non-Adherent' ORDER BY fe.readmission_risk_score DESC"
-    },
-    {
-      "id": "sq02-top-denial-reasons",
-      "question": "What are the top 5 denial reasons by claim count and total billed amount?",
-      "query": "SELECT TOP 5 primary_denial_reason, COUNT(*) as denial_count, SUM(billed_amount) as total_billed_amount, AVG(billed_amount) as avg_claim_amount FROM fact_claim WHERE denial_flag = 1 GROUP BY primary_denial_reason ORDER BY denial_count DESC"
-    },
-    {
-      "id": "sq03-provider-denial-rates",
-      "question": "Which providers have the highest denial rates? Show the top 10 with their specialties.",
-      "query": "SELECT TOP 10 dpr.display_name, dpr.specialty, COUNT(*) as total_claims, SUM(CASE WHEN fc.denial_flag = 1 THEN 1 ELSE 0 END) as denial_count, CAST(SUM(CASE WHEN fc.denial_flag = 1 THEN 1 ELSE 0 END) AS FLOAT) / NULLIF(COUNT(*), 0) * 100 as denial_rate_pct, SUM(CASE WHEN fc.denial_flag = 1 THEN fc.billed_amount ELSE 0 END) as denied_amount FROM fact_claim fc JOIN dim_provider dpr ON fc.provider_key = dpr.provider_key AND dpr.is_current = 1 GROUP BY dpr.display_name, dpr.specialty ORDER BY denial_rate_pct DESC"
-    },
-    {
-      "id": "sq08-readmission-rate-trend",
-      "question": "What is the 30-day readmission rate and how does it trend by month?",
-      "query": "SELECT dd.year, dd.month_number, dd.month_name, SUM(ar.total_encounters) as total_encounters, SUM(ar.actual_readmissions) as readmissions, CAST(SUM(ar.actual_readmissions) AS FLOAT) / NULLIF(SUM(ar.total_encounters), 0) * 100 as readmission_rate_pct FROM agg_readmission_by_date ar JOIN dim_date dd ON ar.encounter_date_key = dd.date_key GROUP BY dd.year, dd.month_number, dd.month_name ORDER BY dd.year DESC, dd.month_number DESC"
-    },
-    {
-      "id": "sq09-top10-risk-with-insurance",
-      "question": "List the top 10 patients with the highest readmission risk scores with their age and insurance type.",
-      "query": "SELECT TOP 10 dp.first_name, dp.last_name, dp.age, dp.insurance_type, fe.readmission_risk_score, fe.readmission_risk_category, fe.encounter_type, fe.length_of_stay FROM fact_encounter fe JOIN dim_patient dp ON fe.patient_key = dp.patient_key AND dp.is_current = 1 ORDER BY fe.readmission_risk_score DESC"
-    },
-    {
-      "id": "sq19-high-svi-with-risk",
-      "question": "Show me members living in high social vulnerability zip codes with their risk factors.",
-      "query": "SELECT dp.first_name, dp.last_name, dp.age, dp.city, dp.zip_code, s.risk_tier, s.social_vulnerability_index, s.poverty_rate, s.food_desert_flag, s.transportation_score, s.median_household_income FROM dim_patient dp JOIN dim_sdoh s ON dp.zip_code = s.zip_code WHERE dp.is_current = 1 AND s.risk_tier = 'High' ORDER BY s.social_vulnerability_index DESC"
-    },
-    {
-      "id": "sq28-readmitted-nonadherent-compound",
-      "question": "Show me patients who were readmitted AND are non-adherent to their medications with their risk scores and drug class.",
-      "query": "SELECT DISTINCT dp.first_name, dp.last_name, dp.age, fe.readmission_risk_score, fe.readmission_risk_category, ma.pdc_score, ma.adherence_category, dm.drug_class, dm.medication_name FROM fact_encounter fe JOIN dim_patient dp ON fe.patient_key = dp.patient_key AND dp.is_current = 1 JOIN agg_medication_adherence ma ON dp.patient_key = ma.patient_key JOIN dim_medication dm ON ma.medication_key = dm.medication_key WHERE fe.readmission_flag = 1 AND ma.adherence_category = 'Non-Adherent' ORDER BY fe.readmission_risk_score DESC"
-    },
-    {
-      "id": "sq01-denial-rate-by-payer",
-      "question": "What is the overall claim denial rate and how does it break down by payer?",
-      "query": "SELECT py.payer_name, COUNT(*) as total_claims, COUNT(CASE WHEN fc.denial_flag = 1 THEN 1 END) as denied_claims, CAST(COUNT(CASE WHEN fc.denial_flag = 1 THEN 1 END) AS FLOAT) / NULLIF(COUNT(*), 0) * 100 as denial_rate_pct, SUM(CASE WHEN fc.denial_flag = 1 THEN fc.billed_amount ELSE 0 END) as denied_dollars FROM fact_claim fc JOIN dim_payer py ON fc.payer_key = py.payer_key GROUP BY py.payer_name ORDER BY denial_rate_pct DESC"
     },
     {
       "id": "sq04-denied-claims-over-50k",
@@ -227,74 +62,9 @@
       "query": "SELECT fc.claim_id, dp.first_name, dp.last_name, py.payer_name, fc.billed_amount, fc.paid_amount, fc.primary_denial_reason, fc.claim_status FROM fact_claim fc JOIN dim_patient dp ON fc.patient_key = dp.patient_key AND dp.is_current = 1 JOIN dim_payer py ON fc.payer_key = py.payer_key WHERE fc.denial_flag = 1 AND fc.billed_amount > 50000 ORDER BY fc.billed_amount DESC"
     },
     {
-      "id": "sq05-revenue-at-risk-high-denial",
-      "question": "What is the total revenue at risk from claims flagged as high denial risk that haven't been denied yet?",
-      "query": "SELECT denial_risk_category, COUNT(*) as claim_count, SUM(billed_amount) as revenue_at_risk, AVG(denial_risk_score) as avg_risk_score FROM fact_claim WHERE denial_risk_category = 'High' AND denial_flag = 0 GROUP BY denial_risk_category"
-    },
-    {
-      "id": "sq06-collection-rate-by-payer",
-      "question": "Compare the collection rate (paid / billed) across all payers. Which payer reimburses the least?",
-      "query": "SELECT py.payer_name, py.payer_type, COUNT(*) as total_claims, SUM(fc.billed_amount) as total_billed, SUM(fc.paid_amount) as total_paid, CAST(SUM(fc.paid_amount) AS FLOAT) / NULLIF(SUM(fc.billed_amount), 0) * 100 as collection_rate_pct FROM fact_claim fc JOIN dim_payer py ON fc.payer_key = py.payer_key GROUP BY py.payer_name, py.payer_type ORDER BY collection_rate_pct ASC"
-    },
-    {
-      "id": "sq07-claims-status-this-month",
-      "question": "How many claims are pending vs paid vs denied this month? Show the month-to-date trend.",
-      "query": "SELECT fc.claim_status, COUNT(*) as claim_count, SUM(fc.billed_amount) as total_billed, SUM(fc.paid_amount) as total_paid FROM fact_claim fc JOIN dim_date dd ON fc.claim_date_key = dd.date_key WHERE dd.year = YEAR(GETDATE()) AND dd.month_number = MONTH(GETDATE()) GROUP BY fc.claim_status ORDER BY claim_count DESC"
-    },
-    {
-      "id": "sq08-readmission-rate-monthly-trend",
-      "question": "What is the 30-day readmission rate? How does it trend by month over the past year?",
-      "query": "SELECT dd.year, dd.month_number, dd.month_name, SUM(ar.total_encounters) as total_encounters, SUM(ar.actual_readmissions) as readmissions, CAST(SUM(ar.actual_readmissions) AS FLOAT) / NULLIF(SUM(ar.total_encounters), 0) * 100 as readmission_rate_pct FROM agg_readmission_by_date ar JOIN dim_date dd ON ar.encounter_date_key = dd.date_key GROUP BY dd.year, dd.month_number, dd.month_name ORDER BY dd.year DESC, dd.month_number DESC"
-    },
-    {
-      "id": "sq09-top10-readmission-risk-patients",
-      "question": "List the top 10 patients with the highest readmission risk scores. Include their age, insurance type, and number of prior encounters.",
-      "query": "SELECT TOP 10 dp.first_name, dp.last_name, dp.age, dp.insurance_type, fe.readmission_risk_score, fe.readmission_risk_category, fe.encounter_type, fe.length_of_stay, (SELECT COUNT(*) FROM fact_encounter fe2 WHERE fe2.patient_key = dp.patient_key) as total_encounters FROM fact_encounter fe JOIN dim_patient dp ON fe.patient_key = dp.patient_key AND dp.is_current = 1 ORDER BY fe.readmission_risk_score DESC"
-    },
-    {
-      "id": "sq11-readmission-rate-by-facility",
-      "question": "Which facilities have the highest readmission rates?",
-      "query": "SELECT df.facility_name, df.facility_type, COUNT(*) as total_encounters, SUM(fe.readmission_flag) as readmissions, CAST(SUM(fe.readmission_flag) AS FLOAT) / NULLIF(COUNT(*), 0) * 100 as readmission_rate_pct, AVG(fe.readmission_risk_score) as avg_risk_score FROM fact_encounter fe JOIN dim_facility df ON fe.facility_key = df.facility_key GROUP BY df.facility_name, df.facility_type ORDER BY readmission_rate_pct DESC"
-    },
-    {
       "id": "sq14-non-adherent-diabetes",
       "question": "Show me members who are non-adherent to their medications with their drug class and gap days.",
       "query": "SELECT dp.first_name, dp.last_name, dp.age, dm.medication_name, dm.drug_class, ma.pdc_score, ma.adherence_category, ma.gap_days, ma.total_fills FROM agg_medication_adherence ma JOIN dim_patient dp ON ma.patient_key = dp.patient_key AND dp.is_current = 1 JOIN dim_medication dm ON ma.medication_key = dm.medication_key WHERE ma.adherence_category = 'Non-Adherent' ORDER BY ma.pdc_score ASC"
-    },
-    {
-      "id": "sq15-pdc-by-drug-class",
-      "question": "Show me medication adherence rates by drug class and therapeutic area.",
-      "query": "SELECT dm.drug_class, dm.therapeutic_area, COUNT(*) as member_medication_pairs, AVG(ma.pdc_score) as avg_pdc, SUM(CASE WHEN ma.adherence_category = 'Adherent' THEN 1 ELSE 0 END) as adherent_count, SUM(CASE WHEN ma.adherence_category = 'Non-Adherent' THEN 1 ELSE 0 END) as non_adherent_count, CAST(SUM(CASE WHEN ma.adherence_category = 'Adherent' THEN 1 ELSE 0 END) AS FLOAT) / NULLIF(COUNT(*), 0) * 100 as adherence_rate_pct FROM agg_medication_adherence ma JOIN dim_medication dm ON ma.medication_key = dm.medication_key GROUP BY dm.drug_class, dm.therapeutic_area ORDER BY avg_pdc ASC"
-    },
-    {
-      "id": "sq18-rx-cost-by-drug-class",
-      "question": "Show me prescription costs broken down by drug class and therapeutic area.",
-      "query": "SELECT dm.drug_class, dm.therapeutic_area, COUNT(*) as total_fills, SUM(fp.total_cost) as total_cost, SUM(fp.payer_paid) as payer_cost, SUM(fp.patient_copay) as patient_cost, AVG(fp.days_supply) as avg_days_supply FROM fact_prescription fp JOIN dim_medication dm ON fp.medication_key = dm.medication_key GROUP BY dm.drug_class, dm.therapeutic_area ORDER BY total_cost DESC"
-    },
-    {
-      "id": "sq19-high-svi-patients",
-      "question": "How many patients live in zip codes with a social vulnerability index above 0.75?",
-      "query": "SELECT s.risk_tier, COUNT(DISTINCT dp.patient_key) as patient_count, AVG(s.social_vulnerability_index) as avg_svi, AVG(s.poverty_rate) as avg_poverty_rate FROM dim_patient dp JOIN dim_sdoh s ON dp.zip_code = s.zip_code WHERE dp.is_current = 1 AND s.social_vulnerability_index > 0.75 GROUP BY s.risk_tier ORDER BY patient_count DESC"
-    },
-    {
-      "id": "sq21-food-desert-patients",
-      "question": "Show me zip codes flagged as food deserts — how many patients are in each?",
-      "query": "SELECT s.zip_code, s.food_desert_flag, s.risk_tier, s.poverty_rate, s.social_vulnerability_index, COUNT(DISTINCT dp.patient_key) as patient_count FROM dim_sdoh s JOIN dim_patient dp ON s.zip_code = dp.zip_code AND dp.is_current = 1 WHERE s.food_desert_flag = 1 GROUP BY s.zip_code, s.food_desert_flag, s.risk_tier, s.poverty_rate, s.social_vulnerability_index ORDER BY patient_count DESC"
-    },
-    {
-      "id": "sq22-denial-rate-poverty",
-      "question": "What is the denial rate for patients in high-poverty zip codes vs low-poverty zip codes?",
-      "query": "SELECT CASE WHEN s.poverty_rate > 0.20 THEN 'High Poverty (>20%)' ELSE 'Low Poverty (<=20%)' END as poverty_group, COUNT(*) as total_claims, COUNT(CASE WHEN fc.denial_flag = 1 THEN 1 END) as denied_claims, CAST(COUNT(CASE WHEN fc.denial_flag = 1 THEN 1 END) AS FLOAT) / NULLIF(COUNT(*), 0) * 100 as denial_rate_pct, SUM(CASE WHEN fc.denial_flag = 1 THEN fc.billed_amount ELSE 0 END) as denied_dollars FROM fact_claim fc JOIN dim_patient dp ON fc.patient_key = dp.patient_key AND dp.is_current = 1 JOIN dim_sdoh s ON dp.zip_code = s.zip_code GROUP BY CASE WHEN s.poverty_rate > 0.20 THEN 'High Poverty (>20%)' ELSE 'Low Poverty (<=20%)' END ORDER BY denial_rate_pct DESC"
-    },
-    {
-      "id": "sq24-top-providers-by-charges",
-      "question": "Which providers have the highest total charges? Show the top 10 with specialty and department.",
-      "query": "SELECT TOP 10 dpr.display_name, dpr.specialty, dpr.department, COUNT(*) as total_encounters, SUM(fe.total_charges) as total_charges, AVG(fe.total_charges) as avg_charges FROM fact_encounter fe JOIN dim_provider dpr ON fe.provider_key = dpr.provider_key AND dpr.is_current = 1 GROUP BY dpr.display_name, dpr.specialty, dpr.department ORDER BY total_charges DESC"
-    },
-    {
-      "id": "sq26-encounters-by-month",
-      "question": "How many encounters occurred this year by month? Show the trend.",
-      "query": "SELECT dd.month_name, dd.month_number, COUNT(*) as encounter_count, SUM(fe.total_charges) as total_charges, AVG(fe.length_of_stay) as avg_los FROM fact_encounter fe JOIN dim_date dd ON fe.encounter_date_key = dd.date_key WHERE dd.year = YEAR(GETDATE()) GROUP BY dd.month_name, dd.month_number ORDER BY dd.month_number"
     },
     {
       "id": "sq27-most-encounters-patients",
@@ -305,46 +75,6 @@
       "id": "sq28-readmitted-non-adherent",
       "question": "Show me patients who were readmitted AND are non-adherent to their medications. Include their risk scores and drug class.",
       "query": "SELECT DISTINCT dp.first_name, dp.last_name, dp.age, fe.readmission_risk_score, fe.readmission_risk_category, ma.pdc_score, ma.adherence_category, dm.drug_class, dm.medication_name FROM fact_encounter fe JOIN dim_patient dp ON fe.patient_key = dp.patient_key AND dp.is_current = 1 JOIN agg_medication_adherence ma ON dp.patient_key = ma.patient_key JOIN dim_medication dm ON ma.medication_key = dm.medication_key WHERE fe.readmission_flag = 1 AND ma.adherence_category = 'Non-Adherent' ORDER BY fe.readmission_risk_score DESC"
-    },
-    {
-      "id": "sq29-sdoh-denial-rate-comparison",
-      "question": "For patients in high SDOH risk zip codes, what is their average denial rate compared to the overall population?",
-      "query": "SELECT s.risk_tier as sdoh_risk_tier, COUNT(*) as total_claims, COUNT(CASE WHEN fc.denial_flag = 1 THEN 1 END) as denied_claims, CAST(COUNT(CASE WHEN fc.denial_flag = 1 THEN 1 END) AS FLOAT) / NULLIF(COUNT(*), 0) * 100 as denial_rate_pct, SUM(fc.billed_amount) as total_billed, AVG(s.social_vulnerability_index) as avg_svi FROM fact_claim fc JOIN dim_patient dp ON fc.patient_key = dp.patient_key AND dp.is_current = 1 JOIN dim_sdoh s ON dp.zip_code = s.zip_code GROUP BY s.risk_tier ORDER BY denial_rate_pct DESC"
-    },
-    {
-      "id": "sq30-chronic-conditions-readmission",
-      "question": "Which chronic conditions have the highest readmission rates? Show the top 5 ICD categories with readmission counts.",
-      "query": "SELECT TOP 5 dd_diag.icd_category, dd_diag.icd_description, COUNT(DISTINCT fe.encounter_key) as total_encounters, SUM(fe.readmission_flag) as readmissions, CAST(SUM(fe.readmission_flag) AS FLOAT) / NULLIF(COUNT(DISTINCT fe.encounter_key), 0) * 100 as readmission_rate_pct FROM fact_encounter fe JOIN fact_diagnosis fd ON fe.encounter_key = fd.encounter_key JOIN dim_diagnosis dd_diag ON fd.diagnosis_key = dd_diag.diagnosis_key WHERE dd_diag.is_chronic = 1 GROUP BY dd_diag.icd_category, dd_diag.icd_description ORDER BY readmission_rate_pct DESC"
-    },
-    {
-      "id": "sq31-rx-cost-by-payer",
-      "question": "Compare prescription costs by payer — which payer pays the most and which shifts the most cost to patients?",
-      "query": "SELECT py.payer_name, py.payer_type, COUNT(*) as total_fills, SUM(fp.total_cost) as total_cost, SUM(fp.payer_paid) as payer_paid, SUM(fp.patient_copay) as patient_copay, CAST(SUM(fp.payer_paid) AS FLOAT) / NULLIF(SUM(fp.total_cost), 0) * 100 as payer_coverage_pct, CAST(SUM(fp.patient_copay) AS FLOAT) / NULLIF(SUM(fp.total_cost), 0) * 100 as patient_burden_pct FROM fact_prescription fp JOIN dim_payer py ON fp.payer_key = py.payer_key GROUP BY py.payer_name, py.payer_type ORDER BY patient_burden_pct DESC"
-    },
-    {
-      "id": "sq32-avg-copay-by-payer-drugclass",
-      "question": "What is the average patient copay by payer and drug class?",
-      "query": "SELECT py.payer_name, dm.drug_class, COUNT(*) as total_fills, AVG(fp.patient_copay) as avg_copay, AVG(fp.payer_paid) as avg_payer_paid, AVG(fp.total_cost) as avg_total_cost FROM fact_prescription fp JOIN dim_payer py ON fp.payer_key = py.payer_key JOIN dim_medication dm ON fp.medication_key = dm.medication_key GROUP BY py.payer_name, dm.drug_class ORDER BY py.payer_name, avg_copay DESC"
-    },
-    {
-      "id": "sq33-payer-chronic-rx-burden",
-      "question": "Which payers bear the highest cost burden for chronic medications?",
-      "query": "SELECT py.payer_name, py.payer_type, COUNT(*) as chronic_fills, SUM(fp.total_cost) as total_cost, SUM(fp.payer_paid) as payer_paid, SUM(fp.patient_copay) as patient_copay, AVG(fp.days_supply) as avg_days_supply FROM fact_prescription fp JOIN dim_payer py ON fp.payer_key = py.payer_key JOIN dim_medication dm ON fp.medication_key = dm.medication_key WHERE dm.is_chronic = 1 GROUP BY py.payer_name, py.payer_type ORDER BY payer_paid DESC"
-    },
-    {
-      "id": "sq34-provider-payer-rx-network",
-      "question": "Show me which providers prescribe the most to each payer — the provider-payer prescription network.",
-      "query": "SELECT dpr.display_name as provider, dpr.specialty, py.payer_name, COUNT(*) as total_fills, SUM(fp.total_cost) as total_cost, SUM(fp.payer_paid) as payer_paid FROM fact_prescription fp JOIN dim_provider dpr ON fp.provider_key = dpr.provider_key AND dpr.is_current = 1 JOIN dim_payer py ON fp.payer_key = py.payer_key GROUP BY dpr.display_name, dpr.specialty, py.payer_name ORDER BY total_cost DESC"
-    },
-    {
-      "id": "a8742113-42e4-4e47-b3e6-934bca26f962",
-      "question": "Which patients have the most non-adherent drug classes?",
-      "query": "WITH patient_classes AS (SELECT DISTINCT dp.patient_id, CONCAT(dp.first_name, ' ', dp.last_name) AS patient_name, dp.age, dm.drug_class FROM agg_medication_adherence ama JOIN dim_patient dp ON dp.patient_key = ama.patient_key AND dp.is_current = 1 JOIN dim_medication dm ON dm.medication_key = ama.medication_key WHERE ama.adherence_category = 'Non-Adherent') SELECT TOP 10 patient_id, patient_name, age, COUNT(*) AS non_adherent_class_count, STRING_AGG(drug_class, ', ') WITHIN GROUP (ORDER BY drug_class) AS non_adherent_drug_classes FROM patient_classes GROUP BY patient_id, patient_name, age ORDER BY non_adherent_class_count DESC"
-    },
-    {
-      "id": "e3379be9-9db7-4e10-9adc-af43c23649aa",
-      "question": "List the top 10 patients with the most non-adherent drug classes, including their names and the drug classes.",
-      "query": "WITH patient_classes AS (SELECT DISTINCT dp.patient_id, CONCAT(dp.first_name, ' ', dp.last_name) AS patient_name, dp.age, dm.drug_class FROM agg_medication_adherence ama JOIN dim_patient dp ON dp.patient_key = ama.patient_key AND dp.is_current = 1 JOIN dim_medication dm ON dm.medication_key = ama.medication_key WHERE ama.adherence_category = 'Non-Adherent') SELECT TOP 10 patient_id, patient_name, age, COUNT(*) AS non_adherent_class_count, STRING_AGG(drug_class, ', ') WITHIN GROUP (ORDER BY drug_class) AS non_adherent_drug_classes FROM patient_classes GROUP BY patient_id, patient_name, age ORDER BY non_adherent_class_count DESC"
     },
     {
       "id": "310f7ab9-5f3e-4a7d-b6cb-bf857bb4bb3c",

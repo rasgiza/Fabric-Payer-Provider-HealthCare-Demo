@@ -1,8 +1,8 @@
 # Executive Demo Runbook — The Nancy & Sarah Story
 
 **Audience:** Healthcare executives (CMO, COO, CFO, CIO, VP Quality) — provider-side or mixed payer/provider
-**Length:** ~10 minutes
-**Tool:** Healthcare Ontology Agent (Graph Data Agent) only
+**Length:** ~12 minutes
+**Tools:** Fabric data agent `OntologyAgent` (Steps 0–5, returns rows) → Foundry agent `OntologyAgent` (Step 6, returns policy + actions)
 **Two patients:** Nancy White (the setup) → Sarah Johnson (the close)
 **Goal:** Prove that Microsoft Fabric + an ontology + a plain-English agent can surface readmission risk and care fragmentation no current tool in their hospital can see.
 
@@ -16,9 +16,12 @@
 4. **Q3** — Nancy's prescribers (no cardiologist managing)
 5. **Q4** — find more patients like Nancy (the pattern scales)
 6. **Q5** — Sarah Johnson's full story (benzo-in-COPD contraindication close)
-7. **Final line** — sit down, don't fill the silence
+7. **Q6** — hand off to Foundry: what the policy says and what to do about it
+8. **Final line** — sit down, don't fill the silence
 
-Total: ~6 minutes narration + ~3 minutes agent runtime = **~10 minutes**.
+Total: ~7 minutes narration + ~5 minutes agent runtime = **~12 minutes**.
+
+> **The framing line for the handoff:** *"The Fabric data agent knows what happened. The Foundry agent knows what it means."*
 
 ---
 
@@ -172,6 +175,42 @@ Pause. Three full seconds.
 >
 > No dashboard shows you this, because to every individual system, she looks perfectly adherent."
 
+---
+
+## STEP 6 — The Foundry handoff (~90 sec)
+
+Switch agents. **Say this while you switch:**
+
+> "Everything so far came from the data agent. It knows *what happened*. Now I'll ask a different agent what it *means* — same ontology underneath, but this one can also read your policy library."
+
+**Agent:** `OntologyAgent` in Foundry project `HealthcareDemo-HLS` — it holds the Fabric data agent *and* an MCP tool over the 26-document knowledge base.
+
+**Type this:**
+
+> Patient PAT006030 has COPD and is on Lorazepam. What does policy say, and what should we do? Cite it.
+
+> ⚠️ Same rule as Step 5 — **patient ID, never the name.** Expect 30–60 seconds; it calls both tools before it answers.
+
+**What should come back:** a traversal confirming COPD (J44.9) alongside active Lorazepam, quoted policy with `Source:` lines, then 2–4 recommended actions.
+
+**The five documents it should reach for:**
+
+| Document | What it says |
+|---|---|
+| `formulary/Drug_Formulary_Guide.md` | Lorazepam is **CONTRAINDICATED** in COPD (J44.9) — respiratory depression risk |
+| `clinical_guidelines/COPD_Management_Guidelines.md` | Avoid Lorazepam in COPD — benzodiazepines suppress respiratory drive |
+| `formulary/Step_Therapy_Protocols.md` | Protocol MH-STEP-002 — a COPD patient is **DENIED** |
+| `compliance/Clinical_Documentation_Standards.md` | Requires indication, duration plan, fall risk, respiratory status |
+| `denial_management/Prior_Authorization_Requirements.md` | Lorazepam >30 days requires prior auth **and a psychiatry consult** |
+
+**The narration — the last one is the kill shot:**
+
+> "That last rule is your own. Lorazepam beyond thirty days requires a psychiatry consult. **She's at a hundred and twenty-six days.** Her only psychiatry encounter was nine months *before* the first Lorazepam fill — and that psychiatrist prescribed her cholesterol medication.
+>
+> Nobody broke a rule they knew about. The rule was written down. It just wasn't reachable from where the prescription was written."
+
+---
+
 ### Final line — say it, then stop
 
 > "Two patients. Twelve minutes. One ontology.
@@ -206,7 +245,14 @@ one-visit prescriber at a different facility, still active — plus a duplicated
 
 ### The 30-second version
 
-> "Look — Nancy and Sarah aren't hypothetical patients. They're already in your data. Your hospital is already paying for their readmissions. So the question isn't *should we invest in this* — the math works if we prevent even one readmission a quarter. The real question is whether your care team can find these patients today, before they bounce back. **Right now, they can't. With this, they can.**"
+> "Look — Nancy and Sarah aren't hypothetical patients. They're already in your data. So the question isn't *should we invest in this* — the math works if we prevent even one readmission a quarter. The real question is whether your care team can find these patients today. **Right now, they can't. With this, they can.**"
+
+> ⚠️ **The two patients carry different economics. Don't merge them.**
+> **Nancy** is the readmission case — Medicare, HRRP-exposed, and the table below applies to her directly.
+> **Sarah** is Tricare with no readmission. Her exposure is coordination and safety: a contraindicated
+> active prescription, a duplicated ACE inhibitor, and $179K billed across 7 facilities with no PCP.
+> If a CFO ties Sarah to the HRRP line, say so plainly: *"She's the reason the penalty math understates
+> the problem. Nobody is paying you to find her — and she's the more dangerous patient."*
 
 ### The four ways readmissions hit a provider's P&L
 
@@ -257,11 +303,14 @@ one-visit prescriber at a different facility, still active — plus a duplicated
 | Nancy: 9 prescribers, 8 specialties | Agent screen | ✅ Bulletproof |
 | Two psychiatrists on Nancy's chart | Agent screen | ✅ Bulletproof |
 | No cardiologist on Nancy's chart | Agent screen | ✅ Bulletproof |
-| Sarah: opioid PDC 1.00, benzo PDC 0.50 | Agent screen | ✅ Bulletproof |
-| Sarah: opioid by Cardiology, benzo by Internal Medicine | Agent screen (earlier prescriber pull) | ✅ Bulletproof |
+| Sarah (`PAT006030`): 12 providers, 7 facilities, 0 PCP | Agent screen | ✅ Bulletproof |
+| Sarah: adherent on every measured class (ACE-I 1.00, ICS 1.00, statin 0.978, anticoagulant 0.957) | Agent screen | ✅ Bulletproof |
+| Sarah: Lorazepam started 396 days after COPD (J44.9), by a one-visit anesthesiologist | Agent screen | ✅ Bulletproof |
+| Sarah: lisinopril 630 days dispensed into a 406-day window, two prescribers | Agent screen | ✅ Bulletproof |
 | Triple-whammy clinical mechanism | BMJ 2013 (Lomas et al.) + standard PharmD literature | ✅ Real |
-| FDA black-box opioid+benzo | FDA boxed warning, August 2016 | ✅ Real |
-| HRRP 3% cap, six conditions | ACA Section 3025, CMS rule | ✅ Bulletproof |
+| Benzodiazepine contraindicated in COPD | Customer's own `Drug_Formulary_Guide.md` and `COPD_Management_Guidelines.md` | ✅ Real (agent cites it live) |
+| Lorazepam >30 days needs prior auth + psychiatry consult | `Prior_Authorization_Requirements.md` | ✅ Real (she is at 126 days) |
+| HRRP 3% cap, six conditions | ACA Section 3025, CMS rule | ✅ Bulletproof (Nancy only — Sarah is Tricare) |
 | ~$15K per readmission | AHRQ HCUP brief | ✅ Defensible (say "roughly") |
 
 ---

@@ -232,7 +232,7 @@ Dual-path design: **Batch ETL** (authoritative, historical) + **Real-Time Intell
 
 **[▶ Launch Nancy White Story](https://rasgiza.github.io/Fabric-Payer-Provider-HealthCare-Demo/demo_3d_story/nancy_white_story.html)** — Age 63, Medicare, CHF. 9 drug classes, 8/9 non-adherent, pharmacy desert. How streaming intelligence catches a $42,000 readmission risk in 48 hours instead of 28 days.
 
-**[▶ Launch Sarah Johnson Story](https://rasgiza.github.io/Fabric-Payer-Provider-HealthCare-Demo/demo_3d_story/sarah_johnson_story.html)** — Age 41, Commercial. 13 providers, opioid + benzo FDA black-box combination, 3 psychiatrists, no PCP. How the ontology surfaces an overdose risk that no dashboard can see.
+**[▶ Launch Sarah Johnson Story](https://rasgiza.github.io/Fabric-Payer-Provider-HealthCare-Demo/demo_3d_story/sarah_johnson_story.html)** — Patient `PAT006030`. Age 39, Tricare. 12 providers across 7 facilities, no PCP, a benzodiazepine started 396 days after a documented COPD diagnosis, and a duplicated ACE inhibitor from two prescribers. She is adherent to every medication — which is exactly why no dashboard ever flagged her.
 
 > Navigate with arrow keys, spacebar, click, or number keys. Press **A** for auto-play.
 

@@ -325,21 +325,20 @@ function buildSarah(){
   var g=new THREE.Group();g.visible=false;scene.add(g);groups.push(g);
   var hosp=buildHospital();g.add(hosp);
   var sarah=buildSarah();sarah.position.set(5,0,14);g.add(sarah);
-  g.add(txt('Sarah Johnson, 41',{size:22,color:'#5B9BD5',scale:.65}).translateX(5).translateY(2.5).translateZ(14));
+  g.add(txt('Sarah Johnson, 39',{size:22,color:'#5B9BD5',scale:.65}).translateX(5).translateY(2.5).translateZ(14));
 
-  /* Provider web — 13 scattered glow nodes */
+  /* Provider web — 12 scattered glow nodes (real: 12 providers, 7 facilities, 0 PCP) */
   var provData=[
-    {label:'Psychiatrist 1',  color:P.foundry},{label:'Psychiatrist 2',  color:P.foundry},
-    {label:'Psychiatrist 3',  color:P.foundry},{label:'Cardiology',      color:P.bad},
-    {label:'Internal Med',    color:P.fabric}, {label:'Family Med',      color:P.iq},
-    {label:'Dermatology',     color:0xE67E22}, {label:'Radiology',       color:0x95A5A6},
-    {label:'Pediatrics',      color:P.rti},    {label:'Anesthesiology',  color:0x7F8C8D},
-    {label:'Pain Mgmt',       color:P.opioid}, {label:'OB/GYN',          color:0xF1C40F},
-    {label:'Urgent Care',     color:0x1ABC9C},
+    {label:'Orthopedics 1',   color:0xE67E22},{label:'Orthopedics 2',   color:0xE67E22},
+    {label:'Orthopedics 3',   color:0xE67E22},{label:'Anesthesiology 1',color:0x7F8C8D},
+    {label:'Anesthesiology 2',color:0x7F8C8D},{label:'Anesthesiology 3',color:P.benzo},
+    {label:'Surgery 1',       color:P.bad},   {label:'Surgery 2',       color:P.bad},
+    {label:'Ophthalmology',   color:P.opioid},{label:'Psychiatry',      color:P.foundry},
+    {label:'Cardiology',      color:0x1ABC9C},{label:'Emergency Med',   color:P.rti},
   ];
   var provNodes=[];
   provData.forEach(function(pd,i){
-    var angle=(i/13)*Math.PI*2,r=8+Math.random()*2;
+    var angle=(i/12)*Math.PI*2,r=8+Math.random()*2;
     var n=glow(.2,pd.color,.35);n.position.set(Math.cos(angle)*r,3+Math.sin(i*1.7)*2,-6+Math.sin(angle)*5);
     n.scale.set(.01,.01,.01);g.add(n);provNodes.push(n);
   });
@@ -358,7 +357,7 @@ function buildSarah(){
   });
 
   enters.push(function(){
-    setTitle("Not <span class=\"hl-fabric\">Medicare</span>. Still <span class=\"hl-critical\">Dangerous</span>.",'Sarah Johnson, age 41. Commercial insurance. 13 providers. Three psychiatrists. A pediatrician prescribing to an adult. This isn\'t an HRRP problem — this is a malpractice and patient safety crisis hiding in your commercial panel.');
+    setTitle("Not <span class=\"hl-fabric\">Medicare</span>. Still <span class=\"hl-critical\">Dangerous</span>.",'Sarah Johnson, age 39. Tricare. 12 providers across 7 facilities. Zero primary care physicians. She takes every medication exactly as prescribed — and that is precisely why nobody is looking at her.');
     gsap.to(cam.position,{x:-3,y:12,z:30,duration:2.2,ease:'power2.inOut'});
     gsap.to(ctrl.target,{x:0,y:5,z:2,duration:2.2,ease:'power2.inOut'});
     bloom.strength=.25;
@@ -366,44 +365,48 @@ function buildSarah(){
 
     setTimeout(function(){addCard('c1cost','right','80px',
       '<h3 style="color:var(--critical)">The Liability Hiding in Plain Sight</h3>'+
-      '<div class="big critical">$2.4M</div>'+
-      '<p style="font-size:.68rem;color:var(--text);line-height:1.8">Average opioid wrongful-death settlement</p>'+
+      '<div class="big critical">$179K</div>'+
+      '<p style="font-size:.68rem;color:var(--text);line-height:1.8">Her actual billed charges &mdash; 12 encounters, 17 months</p>'+
       '<p style="font-size:.68rem;line-height:1.9;margin-top:8px;color:var(--muted)">'+
-      '<b style="color:var(--critical)">72,000</b> — U.S. opioid overdose deaths per year<br>'+
-      '<b style="color:var(--critical)">30%</b> — Opioid ER visits involving opioid + benzo combo<br>'+
-      '<b style="color:var(--critical)">3 prescribers</b> — No single physician sees the full picture<br>'+
-      '<b style="color:var(--critical)">$0</b> — What your system flags today</p>'+
-      '<p style="margin-top:8px;font-size:.6rem;color:var(--rti)">This isn\'t a quality metric. This is a patient one bad day from the news.</p>'
+      '<b style="color:var(--critical)">12 providers</b> &mdash; across 7 different facilities<br>'+
+      '<b style="color:var(--critical)">0</b> &mdash; primary care physicians coordinating any of it<br>'+
+      '<b style="color:var(--critical)">3</b> &mdash; emergency department visits<br>'+
+      '<b style="color:var(--critical)">$0</b> &mdash; What your system flags today</p>'+
+      '<p style="margin-top:10px;padding-top:8px;border-top:1px solid rgba(255,255,255,.08);font-size:.56rem;color:var(--muted);line-height:1.7">'+
+      '<b style="color:var(--rti);letter-spacing:.08em">BENCHMARK &mdash; NOT HER EXPOSURE</b><br>'+
+      '~$15.2K per avoidable 30-day readmission, all-payer <i>(AHRQ HCUP)</i>.<br>'+
+      'She is <b style="color:var(--text)">Tricare</b> &mdash; no HRRP penalty, no Star Rating, no CMS program is watching her.</p>'+
+      '<p style="margin-top:8px;font-size:.6rem;color:var(--rti)">That is exactly why nobody found her. This isn\'t a quality metric. This is a patient one bad day from the news.</p>'
     ,{border:'rgba(255,23,68,.2)'})},600);
 
     setTimeout(function(){addCard('c1a','right','380px',
-      '<h3 style="color:var(--muted)">13 Providers — Nobody Coordinating</h3>'+
+      '<h3 style="color:var(--muted)">12 Providers — Nobody Coordinating</h3>'+
       '<p style="font-size:.66rem;line-height:1.85;color:var(--text)">'+
-      '<span class="pill pill-purple">Psychiatry &times;3</span> <span class="pill pill-red">Cardiology</span> <span class="pill pill-blue">Internal Med</span> <span class="pill pill-teal">Family Med</span><br>'+
-      '<span class="pill pill-yellow">Pediatrics &#9888;</span> <span style="font-size:.52rem;color:var(--rti)"> prescribing to a 41-year-old</span><br>'+
-      '<span class="pill" style="background:rgba(230,126,34,.1);color:#E67E22;border:1px solid rgba(230,126,34,.2)">Dermatology</span> '+
-      '<span class="pill" style="background:rgba(149,165,166,.1);color:#95A5A6;border:1px solid rgba(149,165,166,.2)">Radiology</span> '+
-      '<span class="pill" style="background:rgba(127,140,141,.1);color:#7F8C8D;border:1px solid rgba(127,140,141,.2)">Anesthesiology</span><br>'+
-      '<span class="pill pill-critical">Pain Mgmt</span> <span class="pill" style="background:rgba(241,196,15,.1);color:#F1C40F;border:1px solid rgba(241,196,15,.2)">OB/GYN</span> <span class="pill pill-teal">Urgent Care</span></p>'+
-      '<p style="margin-top:6px;font-size:.58rem;color:var(--muted)">No PCP managing. No care plan. Nobody coordinating psychiatry, pain, and chronic disease.</p>'
+      '<span class="pill" style="background:rgba(230,126,34,.1);color:#E67E22;border:1px solid rgba(230,126,34,.2)">Orthopedics &times;3</span> '+
+      '<span class="pill" style="background:rgba(127,140,141,.1);color:#7F8C8D;border:1px solid rgba(127,140,141,.2)">Anesthesiology &times;3</span><br>'+
+      '<span class="pill pill-red">Surgery &times;2</span> <span class="pill pill-purple">Psychiatry</span> <span class="pill pill-teal">Cardiology</span><br>'+
+      '<span class="pill pill-critical">Ophthalmology &#9888;</span> <span style="font-size:.52rem;color:var(--rti)"> prescribed her opioid</span><br>'+
+      '<span class="pill pill-yellow">Emergency Medicine</span> <span style="font-size:.52rem;color:var(--muted)"> 3 visits</span></p>'+
+      '<p style="margin-top:6px;font-size:.58rem;color:var(--critical);font-weight:600">0 primary care. 7 facilities. Not one of these 12 has seen the whole chart.</p>'
     ,{border:'rgba(255,255,255,.04)'})},1200);
 
     setTimeout(function(){addCard('c1p','left','260px',
-      '<div><span class="badge badge-critical">COMMERCIAL PATIENT</span></div>'+
+      '<div><span class="badge badge-critical">TRICARE PATIENT</span></div>'+
       '<h3 style="color:var(--text);margin-top:8px">Sarah Johnson</h3>'+
-      '<p style="color:var(--text)">Age 41 · Female · Commercial Insurance · 13 providers</p>'+
-      '<p><span class="pill pill-critical">Opioid + Benzo</span> <span class="pill pill-red">No PCP</span> <span class="pill pill-yellow">Pediatrician Rx</span></p>'+
+      '<p style="color:var(--text)">Age 39 · Female · Tricare · 12 providers · 7 facilities</p>'+
+      '<p><span class="pill pill-critical">Benzo + COPD</span> <span class="pill pill-red">No PCP</span> <span class="pill pill-yellow">Duplicate ACE-I</span></p>'+
       '<p class="click-hint">&#9654; Click for medication detail</p>'+
       '<div class="click-expand">'+
-      '<table><tr><th>Drug Class</th><th>PDC</th><th>Status</th></tr>'+
-      '<tr><td style="color:var(--critical)">Hydrocodone (Opioid)</td><td style="color:var(--critical);font-weight:700">1.00</td><td><span class="pill pill-critical">Perfect Fill</span></td></tr>'+
-      '<tr><td style="color:var(--benzo)">Lorazepam (Benzo)</td><td style="color:var(--benzo)">0.85</td><td><span class="pill pill-critical">FDA Black-Box</span></td></tr>'+
-      '<tr><td>ACE Inhibitor</td><td style="color:var(--danger)">0.42</td><td><span class="pill pill-red">Non-Adherent</span></td></tr>'+
-      '<tr><td>SSRI</td><td style="color:var(--danger)">0.38</td><td><span class="pill pill-red">Non-Adherent</span></td></tr>'+
-      '<tr><td>Diuretic</td><td style="color:var(--danger)">0.35</td><td><span class="pill pill-red">Non-Adherent</span></td></tr>'+
-      '<tr><td>NSAID</td><td style="color:var(--danger)">0.03</td><td><span class="pill pill-red">356 Gap Days</span></td></tr>'+
-      '<tr><td>Macrolide</td><td style="color:var(--danger)">0.12</td><td><span class="pill pill-red">Non-Adherent</span></td></tr></table>'+
-      '<p style="margin-top:8px;color:var(--critical);font-weight:700;font-size:.66rem">&#9888; She fills the opioid perfectly. She doesn\'t fill her heart, brain, or blood pressure meds.</p>'+
+      '<table><tr><th>Medication</th><th>Prescriber</th><th>PDC</th></tr>'+
+      '<tr><td style="color:var(--benzo)">Lorazepam (Benzo)</td><td style="color:var(--critical)">Anesthesiology</td><td>9 fills</td></tr>'+
+      '<tr><td>Lisinopril (ACE-I)</td><td style="color:var(--danger)">Surgery <b>+</b> Ortho</td><td style="color:var(--success)">1.00</td></tr>'+
+      '<tr><td>Warfarin</td><td>Surgery</td><td style="color:var(--success)">0.96</td></tr>'+
+      '<tr><td>Atorvastatin</td><td style="color:var(--rti)">Psychiatry &#9888;</td><td style="color:var(--success)">0.98</td></tr>'+
+      '<tr><td>Fluticasone (COPD)</td><td>Anesthesiology</td><td style="color:var(--success)">1.00</td></tr>'+
+      '<tr><td>Albuterol (COPD)</td><td>Anesthesiology</td><td>7 fills</td></tr>'+
+      '<tr><td style="color:var(--opioid)">Hydrocodone</td><td style="color:var(--critical)">Ophthalmology &#9888;</td><td>2 fills</td></tr></table>'+
+      '<p style="margin-top:8px;color:var(--success);font-weight:700;font-size:.66rem">&#10004; She is adherent to every single chronic medication. PDC 0.96&ndash;1.00.</p>'+
+      '<p style="margin-top:4px;color:var(--critical);font-weight:700;font-size:.66rem">&#9888; She does everything right. The system is what is broken.</p>'+
       '</div>'
     ,{border:'rgba(255,23,68,.2)',click:true})},1800);
   });
@@ -415,9 +418,9 @@ function buildSarah(){
   var g=new THREE.Group();g.visible=false;scene.add(g);groups.push(g);
 
   var sources=[
-    {label:'Rx Claims',    sub:'Opioid+Benzo detected',    color:P.opioid, x:-14,y:6},
-    {label:'Provider Net',  sub:'13 prescribers, no PCP',  color:P.fabric, x:-14,y:3.5},
-    {label:'Encounter Log', sub:'Pediatrician anomaly',    color:P.rti,    x:-14,y:1},
+    {label:'Rx Claims',     sub:'Benzo + COPD detected',   color:P.opioid, x:-14,y:6},
+    {label:'Provider Net',  sub:'12 prescribers, no PCP',   color:P.fabric, x:-14,y:3.5},
+    {label:'Diagnosis Log', sub:'COPD dx 396 days prior',   color:P.rti,    x:-14,y:1},
   ];
   var srcNodes=[];
   sources.forEach(function(s){
@@ -446,7 +449,7 @@ function buildSarah(){
   g.add(txt('FDA + DEA + Clinical Rules',{size:11,color:'#444460',scale:.3}).translateX(5).translateY(2.2));
   var faRing=orbitRing(1.5,P.foundry);faRing.position.set(5,3.5,0);faRing.rotation.x=-Math.PI/2;g.add(faRing);
 
-  var kbNames=['FDA Black-Box','DEA Schedule','APA Guide','ACC/AHA'];
+  var kbNames=['Formulary Guide','Step Therapy','Beers Criteria','GOLD COPD'];
   var kbColors=[P.critical,P.opioid,P.foundry,P.bad];
   var kbNodes=[];
   kbNames.forEach(function(name,i){
@@ -492,7 +495,7 @@ function buildSarah(){
   });
 
   enters.push(function(){
-    setTitle('<span class="hl-iq">Data Agent</span> + <span class="hl-foundry">Foundry Agent</span>','The ontology connects what dashboards can\'t. A flat report shows 13 prescriptions. The ontology shows that those 13 prescriptions are a clinical and legal time bomb.');
+    setTitle('<span class="hl-iq">Data Agent</span> + <span class="hl-foundry">Foundry Agent</span>','The ontology connects what dashboards can\'t. A flat report shows 62 prescription fills and 12 clean encounters. The ontology shows a contraindicated drug and a doubled dose that no single provider could ever see.');
     gsap.to(cam.position,{x:0,y:5,z:22,duration:1.8,ease:'power2.inOut'});
     gsap.to(ctrl.target,{x:0,y:3.5,z:0,duration:1.8,ease:'power2.inOut'});
     bloom.strength=.45;
@@ -510,31 +513,31 @@ function buildSarah(){
       '<p style="color:var(--text);font-size:.68rem;line-height:1.8">'+
       '<span class="edge">Patient</span> &rarr; <span class="edge">Prescription</span> &rarr; <span class="edge">Provider</span></p>'+
       '<table><tr><th>Finding</th><th>Detail</th></tr>'+
-      '<tr><td style="color:var(--critical)">Opioid + Benzo</td><td>Hydrocodone (PDC 1.00) + Lorazepam (0.85) from <b>different prescribers</b></td></tr>'+
-      '<tr><td style="color:var(--rti)">Pediatrician Rx</td><td>Prescribing to 41-year-old adult</td></tr>'+
-      '<tr><td style="color:var(--danger)">NSAID Triple</td><td>Furosemide + Lisinopril + Ibuprofen (356 gap days)</td></tr>'+
-      '<tr><td style="color:var(--danger)">No PCP</td><td>13 providers, 0 primary care coordination</td></tr>'+
-      '<tr><td style="color:var(--foundry)">3 Psychiatrists</td><td>No consolidation, potential duplicate Rx</td></tr></table>'+
+      '<tr><td style="color:var(--critical)">Benzo in COPD</td><td>Lorazepam started <b>396 days</b> after COPD dx — different provider, different facility</td></tr>'+
+      '<tr><td style="color:var(--danger)">Duplicate ACE-I</td><td>Lisinopril from <b>2 prescribers</b> — 630 days dispensed into a 406-day window</td></tr>'+
+      '<tr><td style="color:var(--rti)">Specialty Mismatch</td><td>Ophthalmologist wrote the opioid; psychiatrist wrote the statin</td></tr>'+
+      '<tr><td style="color:var(--danger)">No PCP</td><td>12 providers, 7 facilities, 0 primary care coordination</td></tr>'+
+      '<tr><td style="color:var(--foundry)">One-Visit Rx</td><td>Benzo prescriber saw her <b>once</b>, then refilled 8 more times</td></tr></table>'+
       '<p style="margin-top:6px;font-size:.56rem;color:var(--iq)">Graph traversal — not SQL aggregation. 10 seconds.</p>'
     ,{border:'rgba(0,183,195,.15)'})},1500);
 
     setTimeout(function(){addCard('c2b','right','100px',
       '<h3 style="color:var(--foundry)">Foundry Agent — What To Do</h3>'+
       '<table><tr><th>Flag</th><th>Rule</th><th>Action</th></tr>'+
-      '<tr><td style="color:var(--critical)">FDA Black-Box</td><td>Opioid + Benzo concurrent</td><td style="color:var(--critical)">IMMEDIATE REVIEW</td></tr>'+
-      '<tr><td style="color:var(--danger)">DEA Schedule II+III</td><td>Multi-prescriber controlled</td><td>Consolidate to 1 provider</td></tr>'+
-      '<tr><td style="color:var(--rti)">Psychiatry &times;3</td><td>APA consolidation guide</td><td>Single psychiatrist</td></tr>'+
-      '<tr><td>NSAID + ACE-I + Diuretic</td><td>Nephrotoxicity risk</td><td>Discontinue NSAID</td></tr>'+
+      '<tr><td style="color:var(--critical)">Benzo + COPD</td><td>Formulary contraindication</td><td style="color:var(--critical)">IMMEDIATE REVIEW</td></tr>'+
+      '<tr><td style="color:var(--danger)">Duplicate Therapy</td><td>Same drug, 2 prescribers</td><td>Consolidate to 1 provider</td></tr>'+
+      '<tr><td style="color:var(--rti)">Scope of Practice</td><td>Specialty vs. drug class</td><td>Audit prescribing rights</td></tr>'+
+      '<tr><td>Chronic Benzo</td><td>Taper guidance &gt;90 days</td><td>Supervised taper</td></tr>'+
       '<tr><td>No PCP</td><td>Care coordination mandate</td><td>Assign PCP within 48hr</td></tr></table>'+
       '<p style="margin-top:8px;font-size:.58rem;color:var(--muted)">'+
-      '<b style="color:var(--critical)">FDA Boxed Warning:</b> "Concurrent use of opioids and benzodiazepines may result in profound sedation, respiratory depression, coma, and death."</p>'
+      '<b style="color:var(--critical)">Formulary Guidance:</b> "Lorazepam is CONTRAINDICATED in patients with COPD — risk of respiratory depression and hypercapnia."</p>'
     ,{border:'rgba(134,97,197,.15)'})},2200);
 
     setTimeout(function(){
       addCard('c2c','center','auto',
         '<p style="font-size:.76rem;line-height:1.6;color:var(--text)">'+
-        'A flat dashboard shows Sarah has <b>13 prescriptions</b>.<br>'+
-        'The ontology shows those 13 prescriptions are a <b style="color:var(--critical)">clinical and legal time bomb</b>.</p>'
+        'A flat dashboard shows Sarah is <b>100% adherent</b> across every chronic medication.<br>'+
+        'The ontology shows she is being <b style="color:var(--critical)">perfectly adherent to a contraindicated drug</b>.</p>'
       ,{border:'rgba(255,255,255,.06)'});
       setTimeout(function(){var el=document.getElementById('c2c');if(el){el.style.top='auto';el.style.bottom='76px'}},50);
     },3500);
@@ -550,19 +553,19 @@ function buildSarah(){
   });
 })();
 
-/* ═══════ SCENE 3 — "The Black Box Warning" ═══════ */
+/* ═══════ SCENE 3 — "The Contraindication Nobody Owns" ═══════ */
 (function(){
   var g=new THREE.Group();g.visible=false;scene.add(g);groups.push(g);
 
-  /* Two large medication spheres */
+  /* Two large nodes — the diagnosis and the drug */
   var opioidNode=glow(1.2,P.opioid,1);opioidNode.position.set(-4,4,0);opioidNode.scale.set(.01,.01,.01);g.add(opioidNode);
-  g.add(txt('HYDROCODONE',{size:18,weight:'900',color:'#E53935',scale:.5}).translateX(-4).translateY(6));
-  g.add(txt('Opioid · Schedule II · PDC 1.00',{size:11,color:'#AA3333',scale:.32}).translateX(-4).translateY(2.5));
+  g.add(txt('COPD · J44.9',{size:18,weight:'900',color:'#E53935',scale:.5}).translateX(-4).translateY(6));
+  g.add(txt('Diagnosed 14 Mar 2025 · Community Clinic',{size:11,color:'#AA3333',scale:.32}).translateX(-4).translateY(2.5));
   var oRing=orbitRing(2,P.opioid);oRing.position.set(-4,4,0);oRing.rotation.x=-Math.PI/2;g.add(oRing);
 
   var benzoNode=glow(1,P.benzo,.9);benzoNode.position.set(4,4,0);benzoNode.scale.set(.01,.01,.01);g.add(benzoNode);
   g.add(txt('LORAZEPAM',{size:18,weight:'900',color:'#FF6D00',scale:.5}).translateX(4).translateY(6));
-  g.add(txt('Benzodiazepine · Schedule IV',{size:11,color:'#AA5500',scale:.32}).translateX(4).translateY(2.5));
+  g.add(txt('Started 14 Apr 2026 · Lakeside Main',{size:11,color:'#AA5500',scale:.32}).translateX(4).translateY(2.5));
   var bRing=orbitRing(1.8,P.benzo);bRing.position.set(4,4,0);bRing.rotation.x=-Math.PI/2;g.add(bRing);
 
   /* Pulsing danger connection */
@@ -572,13 +575,13 @@ function buildSarah(){
 
   /* FDA warning glow in center */
   var fdaGlow=glow(.5,P.critical,2);fdaGlow.position.set(0,4,0);fdaGlow.scale.set(.01,.01,.01);g.add(fdaGlow);
-  g.add(txt('FDA BLACK BOX',{size:16,weight:'900',color:'#FF1744',scale:.45}).translateY(4.8));
+  g.add(txt('CONTRAINDICATED',{size:16,weight:'900',color:'#FF1744',scale:.45}).translateY(4.8));
 
   /* Three prescriber nodes below */
   var prescribers=[
-    {label:'Dr. A — Pain Mgmt',  color:P.opioid, x:-5,y:0},
-    {label:'Dr. B — Psychiatry',  color:P.foundry,x:0,y:-.5},
-    {label:'Dr. C — Urgent Care', color:P.iq,     x:5,y:0},
+    {label:'Dr. Garcia — Orthopedics',   color:P.opioid, x:-5,y:0},
+    {label:'Dr. R. Wilson — Anesthesia', color:P.benzo,  x:0,y:-.5},
+    {label:'Dr. M. Miller — Anesthesia', color:P.iq,     x:5,y:0},
   ];
   var rxNodes=[];
   prescribers.forEach(function(p){
@@ -586,7 +589,7 @@ function buildSarah(){
     g.add(txt(p.label,{size:12,weight:'600',color:'#'+new THREE.Color(p.color).getHexString(),scale:.32}).translateX(p.x).translateY(p.y-1));
     g.add(lnPts([new THREE.Vector3(p.x,p.y+.5,0),new THREE.Vector3(p.x<0?-3:p.x>0?3:0,3.5,0)],p.color,.15));
   });
-  g.add(txt('3 prescribers — none aware of each other',{size:11,color:'#555570',scale:.32}).translateY(-2));
+  g.add(txt('3 providers · 3 facilities · none saw the other two',{size:11,color:'#555570',scale:.32}).translateY(-2));
 
   /* Ops Agent */
   var opsNode=glow(.6,P.critical,.8);opsNode.position.set(10,4,0);opsNode.scale.set(.01,.01,.01);g.add(opsNode);
@@ -609,7 +612,7 @@ function buildSarah(){
   });
 
   enters.push(function(){
-    setTitle('The <span class="hl-critical">Black Box</span> Warning','Hydrocodone + Lorazepam. The FDA\'s most severe drug interaction warning. Three different providers in your system prescribed this combination. None of them know about each other.');
+    setTitle('The <span class="hl-critical">Contraindication</span> Nobody Owns','Her COPD was documented on 14 March 2025. Her Lorazepam was started 396 days later by an anesthesiologist who saw her exactly once, at a different hospital. He refilled it eight more times. He never knew she had COPD.');
     gsap.to(cam.position,{x:0,y:5,z:16,duration:1.8,ease:'power2.inOut'});
     gsap.to(ctrl.target,{x:1,y:3.5,z:0,duration:1.8,ease:'power2.inOut'});
     bloom.strength=.55;
@@ -625,13 +628,13 @@ function buildSarah(){
       '<div class="teams-notif">'+
       '<h4>&#9888; CRITICAL — Operations Agent</h4>'+
       '<div class="body">'+
-      '<b style="color:var(--text)">Sarah Johnson (Age 41, Female, Commercial)</b><br><br>'+
-      '<span style="color:var(--critical);font-weight:700">&#9888; FDA BLACK-BOX COMBINATION DETECTED</span><br>'+
-      '<b style="color:var(--opioid)">Hydrocodone-APAP</b> (PDC 1.00) — Pain Mgmt prescriber<br>'+
-      '<b style="color:var(--benzo)">Lorazepam</b> (PDC 0.85) — Psychiatry prescriber<br><br>'+
-      '&#128137; 3 different controlled-substance prescribers<br>'+
-      '&#128165; Concurrent opioid+benzo = <b>respiratory depression risk</b><br>'+
-      '&#9888; No PCP oversight, no care coordination<br><br>'+
+      '<b style="color:var(--text)">Sarah Johnson (Age 39, Female, Tricare)</b><br><br>'+
+      '<span style="color:var(--critical);font-weight:700">&#9888; CONTRAINDICATED MEDICATION — ACTIVE</span><br>'+
+      '<b style="color:var(--benzo)">Lorazepam 0.5 MG</b> — 9 fills, covered through 24 Aug 2026<br>'+
+      '<b style="color:var(--opioid)">COPD (J44.9)</b> — documented 14 Mar 2025<br><br>'+
+      '&#128137; Prescriber had <b>1 encounter</b>, then 8 refills<br>'+
+      '&#128165; Benzodiazepine in COPD = <b>respiratory depression risk</b><br>'+
+      '&#9888; No PCP oversight across 12 providers / 7 facilities<br><br>'+
       '<b style="color:var(--critical)">Immediate physician review required</b></div>'+
       '<div class="actions">'+
       '<button class="btn-go" onclick="this.textContent=\'&#10003; Escalated\';this.style.opacity=\'.6\'">&#10003; Escalate Now</button>'+
@@ -641,13 +644,13 @@ function buildSarah(){
     setTimeout(function(){addCard('c3b','left','200px',
       '<h3 style="color:var(--critical)">Why This Stops the Room</h3>'+
       '<p style="font-size:.68rem;line-height:2;color:var(--text)">'+
-      '<span class="pill pill-critical">1</span> Opioid + Benzo = #1 cause of opioid overdose death<br>'+
-      '<span class="pill pill-critical">2</span> 30% of opioid-related ER visits involve this combo<br>'+
-      '<span class="pill pill-critical">3</span> 3 prescribers — none aware of each other\'s Rx<br>'+
-      '<span class="pill pill-critical">4</span> She fills the opioid perfectly (PDC 1.00)<br>'+
-      '<span class="pill pill-critical">5</span> She does NOT fill her SSRI, ACE-I, or diuretic</p>'+
+      '<span class="pill pill-critical">1</span> Benzodiazepines are contraindicated in COPD<br>'+
+      '<span class="pill pill-critical">2</span> COPD was documented <b>396 days</b> before the first fill<br>'+
+      '<span class="pill pill-critical">3</span> The prescriber saw her <b>once</b> — then refilled 8&times;<br>'+
+      '<span class="pill pill-critical">4</span> On <b>23 Aug 2026</b> a second anesthesiologist started her COPD inhaler — while the Lorazepam was still active<br>'+
+      '<span class="pill pill-critical">5</span> Two doctors, same specialty, same patient, opposite directions</p>'+
       '<p style="margin-top:8px;font-size:.62rem;color:var(--muted)">'+
-      'This is a behavior pattern, not a knowledge gap. The ontology surfaces what no dashboard can.</p>'
+      'Nobody made a mistake. Every prescription was reasonable in isolation. The ontology surfaces what no dashboard can.</p>'
     ,{border:'rgba(255,23,68,.15)'})},1800);
   });
 
@@ -671,12 +674,12 @@ function buildSarah(){
   var eRing=orbitRing(2.5,P.fabric);eRing.position.y=1;eRing.rotation.x=-Math.PI/2;g.add(eRing);
 
   var actions=[
-    {label:'Pain Mgmt Review',    sub:'Consolidate opioid Rx',       color:P.critical,angle:0},
-    {label:'Psychiatry Consol.',   sub:'3 psychiatrists → 1',        color:P.foundry, angle:Math.PI*.333},
+    {label:'Benzo Taper',          sub:'COPD contraindication',      color:P.critical,angle:0},
+    {label:'Duplicate ACE-I Stop', sub:'2 prescribers → 1',           color:P.foundry, angle:Math.PI*.333},
     {label:'PCP Assignment',       sub:'Care coordination hub',      color:P.fabric,  angle:Math.PI*.667},
-    {label:'Benzo Taper Protocol', sub:'Supervised dose reduction',  color:P.benzo,   angle:Math.PI},
-    {label:'Med Reconciliation',   sub:'Resolve all duplicates',     color:P.iq,      angle:Math.PI*1.333},
-    {label:'NSAID Discontinue',    sub:'Nephrotoxicity prevention',  color:P.rti,     angle:Math.PI*1.667},
+    {label:'Pulmonary Referral',   sub:'COPD finally managed',       color:P.benzo,   angle:Math.PI},
+    {label:'Med Reconciliation',   sub:'62 fills, 12 prescribers',   color:P.iq,      angle:Math.PI*1.333},
+    {label:'Scope Audit',          sub:'Specialty vs. drug class',   color:P.rti,     angle:Math.PI*1.667},
   ];
   var actNodes=[];var radius=6;
   actions.forEach(function(a){
@@ -702,7 +705,7 @@ function buildSarah(){
   });
 
   enters.push(function(){
-    setTitle('<span class="hl-fabric">Day 2</span> — Intervention','Six actions execute simultaneously. The opioid+benzo combination triggers immediate physician review. Three psychiatrists consolidate to one. A PCP is assigned for the first time.');
+    setTitle('<span class="hl-fabric">Day 2</span> — Intervention','Six actions execute simultaneously. The benzodiazepine enters a supervised taper. The duplicated ACE inhibitor collapses to a single prescriber. A PCP is assigned for the first time in 17 months.');
     gsap.to(cam.position,{x:0,y:7,z:14,duration:1.8,ease:'power2.inOut'});
     gsap.to(ctrl.target,{x:0,y:1.5,z:0,duration:1.8,ease:'power2.inOut'});
     bloom.strength=.35;
@@ -712,22 +715,22 @@ function buildSarah(){
       '<div><span class="badge badge-day2">DAY 2 — INTERVENTION</span></div>'+
       '<h3 style="color:var(--fabric);margin-top:8px">Actions Executed</h3>'+
       '<p style="font-size:.68rem;line-height:2.2;color:var(--text)">'+
-      '&#10004; <b style="color:var(--critical)">Pain Mgmt review</b> — Consolidate opioid prescribing to single provider<br>'+
-      '&#10004; <b style="color:var(--foundry)">Psychiatry consolidation</b> — 3 psychiatrists &rarr; 1 primary<br>'+
+      '&#10004; <b style="color:var(--critical)">Benzo taper initiated</b> — Contraindicated in documented COPD<br>'+
+      '&#10004; <b style="color:var(--foundry)">Duplicate ACE-I resolved</b> — Surgery + Orthopedics &rarr; 1 prescriber<br>'+
       '&#10004; <b style="color:var(--fabric)">PCP assigned</b> — First-ever care coordination hub<br>'+
-      '&#10004; <b style="color:var(--benzo)">Benzo taper</b> — Supervised dose reduction protocol<br>'+
-      '&#10004; <b style="color:var(--iq)">Medication reconciliation</b> — Resolve all duplicates across 13 providers<br>'+
-      '&#10004; <b style="color:var(--rti)">NSAID discontinuation</b> — Prevent nephrotoxicity (triple-whammy)</p>'
+      '&#10004; <b style="color:var(--benzo)">Pulmonary referral</b> — COPD managed by a pulmonologist<br>'+
+      '&#10004; <b style="color:var(--iq)">Medication reconciliation</b> — 62 fills across 12 prescribers<br>'+
+      '&#10004; <b style="color:var(--rti)">Scope-of-practice audit</b> — Ophthalmology opioid, Psychiatry statin</p>'
     ,{border:'rgba(0,120,212,.2)'})},800);
 
     setTimeout(function(){addCard('c4b','left','200px',
       '<h3 style="color:var(--foundry)">Barrier Resolution</h3>'+
       '<p style="color:var(--text);font-size:.68rem;line-height:2">'+
-      '<span class="pill pill-critical">Opioid+Benzo</span> &rarr; <span class="pill pill-green">Under Review</span><br>'+
-      '<span class="pill pill-purple">3 Psychiatrists</span> &rarr; <span class="pill pill-green">Consolidated</span><br>'+
+      '<span class="pill pill-critical">Benzo in COPD</span> &rarr; <span class="pill pill-green">Taper Started</span><br>'+
+      '<span class="pill pill-purple">Duplicate ACE-I</span> &rarr; <span class="pill pill-green">Consolidated</span><br>'+
       '<span class="pill pill-red">No PCP</span> &rarr; <span class="pill pill-green">Assigned</span><br>'+
-      '<span class="pill pill-critical">Controlled Substance</span> &rarr; <span class="pill pill-blue">Single Prescriber</span><br>'+
-      '<span class="pill pill-red">NSAID Triple</span> &rarr; <span class="pill pill-green">Discontinued</span><br>'+
+      '<span class="pill pill-critical">COPD Unmanaged</span> &rarr; <span class="pill pill-blue">Pulmonology</span><br>'+
+      '<span class="pill pill-red">Specialty Mismatch</span> &rarr; <span class="pill pill-green">Audited</span><br>'+
       '<span class="pill pill-red">No Care Plan</span> &rarr; <span class="pill pill-blue">Created</span></p>'+
       '<p style="margin-top:8px;font-size:.62rem;color:var(--muted)">Every risk the agents found has a resolution in progress — in 48 hours.</p>'
     ,{border:'rgba(134,97,197,.15)'})},1800);
@@ -749,8 +752,8 @@ function buildSarah(){
 
   /* Sarah (right) */
   var sarahGlow=glow(.8,0x5B9BD5,.5);sarahGlow.position.set(7,3,0);sarahGlow.scale.set(.01,.01,.01);g.add(sarahGlow);
-  g.add(txt('Sarah Johnson, 41',{size:16,weight:'700',color:'#5B9BD5',scale:.45}).translateX(7).translateY(5));
-  g.add(txt('Overdose Risk',{size:13,weight:'600',color:'#FF1744',scale:.36}).translateX(7).translateY(1.5));
+  g.add(txt('Sarah Johnson, 39',{size:16,weight:'700',color:'#5B9BD5',scale:.45}).translateX(7).translateY(5));
+  g.add(txt('Respiratory Risk',{size:13,weight:'600',color:'#FF1744',scale:.36}).translateX(7).translateY(1.5));
   var sRing=orbitRing(1.5,0x5B9BD5);sRing.position.set(7,3,0);sRing.rotation.x=-Math.PI/2;g.add(sRing);
 
   /* Connecting arc through center */
@@ -787,7 +790,7 @@ function buildSarah(){
   });
 
   enters.push(function(){
-    setTitle('Two <span class="hl-danger">Patients</span>. One <span class="hl-iq">System</span>.','Nancy White — geriatric polypharmacy, readmission risk. Sarah Johnson — behavioral health + chronic disease, overdose risk. Both invisible until today. Both found in 12 minutes with one ontology and one agent.');
+    setTitle('Two <span class="hl-danger">Patients</span>. One <span class="hl-iq">System</span>.','Nancy White — geriatric polypharmacy, readmission risk. Sarah Johnson — a contraindicated drug and a doubled dose, hiding behind perfect adherence. Both invisible until today. Both found in 12 minutes with one ontology and one agent.');
     gsap.to(cam.position,{x:0,y:4,z:18,duration:1.8,ease:'power2.inOut'});
     gsap.to(ctrl.target,{x:0,y:2,z:0,duration:1.8,ease:'power2.inOut'});
     bloom.strength=.32;
@@ -809,18 +812,18 @@ function buildSarah(){
     setTimeout(function(){addCard('c5b','right','120px',
       '<h3 style="color:#5B9BD5">Sarah Johnson</h3>'+
       '<p style="font-size:.68rem;line-height:1.9;color:var(--text)">'+
-      'Age 41 · Commercial · 13 providers · 3 psychiatrists<br>'+
-      '<span class="pill pill-critical">Opioid PDC 1.00</span> <span class="pill pill-critical">+ Benzo</span><br>'+
-      '<span class="pill pill-red">No PCP</span> <span class="pill pill-yellow">Pediatrician Rx</span></p>'+
-      '<p style="margin-top:6px;font-size:.62rem;color:var(--critical);font-weight:600">Risk: FDA black-box combo. $2.4M wrongful death exposure.</p>'+
-      '<p style="margin-top:4px;font-size:.58rem;color:var(--success)">&#10004; Caught Day 1. Opioid review + benzo taper Day 2.</p>'
+      'Age 39 · Tricare · 12 providers · 7 facilities<br>'+
+      '<span class="pill pill-critical">Benzo in COPD</span> <span class="pill pill-critical">Duplicate ACE-I</span><br>'+
+      '<span class="pill pill-red">No PCP</span> <span class="pill pill-yellow">Ophthalmology Rx</span></p>'+
+      '<p style="margin-top:6px;font-size:.62rem;color:var(--critical);font-weight:600">Risk: Respiratory depression. $179K billed and climbing.</p>'+
+      '<p style="margin-top:4px;font-size:.58rem;color:var(--success)">&#10004; Caught Day 1. Benzo taper + ACE-I consolidation Day 2.</p>'
     ,{border:'rgba(91,155,213,.15)'})},1400);
 
     setTimeout(function(){addCard('c5c','left','380px',
       '<h3 style="color:var(--muted)">The Pattern</h3>'+
       '<p style="font-size:.68rem;line-height:2.2;color:var(--text)">'+
       '<b style="color:var(--danger)">Nancy:</b> Geriatric polypharmacy &rarr; readmission risk<br>'+
-      '<b style="color:var(--critical)">Sarah:</b> Behavioral health + chronic &rarr; overdose risk<br><br>'+
+      '<b style="color:var(--critical)">Sarah:</b> Contraindicated drug + duplicate therapy &rarr; respiratory risk<br><br>'+
       '<b style="color:var(--muted)">Both:</b> Fragmented providers. No coordination. Data existed.<br>'+
       '<b style="color:var(--iq)">Now:</b> One ontology. One agent. <b>12 minutes.</b></p>'
     )},2400);
@@ -898,11 +901,11 @@ function buildSarah(){
       '<h3 style="color:var(--muted)">If They Ask For More</h3>'+
       '<p style="font-size:.66rem;line-height:2;color:var(--muted)">'+
       '<b style="color:var(--iq)">"More like Sarah?"</b><br>'+
-      '<span style="color:#555570">&rarr; "Show me 5 patients on both an opioid and a benzo prescribed by different providers."</span><br><br>'+
-      '<b style="color:var(--iq)">"What about kids?"</b><br>'+
-      '<span style="color:#555570">&rarr; "Show me a pediatric patient with prescriptions from 3+ different providers."</span><br><br>'+
+      '<span style="color:#555570">&rarr; "Show me patients with a COPD diagnosis who are filling a benzodiazepine."</span><br><br>'+
+      '<b style="color:var(--iq)">"Any other duplicates?"</b><br>'+
+      '<span style="color:#555570">&rarr; "Find patients receiving the same medication from two different prescribers."</span><br><br>'+
       '<b style="color:var(--iq)">"Can we see the pharmacy pattern?"</b><br>'+
-      '<span style="color:#555570">&rarr; "For Sarah Johnson, show prescription fill dates and pharmacy types."</span></p>'
+      '<span style="color:#555570">&rarr; "For Sarah Johnson, show prescription fill dates and prescribing provider specialty."</span></p>'
     ,{border:'rgba(255,255,255,.04)'})},3000);
   });
 

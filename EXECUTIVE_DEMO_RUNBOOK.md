@@ -15,7 +15,7 @@
 3. **Q2** — Nancy's adherence by drug class (the triple whammy)
 4. **Q3** — Nancy's prescribers (no cardiologist managing)
 5. **Q4** — find more patients like Nancy (the pattern scales)
-6. **Q5** — Sarah Johnson's full story (opioid + benzo black-box close)
+6. **Q5** — Sarah Johnson's full story (benzo-in-COPD contraindication close)
 7. **Final line** — sit down, don't fill the silence
 
 Total: ~6 minutes narration + ~3 minutes agent runtime = **~10 minutes**.
@@ -133,9 +133,12 @@ Move on.
 
 ## STEP 5 — Sarah Johnson: the close
 
+> ⚠️ **Use the patient ID, never the name.** There are 11 Sarah Johnsons in `dim_patient`.
+> The story patient is **`PAT006030`**.
+
 ### Type
 
-> **"Show me Sarah Johnson age 41 — her diagnoses, her medications, her adherence, and her community health profile"**
+> **"Show me patient PAT006030 — her diagnoses, her medications with prescribing provider and specialty, and her medication adherence"**
 
 ### While it runs
 
@@ -143,19 +146,31 @@ Move on.
 
 ### After it lands (45 sec — stand still, don't click)
 
-> "Sarah Johnson. **Forty-one.** Working-age. The chart of a sixty-five-year-old on a forty-one-year-old body — diabetes, COPD, coronary disease, depression.
+> "Sarah Johnson. **Thirty-nine.** Working-age. Tricare — so she's not in a single CMS program you're measured on. Nobody's dashboard is watching her.
 >
-> Look at her adherence. She's skipping every chronic medication that keeps her alive — heart, blood pressure, antidepressant — all under fifty percent.
+> Twelve providers. Seven facilities. **Zero** primary care physicians.
 >
-> Then look at this line. **Opioid. PDC one-point-zero-zero.** The only thing she fills perfectly is the opioid.
+> Now look at her adherence. This is the part that surprised me. She is **adherent to everything.** ACE inhibitor, one-point-zero-zero. Inhaled corticosteroid, one-point-zero-zero. Statin, ninety-eight. Anticoagulant, ninety-six. **This patient does everything right.**
 >
-> And one line below it — **benzodiazepine.** Different doctor. Different specialty. Neither one can see what the other prescribed.
+> So watch what the ontology does with that.
 >
-> **Opioid plus benzodiazepine is the FDA black-box warning combination.** Leading prescription drug combination in overdose deaths in this country. Every prescriber on this chart was trained never to co-prescribe these two — and yet here they are.
+> Line one — **COPD.** Diagnosed March of last year, by an orthopedist, at a community clinic.
 >
-> Sarah is one bad day away from a headline. Nobody in your network knows it — because no human is positioned to see her chart the way this ontology just did."
+> Line two — **Lorazepam.** A benzodiazepine. Started three hundred and ninety-six days later by an **anesthesiologist**, at a different hospital, who saw her **exactly once** — and then refilled it eight more times without ever seeing her again.
+>
+> **Benzodiazepines are contraindicated in COPD.** Respiratory depression. It's in your own formulary guide — the agent cited it.
+>
+> And here's the line that ends the conversation. **Five days ago**, a *second* anesthesiologist started her on a COPD inhaler — while that Lorazepam was still active. Two doctors. Same specialty. Same patient. Pulling in opposite directions. Neither one knew the other existed.
+>
+> **Nobody made a mistake.** Every single prescription was reasonable in isolation. That's what makes this invisible — and that's exactly what an ontology is for."
 
 Pause. Three full seconds.
+
+### If you have time — the second finding
+
+> "One more, quickly. Her blood pressure medication — lisinopril. Twenty-one fills. **Six hundred and thirty days of medication dispensed into a four-hundred-and-six-day window.** Two prescribers, a surgeon and an orthopedist, at two different facilities, filling two to three days apart, eight separate times. She's been taking a double dose of an ACE inhibitor for over a year. She has heart failure. She's on a blood thinner.
+>
+> No dashboard shows you this, because to every individual system, she looks perfectly adherent."
 
 ### Final line — say it, then stop
 
@@ -164,6 +179,26 @@ Pause. Three full seconds.
 > **What's the first question you'd want to ask it about your own data?**"
 
 **Sit down. Don't fill the silence.**
+
+---
+
+## ⛔ DO NOT SAY — disproven for PAT006030
+
+These claims were in earlier versions of this script. They are **false for this patient** and were
+verified against `lh_gold_curated` on 2026-08-27. If a customer's clinician checks, you lose the room.
+
+| Do not say | Why it's false |
+|---|---|
+| "Concurrent opioid + benzodiazepine" / "FDA black-box combination" | Her opioid (Apr 2025) and her benzo (Apr 2026) are **362 days apart**. No overlap. Dataset-wide, **no provider ever prescribes both** to the same patient. |
+| "She's non-adherent" / "PDC under 50%" / "she only fills the opioid" | She is **Adherent on every measured class**: ACE-I 1.00, Inhaled Corticosteroid 1.00, Statin 0.978, Anticoagulant 0.957. |
+| "Warfarin + NSAID interaction" | No overlap — warfarin coverage ends 2026-07-01, ibuprofen starts 2026-07-10. **−9 days.** Frame as a coordination near-miss only. |
+| "Three psychiatrists" | She has **one** (Dr. Sarah Smith). |
+| "A pediatrician prescribing to an adult" | Fictional. The real anomaly is an **ophthalmologist** who wrote her opioid, and a **psychiatrist** who wrote her statin. |
+| "Age 41" / "Commercial insurance" / "13 providers" | She is **39**, **Tricare**, **12 providers**, 7 facilities. |
+
+**The verified close is:** benzodiazepine started 396 days after a documented COPD diagnosis, by a
+one-visit prescriber at a different facility, still active — plus a duplicated ACE inhibitor
+(630 days dispensed into a 406-day window) from two prescribers filling days apart.
 
 ---
 
@@ -192,7 +227,7 @@ Pause. Three full seconds.
 ## Q&A prep — the lines they'll challenge
 
 **"Is this real patient data?"**
-> "Synthetic data, modeled on real-world distributions. The patterns — fragmented prescribing, triple-whammy combinations, opioid-benzo co-prescribing — are pulled from published clinical literature and CMS data. We use synthetic patients so we can demo without HIPAA exposure. When we connect this to your data, the names change. The patterns won't."
+> "Synthetic data, modeled on real-world distributions. The patterns — fragmented prescribing, triple-whammy combinations, contraindicated co-prescribing across specialties — are pulled from published clinical literature and CMS data. We use synthetic patients so we can demo without HIPAA exposure. When we connect this to your data, the names change. The patterns won't."
 
 **"Where does the $15K come from?"**
 > "AHRQ's HCUP brief on 30-day readmissions puts the all-payer average around fifteen-two. Medicare-specific is slightly higher. Premier's analyses range ten to twenty depending on DRG. Fifteen is the round midpoint."

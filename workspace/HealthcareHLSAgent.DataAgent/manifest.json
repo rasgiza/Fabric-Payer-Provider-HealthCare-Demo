@@ -6,10 +6,6 @@
       "payloadType": "InlineBase64"
     },
     {
-      "path": "Files/Config/draft/stage_config.json",
-      "payloadType": "InlineBase64"
-    },
-    {
       "path": "Files/Config/draft/lakehouse-tables-lh_gold_curated/datasource.json",
       "payloadType": "InlineBase64"
     },
@@ -18,11 +14,19 @@
       "payloadType": "InlineBase64"
     },
     {
-      "path": "Files/Config/publish_info.json",
+      "path": "Files/Config/draft/semantic-model-HealthcareDemoHLS/datasource.json",
       "payloadType": "InlineBase64"
     },
     {
-      "path": "Files/Config/published/stage_config.json",
+      "path": "Files/Config/draft/semantic-model-HealthcareDemoHLS/fewshots.json",
+      "payloadType": "InlineBase64"
+    },
+    {
+      "path": "Files/Config/draft/stage_config.json",
+      "payloadType": "InlineBase64"
+    },
+    {
+      "path": "Files/Config/publish_info.json",
       "payloadType": "InlineBase64"
     },
     {
@@ -34,7 +38,15 @@
       "payloadType": "InlineBase64"
     },
     {
-      "path": ".platform",
+      "path": "Files/Config/published/semantic-model-HealthcareDemoHLS/datasource.json",
+      "payloadType": "InlineBase64"
+    },
+    {
+      "path": "Files/Config/published/semantic-model-HealthcareDemoHLS/fewshots.json",
+      "payloadType": "InlineBase64"
+    },
+    {
+      "path": "Files/Config/published/stage_config.json",
       "payloadType": "InlineBase64"
     }
   ]

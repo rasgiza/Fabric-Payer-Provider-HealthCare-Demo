@@ -1,0 +1,70 @@
+{
+  "$schema": "https://developer.microsoft.com/json-schemas/fabric/item/dataAgent/definition/fewShots/1.0.0/schema.json",
+  "fewShots": [
+    {
+      "id": "d3579815-62a3-428a-be12-ebd7844d5f11",
+      "question": "What is the overall claim denial rate?",
+      "query": "EVALUATE ROW(\"Denial Rate\", [Denial Rate], \"Total Claims\", [Total Claims])"
+    },
+    {
+      "id": "5f118ca0-8a74-4739-b854-b2eacbef598c",
+      "question": "What is the denial rate by payer?",
+      "query": "EVALUATE\nSUMMARIZECOLUMNS(\n    dim_payer[payer_name],\n    \"Denial Rate\", [Denial Rate],\n    \"Total Claims\", [Total Claims],\n    \"Total Billed\", [Total Billed]\n)\nORDER BY [Denial Rate] DESC"
+    },
+    {
+      "id": "48fa5cf2-4047-4270-88d5-9c0821ddca6a",
+      "question": "What is the 30-day readmission rate trend by month?",
+      "query": "EVALUATE\nSUMMARIZECOLUMNS(\n    dim_date[year],\n    dim_date[month_number],\n    dim_date[month_name],\n    \"Readmission Rate\", [Readmission Rate],\n    \"Total Encounters\", [Total Encounters]\n)\nORDER BY dim_date[year], dim_date[month_number]"
+    },
+    {
+      "id": "491a5854-7e62-44a2-82c0-75ebe10104e6",
+      "question": "What is the readmission rate by encounter type?",
+      "query": "EVALUATE\nSUMMARIZECOLUMNS(\n    fact_encounter[encounter_type],\n    \"Readmission Rate\", [Readmission Rate],\n    \"Total Encounters\", [Total Encounters],\n    \"Avg Length of Stay\", [Avg Length of Stay]\n)\nORDER BY [Readmission Rate] DESC"
+    },
+    {
+      "id": "e1685769-6583-4f33-8579-f098243189ac",
+      "question": "How many encounters are in each readmission risk category?",
+      "query": "EVALUATE\nSUMMARIZECOLUMNS(\n    fact_encounter[readmission_risk_category],\n    \"Total Encounters\", [Total Encounters],\n    \"Avg Readmission Risk\", [Avg Readmission Risk]\n)\nORDER BY [Total Encounters] DESC"
+    },
+    {
+      "id": "95a83ab8-eb9b-4316-a4e0-593bdd4d3647",
+      "question": "What is medication adherence rate by drug class?",
+      "query": "EVALUATE\nSUMMARIZECOLUMNS(\n    agg_medication_adherence[drug_class],\n    \"Adherent Rate\", [Adherent Rate],\n    \"Avg PDC Score\", [Avg PDC Score]\n)\nORDER BY [Adherent Rate] DESC"
+    },
+    {
+      "id": "6fedb424-b4c3-4a2e-a3ea-c40c0a75fcb2",
+      "question": "How many patients are adherent vs non-adherent?",
+      "query": "EVALUATE\nSUMMARIZECOLUMNS(\n    agg_medication_adherence[adherence_category],\n    \"Patients\", DISTINCTCOUNT(agg_medication_adherence[patient_key])\n)\nORDER BY [Patients] DESC"
+    },
+    {
+      "id": "4f43bfad-56bd-424e-8868-11ecf1431b5e",
+      "question": "Compare prescription cost by payer.",
+      "query": "EVALUATE\nSUMMARIZECOLUMNS(\n    dim_payer[payer_name],\n    \"Total Rx Cost\", [Total Rx Cost],\n    \"Payer Rx Cost\", [Payer Rx Cost],\n    \"Patient Copay Total\", [Patient Copay Total],\n    \"Generic Fill Rate\", [Generic Fill Rate]\n)\nORDER BY [Total Rx Cost] DESC"
+    },
+    {
+      "id": "cccd4114-256d-4aa5-93b4-4e75fd74d817",
+      "question": "Which payers have the lowest collection rate?",
+      "query": "EVALUATE\nSUMMARIZECOLUMNS(\n    dim_payer[payer_name],\n    \"Collection Rate\", [Collection Rate],\n    \"Total Billed\", [Total Billed],\n    \"Total Paid\", [Total Paid]\n)\nORDER BY [Collection Rate] ASC"
+    },
+    {
+      "id": "8bb17965-2d07-41de-ab70-fb58939e3aa6",
+      "question": "What is the average length of stay by encounter type?",
+      "query": "EVALUATE\nSUMMARIZECOLUMNS(\n    fact_encounter[encounter_type],\n    \"Avg Length of Stay\", [Avg Length of Stay],\n    \"Total Encounters\", [Total Encounters]\n)\nORDER BY [Avg Length of Stay] DESC"
+    },
+    {
+      "id": "baddc599-b583-4580-ab16-ac858d2fa545",
+      "question": "How many patients are in each age group?",
+      "query": "EVALUATE\nSUMMARIZECOLUMNS(\n    dim_patient[age_group],\n    \"Total Patients\", [Total Patients]\n)\nORDER BY dim_patient[age_group]"
+    },
+    {
+      "id": "a019188f-f059-4f82-a622-93c9de974736",
+      "question": "What is our YoY charge growth?",
+      "query": "EVALUATE ROW(\n    \"YTD Charges\", [YTD Charges],\n    \"PY Charges\", [PY Charges],\n    \"YoY Charge Growth\", [YoY Charge Growth]\n)"
+    },
+    {
+      "question": "What are the top 5 denial reasons by claim count and total billed amount?",
+      "query": "EVALUATE\nTOPN(\n    5,\n    CALCULATETABLE(\n        SUMMARIZECOLUMNS(\n            fact_claim[primary_denial_reason],\n            \"Total Claims\", [Total Claims],\n            \"Total Billed\", [Total Billed]\n        ),\n        fact_claim[denial_flag] = 1\n    ),\n    [Total Claims], DESC\n)\nORDER BY [Total Claims] DESC",
+      "id": "a0bdc823-b731-474b-b97f-c09a9527cd39"
+    }
+  ]
+}

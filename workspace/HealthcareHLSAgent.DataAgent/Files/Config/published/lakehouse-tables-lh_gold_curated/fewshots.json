@@ -85,6 +85,21 @@
       "id": "sq35-patient-adherence-by-drug-class",
       "question": "Show me medication adherence for Jane Doe age 50 by drug class.",
       "query": "SELECT CONCAT(dp.first_name, ' ', dp.last_name) AS patient_name, dp.age, dm.drug_class, dm.therapeutic_area, COUNT(*) AS medications_in_class, AVG(ama.pdc_score) AS avg_pdc_score, MIN(ama.pdc_score) AS worst_pdc_score, SUM(ama.gap_days) AS total_gap_days, MAX(ama.adherence_category) AS worst_adherence_category, STRING_AGG(dm.medication_name, ', ') WITHIN GROUP (ORDER BY dm.medication_name) AS medications FROM agg_medication_adherence ama JOIN dim_patient dp ON dp.patient_key = ama.patient_key AND dp.is_current = 1 JOIN dim_medication dm ON dm.medication_key = ama.medication_key WHERE dp.first_name = 'Jane' AND dp.last_name = 'Doe' AND dp.age = 50 GROUP BY dp.first_name, dp.last_name, dp.age, dm.drug_class, dm.therapeutic_area ORDER BY worst_pdc_score ASC"
+    },
+    {
+      "id": "5d9e346e-6ea3-4bf5-afca-fbbc18d7a59e",
+      "question": "Please list the 5 most recent encounters for denial reason 'Missing Documentation', only include encounters with a prescription",
+      "query": "SELECT TOP 5 fe.encounter_id, CONCAT(dp.first_name, ' ', dp.last_name) AS patient_name, dd.full_date AS encounter_date, fe.encounter_type, dpr.display_name AS provider_name, dpr.specialty, fc.claim_id, fc.primary_denial_reason, fc.billed_amount FROM fact_encounter fe JOIN fact_claim fc ON fe.encounter_key = fc.encounter_key JOIN dim_patient dp ON fe.patient_key = dp.patient_key AND dp.is_current = 1 JOIN dim_provider dpr ON fe.provider_key = dpr.provider_key AND dpr.is_current = 1 JOIN dim_date dd ON fe.encounter_date_key = dd.date_key WHERE fc.primary_denial_reason = 'Missing Documentation' AND EXISTS (SELECT 1 FROM fact_prescription fp WHERE fp.encounter_key = fe.encounter_key) ORDER BY fe.encounter_date_key DESC"
+    },
+    {
+      "id": "914b59ef-583c-4c7b-9869-117d9ecd0525",
+      "question": "I would like to see full details for encounter ENC00014657, please include provider, diagnosis and prescription information",
+      "query": "SELECT fe.encounter_id, CONCAT(dp.first_name, ' ', dp.last_name) AS patient_name, dp.age, dp.insurance_type, dpr.display_name AS provider_name, dpr.specialty, dpr.department, dd.full_date AS encounter_date, fe.encounter_type, fe.admission_type, fe.discharge_disposition, fe.length_of_stay, fe.total_charges, fe.readmission_risk_category, (SELECT STRING_AGG(CONCAT(dx.icd_code, ' - ', dx.icd_description), '; ') FROM fact_diagnosis fd JOIN dim_diagnosis dx ON fd.diagnosis_key = dx.diagnosis_key WHERE fd.encounter_key = fe.encounter_key) AS diagnoses, (SELECT STRING_AGG(CONCAT(dm.medication_name, ' (', dm.drug_class, ')'), '; ') FROM fact_prescription fp JOIN dim_medication dm ON fp.medication_key = dm.medication_key WHERE fp.encounter_key = fe.encounter_key) AS prescriptions FROM fact_encounter fe JOIN dim_patient dp ON fe.patient_key = dp.patient_key AND dp.is_current = 1 JOIN dim_provider dpr ON fe.provider_key = dpr.provider_key AND dpr.is_current = 1 JOIN dim_date dd ON fe.encounter_date_key = dd.date_key WHERE fe.encounter_id = 'ENC00014657'"
+    },
+    {
+      "id": "e516c82a-41ce-497d-aed7-dadddbc16eef",
+      "question": "Show me the most recent encounters for patient PAT006030",
+      "query": "SELECT TOP 20 fe.encounter_id, dd.full_date AS encounter_date, fe.encounter_type, dpr.display_name AS provider_name, dpr.specialty, fe.length_of_stay, fe.total_charges FROM fact_encounter fe JOIN dim_patient dp ON fe.patient_key = dp.patient_key AND dp.is_current = 1 JOIN dim_provider dpr ON fe.provider_key = dpr.provider_key AND dpr.is_current = 1 JOIN dim_date dd ON fe.encounter_date_key = dd.date_key WHERE dp.patient_id = 'PAT006030' ORDER BY fe.encounter_date_key DESC"
     }
   ]
 }

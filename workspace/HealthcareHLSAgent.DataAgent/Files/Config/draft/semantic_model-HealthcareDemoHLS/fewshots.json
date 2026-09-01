@@ -60,6 +60,11 @@
       "question": "What is our YoY charge growth?",
       "query": "EVALUATE ROW(\n    \"YTD Charges\", [YTD Charges],\n    \"PY Charges\", [PY Charges],\n    \"YoY Charge Growth\", [YoY Charge Growth]\n)",
       "explanation": "Time-intelligence measures already encoded."
+    },
+    {
+      "question": "What are the top 5 denial reasons by claim count and total billed amount?",
+      "query": "EVALUATE\nTOPN(\n    5,\n    CALCULATETABLE(\n        SUMMARIZECOLUMNS(\n            fact_claim[primary_denial_reason],\n            \"Total Claims\", [Total Claims],\n            \"Total Billed\", [Total Billed]\n        ),\n        fact_claim[denial_flag] = 1\n    ),\n    [Total Claims], DESC\n)\nORDER BY [Total Claims] DESC",
+      "explanation": "Category rollup: one row per denial reason, not per claim. Filter to denied claims with denial_flag = 1 so approved claims with a null reason are excluded. Contrast with 'list the 5 most recent denied encounters', which is a record list and belongs to the lakehouse."
     }
   ]
 }

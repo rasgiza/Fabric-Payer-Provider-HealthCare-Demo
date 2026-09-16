@@ -2,7 +2,7 @@
 
 **Audience:** Healthcare executives (CMO, COO, CFO, CIO, VP Quality) — provider-side or mixed payer/provider
 **Length:** ~12 minutes
-**Tools:** Fabric data agent `OntologyAgent` (Steps 0–5, returns rows) → Foundry agent `OntologyAgent` (Step 6, returns policy + actions)
+**Tools:** Fabric data agent `HealthcareHLSAgent` (Steps 0–5, returns rows) → Foundry agent `Healthcare Ontology Agent` (Step 6, returns policy + actions)
 **Two patients:** Nancy White (the setup) → Sarah Johnson (the close)
 **Goal:** Prove that Microsoft Fabric + an ontology + a plain-English agent can surface readmission risk and care fragmentation no current tool in their hospital can see.
 
@@ -76,11 +76,15 @@ Move on.
 
 ### Type
 
-> **"Show me medication adherence for Nancy White age 63 by drug class"**
+> **"Show me every medication prescribed to Nancy White age 63, with its drug class"**
+
+> 🚨 **Ask for medications here, not adherence.** Adherence is only computed for *chronic*
+> maintenance drugs, and her ibuprofen is an acute script — so an adherence question silently
+> drops the NSAID and you lose the triple whammy. Expect **10 drug classes**.
 
 ### While it runs
 
-> "Patient → prescriptions → medications → drug class, with fill rate per class. A four-table join in SQL. One sentence in English."
+> "Patient → prescriptions → medications → drug class. A four-table join in SQL. One sentence in English."
 
 ### After it lands (30 sec)
 
@@ -89,6 +93,13 @@ Move on.
 > Nancy is sixty-three. She's prescribed all three. And no dashboard in your hospital today shows you this — because the prescriptions live in three different systems.
 >
 > **That's the mechanism behind her readmission risk.** Now — who prescribed all of this to her?"
+
+### Optional follow-up — if someone asks whether she's actually taking them
+
+> **"Now show me her medication adherence by drug class"**
+
+Expect **9 rows, 8 of them Non-Adherent** at a PDC of 0.43. The only class she takes properly is
+her thyroid hormone. The NSAID does not appear here — see the note above.
 
 ---
 
@@ -124,9 +135,7 @@ Move on.
 
 ### After it lands (45 sec)
 
-> "Five more Nancys. Look at this one — **Barbara Johnson, age fifty. Ten providers. Nine different specialties.** Almost one specialty per prescription. Worse than Nancy.
->
-> Robert Wilson, eighty-five, ten doctors. Christopher Gonzalez, seventy-two, eleven providers.
+> "Five more Nancys. **Read the top row off the screen — name, age, provider count, specialty count.** Several of them are worse than Nancy: ten providers, nine different specialties, almost one specialty per prescription.
 >
 > Each name is a Nancy. Each is a readmission waiting to happen. The agent found them in three seconds — without me telling it what to look for. I asked for the **pattern**. It returned the **people**.
 >
@@ -136,12 +145,33 @@ Move on.
 
 ## STEP 5 — Sarah Johnson: the close
 
-> ⚠️ **Use the patient ID, never the name.** There are 11 Sarah Johnsons in `dim_patient`.
-> The story patient is **`PAT006030`**.
+> ⚠️ **Ask by name AND age — not by patient ID.**
+> At the default 10,000-patient volume there are 11 Sarah Johnsons in `dim_patient`, but the
+> generator guarantees only **one is 39**, so name + age is unique.
+>
+> Do **not** type `PAT006030` into the agent. `patient_id` exists only on `dim_patient`; every fact
+> table keys on `patient_key`. Filtering facts by patient ID returns zero rows and the agent will
+> correctly tell you it has no data for her. `PAT006030` is for *your* reference and for SQL — not for the agent.
 
-### Type
+> 🚨 **Do not ask for medications and adherence in the same question.**
+> "...and her medication adherence" anchors the agent on `agg_medication_adherence`, which holds
+> **only 4 chronic drug classes** — ACE inhibitor, statin, anticoagulant, inhaled corticosteroid.
+> **Lorazepam has no adherence row.** Ask them together and the benzodiazepine never appears —
+> and you lose the close. Two questions, in this order.
 
-> **"Show me patient PAT006030 — her diagnoses, her medications with prescribing provider and specialty, and her medication adherence"**
+### Type — question 1 of 2
+
+> **"Show me Sarah Johnson, age 39 — all her diagnoses, and every medication she has been prescribed with the prescribing provider and their specialty"**
+
+Expect **9 drug classes**, Lorazepam among them. If you see fewer, re-ask with
+*"list every medication she has ever filled, including ones she is no longer taking."*
+
+### Type — question 2 of 2 (after you have narrated the medications)
+
+> **"Now show me her medication adherence by drug class"**
+
+Expect **4 rows, all Adherent**: ACE inhibitor 1.00, inhaled corticosteroid 1.00,
+statin 0.98, anticoagulant 0.96.
 
 ### While it runs
 
@@ -157,7 +187,7 @@ Move on.
 >
 > So watch what the ontology does with that.
 >
-> Line one — **COPD.** Diagnosed March of last year, by an orthopedist, at a community clinic.
+> Line one — **COPD.** Diagnosed about seventeen months ago, by an orthopedist, at a community clinic.
 >
 > Line two — **Lorazepam.** A benzodiazepine. Started three hundred and ninety-six days later by an **anesthesiologist**, at a different hospital, who saw her **exactly once** — and then refilled it eight more times without ever seeing her again.
 >
@@ -183,15 +213,28 @@ Switch agents. **Say this while you switch:**
 
 > "Everything so far came from the data agent. It knows *what happened*. Now I'll ask a different agent what it *means* — same ontology underneath, but this one can also read your policy library."
 
-**Agent:** `OntologyAgent` in Foundry project `HealthcareDemo-HLS` — it holds the Fabric data agent *and* an MCP tool over the 26-document knowledge base.
+**Agent:** `Healthcare Ontology Agent` in Foundry — it holds the Fabric data agent *and* an MCP tool over the 26-document knowledge base.
 
 **Type this:**
 
-> Patient PAT006030 has COPD and is on Lorazepam. What does policy say, and what should we do? Cite it.
+> **"Sarah Johnson, age 39. Confirm from the data every benzodiazepine she has been prescribed — the drug, the prescribing provider, their specialty, the first fill date, and the total days supplied. Then, given her documented diagnoses, tell me what policy says about it, including any prior authorization requirement. Cite your sources and give me next actions."**
 
-> ⚠️ Same rule as Step 5 — **patient ID, never the name.** Expect 30–60 seconds; it calls both tools before it answers.
+> ⚠️ Same rule as Step 5 — **name and age, never the patient ID.**
+>
+> 🚨 **Do not name Lorazepam in the question.** If you hand the agent the drug, it will answer
+> *from your prompt* and print "details not shown here, but stated in the question" — which tells
+> the room you fed it the answer. Make it retrieve. The phrase **"confirm from the data"** is
+> what forces the traversal; **"prior authorization requirement"** is what pulls the kill-shot document.
+>
+> ⏱️ **Budget 2–3 minutes, not 60 seconds.** Observed 203s. Talk over it — this is where you
+> narrate what it's doing, not where you stand silent.
 
-**What should come back:** a traversal confirming COPD (J44.9) alongside active Lorazepam, quoted policy with `Source:` lines, then 2–4 recommended actions.
+**What should come back:** Lorazepam 0.5 MG, **Dr. Richard Wilson, Anesthesiology**, first filled
+**about four months ago**, **126 days** supplied — then quoted policy with `Source:` lines, then 2–4 actions.
+
+> **If it returns the drug but not the prescriber or the days**, follow up with:
+> *"Who prescribed it, what is their specialty, and how many days has she been on it?"*
+> Never supply those facts yourself.
 
 **The five documents it should reach for:**
 
@@ -203,9 +246,15 @@ Switch agents. **Say this while you switch:**
 | `compliance/Clinical_Documentation_Standards.md` | Requires indication, duration plan, fall risk, respiratory status |
 | `denial_management/Prior_Authorization_Requirements.md` | Lorazepam >30 days requires prior auth **and a psychiatry consult** |
 
+> ⚠️ **If it quotes the Beers Criteria, get ahead of it.** `Drug_Formulary_Guide.md:88` genuinely
+> cites AGS 2023 Beers — but Beers applies to **age >65**, and Sarah is **39**. The agent sometimes
+> blends it in. If a clinician catches it, agree instantly: *"Right — Beers is the elderly rule and
+> she isn't elderly. The COPD contraindication and your own prior-auth rule are what apply here."*
+> Conceding that fast makes everything else more credible, not less.
+
 **The narration — the last one is the kill shot:**
 
-> "That last rule is your own. Lorazepam beyond thirty days requires a psychiatry consult. **She's at a hundred and twenty-six days.** Her only psychiatry encounter was nine months *before* the first Lorazepam fill — and that psychiatrist prescribed her cholesterol medication.
+> "That last rule is your own. Lorazepam beyond thirty days requires a psychiatry consult. **She's at a hundred and twenty-six days.** Her only psychiatry encounter was nearly eighteen months *before* the first Lorazepam fill — and that psychiatrist prescribed her cholesterol medication.
 >
 > Nobody broke a rule they knew about. The rule was written down. It just wasn't reachable from where the prescription was written."
 
@@ -223,14 +272,15 @@ Switch agents. **Say this while you switch:**
 
 ## ⛔ DO NOT SAY — disproven for PAT006030
 
-These claims were in earlier versions of this script. They are **false for this patient** and were
-verified against `lh_gold_curated` on 2026-08-27. If a customer's clinician checks, you lose the room.
+These claims were in earlier versions of this script. They are **false for this patient**. Every
+fact this runbook does assert is pinned by `NB_Generate_Sample_Data` and re-verified on each build,
+so it survives a regeneration. If a customer's clinician checks, you lose the room.
 
 | Do not say | Why it's false |
 |---|---|
-| "Concurrent opioid + benzodiazepine" / "FDA black-box combination" | Her opioid (Apr 2025) and her benzo (Apr 2026) are **362 days apart**. No overlap. Dataset-wide, **no provider ever prescribes both** to the same patient. |
+| "Concurrent opioid + benzodiazepine" / "FDA black-box combination" | Her opioid and her benzo are **362 days apart**. No overlap. Dataset-wide, **no provider ever prescribes both** to the same patient. |
 | "She's non-adherent" / "PDC under 50%" / "she only fills the opioid" | She is **Adherent on every measured class**: ACE-I 1.00, Inhaled Corticosteroid 1.00, Statin 0.978, Anticoagulant 0.957. |
-| "Warfarin + NSAID interaction" | No overlap — warfarin coverage ends 2026-07-01, ibuprofen starts 2026-07-10. **−9 days.** Frame as a coordination near-miss only. |
+| "Warfarin + NSAID interaction" | No overlap — her warfarin coverage ends **9 days before** the ibuprofen starts. Frame as a coordination near-miss only. |
 | "Three psychiatrists" | She has **one** (Dr. Sarah Smith). |
 | "A pediatrician prescribing to an adult" | Fictional. The real anomaly is an **ophthalmologist** who wrote her opioid, and a **psychiatrist** who wrote her statin. |
 | "Age 41" / "Commercial insurance" / "13 providers" | She is **39**, **Tricare**, **12 providers**, 7 facilities. |
@@ -285,7 +335,7 @@ one-visit prescriber at a different facility, still active — plus a duplicated
 > "A semantic model **counts**. An ontology **connects**. Your semantic model tells you Nancy has nine prescriptions and a 73% non-adherence score. The ontology tells you those nine prescriptions came from eight specialties with no cardiologist coordinating. Same data. Different question. You need both — the semantic model runs your dashboards, the ontology answers the questions that start with *why* and *who else*."
 
 **"How long to stand this up on our data?"**
-> "The ontology layer sits on top of Microsoft Fabric's OneLake. If your EMR, claims, and pharmacy data already land in Fabric — or any modern lakehouse — we're talking weeks, not quarters. The schema we just queried is twelve entities and eighteen relationships. That's the whole map."
+> "The ontology layer sits on top of Microsoft Fabric's OneLake. If your EMR, claims, and pharmacy data already land in Fabric — or any modern lakehouse — we're talking weeks, not quarters. The schema we just queried is eleven entities and seventeen relationships. That's the whole map."
 
 **"What about hallucinations?"**
 > "Every answer is a query against your data, not a generated guess. The ontology constrains it — it can only return what's actually in the graph. We can show you the underlying GQL traversal for any answer."

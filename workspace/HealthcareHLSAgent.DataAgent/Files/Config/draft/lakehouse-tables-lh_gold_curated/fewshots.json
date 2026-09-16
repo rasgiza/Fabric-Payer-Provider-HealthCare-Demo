@@ -28,8 +28,8 @@
     },
     {
       "id": "4d0ba805-d5f6-479a-ac5f-cffafb7ced3b",
-      "question": "Show me details for patient PAT0000001",
-      "query": "SELECT patient_id, first_name, last_name, date_of_birth, age, age_group, gender, city, state, zip_code, insurance_type, insurance_provider, is_current FROM dim_patient WHERE patient_id = 'PAT0000001' AND is_current = 1"
+      "question": "Show me details for patient PAT000001",
+      "query": "SELECT patient_id, first_name, last_name, date_of_birth, age, age_group, gender, city, state, zip_code, insurance_type, insurance_provider, is_current FROM dim_patient WHERE patient_id = 'PAT000001' AND is_current = 1"
     },
     {
       "id": "a0ca1d92-6fab-42d6-baa4-5018182c574b",

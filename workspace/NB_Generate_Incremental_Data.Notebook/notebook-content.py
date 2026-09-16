@@ -180,7 +180,16 @@ patient_ids = [row["patient_id"] for row in patients_sdf.select("patient_id").co
 provider_ids = [row["provider_id"] for row in providers_sdf.select("provider_id").collect()]
 patients_pdf = patients_sdf.toPandas()
 
+# Pinned demo fixtures backing the README / runbook agent questions. Incremental runs are
+# unseeded, so without this they could re-medicate, re-insure, or duplicate these patients
+# and silently break the documented demo. Keep in sync with NB_Generate_Sample_Data.
+DEMO_PATIENT_IDS = {"PAT000063", "PAT006030"}
+DEMO_PATIENT_NAMES = {("Nancy", "White"), ("Sarah", "Johnson")}
+
+patient_ids = [p for p in patient_ids if p not in DEMO_PATIENT_IDS]
+
 print(f"Loaded {len(patient_ids)} existing patients, {len(provider_ids)} existing providers")
+print(f"  Protected demo patients excluded from churn: {sorted(DEMO_PATIENT_IDS)}")
 
 # Scan for max IDs from existing CSV data to avoid collisions
 def scan_max_id_from_csv(path, id_col):
@@ -485,7 +494,10 @@ print(f"Generated {len(dx_df)} diagnoses ({principal} principal, {secondary} sec
 # ============================================================================
 
 # Patient updates (simulate address/insurance changes for SCD2)
-updated_patients = patients_pdf.sample(n=min(NUM_PATIENT_UPDATES, len(patients_pdf))).copy()
+eligible_for_update = patients_pdf[~patients_pdf["patient_id"].isin(DEMO_PATIENT_IDS)]
+updated_patients = eligible_for_update.sample(
+    n=min(NUM_PATIENT_UPDATES, len(eligible_for_update))
+).copy()
 for idx in updated_patients.index:
     change = random.choice(["address", "insurance", "both"])
     if change in ("address", "both"):
@@ -504,10 +516,14 @@ for i in range(NUM_NEW_PATIENTS):
     pid = f"PAT{next_pat + i:06d}"
     gender = random.choice(["M", "F"])
     dob = datetime(random.randint(1940, 2020), random.randint(1, 12), random.randint(1, 28))
+    first = random.choice(MALE_FIRST_NAMES) if gender == "M" else random.choice(FEMALE_FIRST_NAMES)
+    last = random.choice(LAST_NAMES)
+    while (first, last) in DEMO_PATIENT_NAMES:
+        last = random.choice(LAST_NAMES)
     new_patients.append({
         "patient_id": pid,
-        "first_name": random.choice(MALE_FIRST_NAMES) if gender == "M" else random.choice(FEMALE_FIRST_NAMES),
-        "last_name": random.choice(LAST_NAMES),
+        "first_name": first,
+        "last_name": last,
         "date_of_birth": dob.strftime("%Y-%m-%d"),
         "gender": gender,
         "address": f"{random.randint(100, 9999)} {random.choice(['Main', 'Oak', 'Elm', 'Cedar'])} St",

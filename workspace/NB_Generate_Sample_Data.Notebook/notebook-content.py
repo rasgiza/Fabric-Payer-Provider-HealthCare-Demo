@@ -256,6 +256,65 @@ INSURANCE_TYPES = ["Commercial", "Medicare", "Medicaid", "Self-Pay", "Workers Co
 INSURANCE_PROVIDERS = ["Blue Cross Blue Shield", "Aetna", "United Healthcare", "Cigna",
                        "Humana", "Medicare", "Medicaid", "Priority Health"]
 
+# ---------------------------------------------------------------------------
+# Runbook fixtures: Nancy White and Sarah Johnson
+#
+# EXECUTIVE_DEMO_RUNBOOK.md narrates ~40 exact facts about these two patients --
+# provider counts, specialty mix, drug classes, fill cadences, PDC to three
+# decimals. None of that survives an unseeded regeneration, so it is pinned here.
+# Every date is expressed relative to DATA_END_DATE so the story stays true
+# whenever the accelerator is deployed.
+#
+# PDC is computed in 06b as:
+#     span = (last_fill - first_fill) + avg_days_supply
+#     pdc  = min(total_days_supply, span) / span      (capped at 1.0)
+# and only medications with is_chronic = True get an adherence row at all.
+# The fill schedules below are chosen to land on the exact scores the script quotes.
+# ---------------------------------------------------------------------------
+
+NANCY_PATIENT_ID = "PAT000063"
+NANCY_ENCOUNTER_ID = "ENC00000063"
+NANCY_PROVIDER_IDS = [f"PRV{i:05d}" for i in range(401, 410)]
+# 9 providers, 8 distinct specialties, two psychiatrists, and no cardiologist.
+NANCY_PROVIDER_SPECIALTIES = [
+    "Psychiatry", "Psychiatry", "Internal Medicine", "Orthopedics", "Neurology",
+    "Emergency Medicine", "Surgery", "Dermatology", "Ophthalmology",
+]
+# Eight chronic classes filled every 90 days against a 30-day supply -> PDC 0.4286.
+NANCY_NONADHERENT_CODES = ["314076", "310429", "200031", "866924",
+                           "836585", "860974", "312938", "311700"]
+# Levothyroxine is the one class she does take properly -> PDC 1.00.
+NANCY_ADHERENT_CODE = "966247"
+# Ibuprofen is non-chronic, so it adds no adherence row. It exists to complete the
+# NSAID + ACE inhibitor + loop diuretic "triple whammy" in her prescription list.
+NANCY_NSAID_CODE = "310965"
+
+SARAH_PATIENT_ID = "PAT006030"
+SARAH_PROVIDER_IDS = [f"PRV{i:05d}" for i in range(421, 433)]
+# 12 providers, 7 facilities, and deliberately not one primary-care specialty.
+SARAH_PROVIDER_SPECIALTIES = [
+    "Orthopedics", "Anesthesiology", "Anesthesiology", "Ophthalmology",
+    "Psychiatry", "Surgery", "Emergency Medicine", "Neurology",
+    "Radiology", "Dermatology", "Obstetrics/Gynecology", "Oncology",
+]
+SARAH_ENCOUNTER_IDS = [f"ENC{6030 + i:08d}" for i in range(12)]
+# (provider index, facility, type, days before DATA_END_DATE, LOS, ICD, charges, risk)
+# Charges total exactly $179,000 across 7 facilities -- the number the ROI close uses.
+SARAH_ENCOUNTER_SPECS = [
+    (0,  "FAC005", "Outpatient", 515, 0, "J44.9",     2400.00, 0.28),
+    (1,  "FAC001", "Outpatient", 119, 0, "F32.9",     1850.00, 0.22),
+    (2,  "FAC002", "Outpatient",   5, 0, "J44.9",     1500.00, 0.30),
+    (3,  "FAC003", "Outpatient", 481, 0, "M54.5",     3200.00, 0.19),
+    (4,  "FAC004", "Outpatient", 645, 0, "E78.5",     2100.00, 0.17),
+    (5,  "FAC006", "Outpatient", 420, 0, "I10",       1900.00, 0.21),
+    (6,  "FAC007", "Emergency",  300, 1, "I50.9",    18500.00, 0.34),
+    (7,  "FAC001", "Outpatient", 260, 0, "G43.909",   2600.00, 0.16),
+    (8,  "FAC002", "Outpatient", 210, 0, "M79.3",     1400.00, 0.15),
+    (9,  "FAC003", "Outpatient", 160, 0, "M79.3",      950.00, 0.14),
+    (10, "FAC004", "Outpatient",  95, 0, "R10.9",     1700.00, 0.15),
+    (11, "FAC005", "Inpatient",   60, 6, "C50.911", 140900.00, 0.38),
+]
+
 MONITOR_TYPES = [
     {"type": "Blood Pressure Monitor", "manufacturer": "Omron", "models": ["BP786N", "BP7450", "BP742N"]},
     {"type": "Pulse Oximeter", "manufacturer": "Masimo", "models": ["MightySat Rx", "Rad-67"]},
@@ -309,8 +368,63 @@ def generate_patients(n):
         })
     return pd.DataFrame(patients)
 
+def _patient_age(date_of_birth, as_of):
+    dob = datetime.strptime(date_of_birth, "%Y-%m-%d").date()
+    return as_of.year - dob.year - ((as_of.month, as_of.day) < (dob.month, dob.day))
+
+def pin_runbook_patients(patients_df):
+    """Pin Nancy White (63) and Sarah Johnson (39) for EXECUTIVE_DEMO_RUNBOOK.md."""
+    as_of = DATA_END_DATE.date()
+
+    nancy_mask = patients_df["patient_id"] == NANCY_PATIENT_ID
+    if nancy_mask.any():
+        duplicate_mask = (
+            (patients_df["first_name"] == "Nancy")
+            & (patients_df["last_name"] == "White")
+            & (patients_df["patient_id"] != NANCY_PATIENT_ID)
+        )
+        patients_df.loc[duplicate_mask, "first_name"] = "Nadine"
+        nancy_dob = as_of - timedelta(days=int(63 * 365.25 + 40))
+        patients_df.loc[nancy_mask, [
+            "first_name", "last_name", "date_of_birth", "gender",
+            "insurance_type", "insurance_provider", "pcp_provider_id", "email",
+        ]] = [
+            "Nancy", "White", nancy_dob.strftime("%Y-%m-%d"), "F",
+            "Medicare", "Medicare", NANCY_PROVIDER_IDS[2], "nancy.white.demo@email.com",
+        ]
+
+    sarah_mask = patients_df["patient_id"] == SARAH_PATIENT_ID
+    if sarah_mask.any():
+        # The runbook deliberately keeps the other Sarah Johnsons -- the point is that
+        # name alone is ambiguous and name + age is not. So only the age must be unique.
+        namesakes = (
+            (patients_df["first_name"] == "Sarah")
+            & (patients_df["last_name"] == "Johnson")
+            & (patients_df["patient_id"] != SARAH_PATIENT_ID)
+        )
+        for idx in patients_df.index[namesakes]:
+            if _patient_age(patients_df.at[idx, "date_of_birth"], as_of) == 39:
+                shifted = datetime.strptime(patients_df.at[idx, "date_of_birth"], "%Y-%m-%d").date()
+                patients_df.at[idx, "date_of_birth"] = (shifted - timedelta(days=5 * 365)).strftime("%Y-%m-%d")
+
+        sarah_dob = as_of - timedelta(days=int(39 * 365.25 + 60))
+        patients_df.loc[sarah_mask, [
+            "first_name", "last_name", "date_of_birth", "gender",
+            "insurance_type", "insurance_provider", "email",
+        ]] = [
+            "Sarah", "Johnson", sarah_dob.strftime("%Y-%m-%d"), "F",
+            "Tricare", "Tricare", "sarah.johnson.demo@email.com",
+        ]
+        # "Zero primary care physicians" has to be true on the patient row too.
+        patients_df.loc[sarah_mask, "pcp_provider_id"] = None
+    else:
+        print(f"  ! NUM_PATIENTS={NUM_PATIENTS} is below 6030 - skipping the Sarah Johnson fixture")
+
+    return patients_df
+
 print("Generating patients...")
 patients_df = generate_patients(NUM_PATIENTS)
+patients_df = pin_runbook_patients(patients_df)
 print(f"  Generated {len(patients_df)} patients")
 
 # METADATA **{"language":"python"}**
@@ -347,8 +461,29 @@ def generate_providers(n):
         })
     return pd.DataFrame(providers)
 
+def pin_demo_providers(providers_df):
+    """Lock the specialty mix the runbook narrates for Nancy and Sarah."""
+    for provider_id, specialty in zip(NANCY_PROVIDER_IDS, NANCY_PROVIDER_SPECIALTIES):
+        mask = providers_df["provider_id"] == provider_id
+        providers_df.loc[mask, ["specialty", "department", "status"]] = [specialty, specialty, "Active"]
+
+    for index, (provider_id, specialty) in enumerate(zip(SARAH_PROVIDER_IDS, SARAH_PROVIDER_SPECIALTIES)):
+        facility = FACILITIES[index % 7]
+        mask = providers_df["provider_id"] == provider_id
+        providers_df.loc[mask, ["specialty", "department", "facility_id", "facility_name", "status"]] = [
+            specialty, specialty, facility["id"], facility["name"], "Active",
+        ]
+
+    # The runbook says these two names out loud, so they cannot be random.
+    providers_df.loc[providers_df["provider_id"] == SARAH_PROVIDER_IDS[1],
+                     ["first_name", "last_name"]] = ["Richard", "Wilson"]
+    providers_df.loc[providers_df["provider_id"] == SARAH_PROVIDER_IDS[4],
+                     ["first_name", "last_name"]] = ["Sarah", "Smith"]
+    return providers_df
+
 print("Generating providers...")
 providers_df = generate_providers(NUM_PROVIDERS)
+providers_df = pin_demo_providers(providers_df)
 print(f"  Generated {len(providers_df)} providers")
 
 # METADATA **{"language":"python"}**
@@ -455,8 +590,66 @@ def generate_encounters(n, patient_ids, provider_ids):
         })
     return pd.DataFrame(encounters)
 
+def _release_stray_encounters(encounters_df, patient_id, keep_ids):
+    """Hand back the encounters the RNG also happened to give a pinned patient.
+
+    Without this, Sarah picks up ~12 random visits on top of her authored 12, and the
+    counts the runbook quotes out loud (12 providers, 7 facilities, $179K) double.
+    Rows are reassigned rather than dropped so totals and row counts stay put.
+    """
+    stray = (encounters_df["patient_id"] == patient_id) & (~encounters_df["encounter_id"].isin(keep_ids))
+    stray_count = int(stray.sum())
+    if stray_count:
+        pinned = {NANCY_PATIENT_ID, SARAH_PATIENT_ID}
+        pool = [p for p in encounters_df["patient_id"].unique() if p not in pinned]
+        encounters_df.loc[stray, "patient_id"] = [pool[i % len(pool)] for i in range(stray_count)]
+    return encounters_df
+
+def pin_runbook_encounters(encounters_df):
+    """Overwrite existing rows so the runbook patients get their charts without shifting counts."""
+    as_of = DATA_END_DATE.date()
+
+    encounters_df = _release_stray_encounters(encounters_df, NANCY_PATIENT_ID, {NANCY_ENCOUNTER_ID})
+    encounters_df = _release_stray_encounters(encounters_df, SARAH_PATIENT_ID, set(SARAH_ENCOUNTER_IDS))
+
+    nancy_mask = encounters_df["encounter_id"] == NANCY_ENCOUNTER_ID
+    if nancy_mask.any():
+        discharge_date = as_of - timedelta(days=6)
+        admit_date = discharge_date - timedelta(days=9)
+        encounters_df.loc[nancy_mask, [
+            "patient_id", "provider_id", "encounter_type", "admit_date",
+            "discharge_date", "length_of_stay", "primary_diagnosis_code",
+            "facility_id", "admission_type", "discharge_disposition",
+            "total_charges", "readmission_risk",
+        ]] = [
+            NANCY_PATIENT_ID, NANCY_PROVIDER_IDS[5], "Inpatient", admit_date.strftime("%Y-%m-%d"),
+            discharge_date.strftime("%Y-%m-%d"), 9, "I50.9", "FAC001", "Emergency",
+            "Home Health", 46000.00, 0.84,
+        ]
+
+    for slot, (provider_index, facility_id, enc_type, days_back, los, icd, charges, risk) in enumerate(SARAH_ENCOUNTER_SPECS):
+        encounter_mask = encounters_df["encounter_id"] == SARAH_ENCOUNTER_IDS[slot]
+        if not encounter_mask.any():
+            continue
+        admit_date = as_of - timedelta(days=days_back)
+        admission_type = "Emergency" if enc_type == "Emergency" else ("Elective" if enc_type == "Inpatient" else None)
+        encounters_df.loc[encounter_mask, [
+            "patient_id", "provider_id", "encounter_type", "admit_date",
+            "discharge_date", "length_of_stay", "primary_diagnosis_code",
+            "facility_id", "admission_type", "discharge_disposition",
+            "total_charges", "readmission_risk",
+        ]] = [
+            SARAH_PATIENT_ID, SARAH_PROVIDER_IDS[provider_index], enc_type,
+            admit_date.strftime("%Y-%m-%d"),
+            (admit_date + timedelta(days=los)).strftime("%Y-%m-%d"), los, icd,
+            facility_id, admission_type, "Home", charges, risk,
+        ]
+
+    return encounters_df
+
 print("Generating encounters...")
 encounters_df = generate_encounters(NUM_ENCOUNTERS, patients_df["patient_id"].tolist(), providers_df["provider_id"].tolist())
+encounters_df = pin_runbook_encounters(encounters_df)
 print(f"  Generated {len(encounters_df)} encounters")
 
 # METADATA **{"language":"python"}**
@@ -652,8 +845,114 @@ def generate_prescriptions(encounters_df, num_rx):
 
     return pd.DataFrame(prescriptions)
 
+def _runbook_rx_rows(prefix, patient_id, encounter_id, provider_id, med_code, first_fill, day_offsets):
+    med = MED_LOOKUP[med_code]
+    rows = []
+    for fill_number, day_offset in enumerate(day_offsets):
+        fill_date = first_fill + timedelta(days=day_offset)
+        rows.append({
+            "prescription_id": f"{prefix}{fill_number + 1:03d}",
+            "encounter_id": encounter_id,
+            "patient_id": patient_id,
+            "provider_id": provider_id,
+            "rxnorm_code": med_code,
+            "medication_name": med["medication_name"],
+            "fill_date": fill_date.strftime("%Y-%m-%d"),
+            "days_supply": med["days_supply_typical"],
+            "quantity": 30,
+            "refill_number": fill_number,
+            "total_cost": med["avg_cost"],
+            "copay_amount": round(med["avg_cost"] * 0.2, 2),
+            "pharmacy_id": "PHR0002",
+            "prescriber_id": provider_id,
+            "is_generic": True,
+            "prior_auth_required": med_code == "835564",
+        })
+    return rows
+
+def pin_runbook_prescriptions(prescriptions_df):
+    """Author Nancy's and Sarah's full medication histories to the exact PDC the runbook quotes."""
+    as_of = DATA_END_DATE.date()
+    rows = []
+
+    if NUM_PATIENTS >= 63 and NUM_ENCOUNTERS >= 63:
+        prescriptions_df = prescriptions_df[prescriptions_df["patient_id"] != NANCY_PATIENT_ID].copy()
+        nancy_first = as_of - timedelta(days=300)
+        # Eight classes on a 90-day cadence against a 30-day supply: 90 / 210 = 0.4286.
+        for med_index, med_code in enumerate(NANCY_NONADHERENT_CODES):
+            rows += _runbook_rx_rows(
+                f"RXNCY{med_index + 1:02d}", NANCY_PATIENT_ID, NANCY_ENCOUNTER_ID,
+                NANCY_PROVIDER_IDS[med_index], med_code, nancy_first, (0, 90, 180),
+            )
+        # The one class she takes properly: 12 fills, no gaps -> 360 / 360 = 1.00.
+        rows += _runbook_rx_rows(
+            "RXNCY09", NANCY_PATIENT_ID, NANCY_ENCOUNTER_ID, NANCY_PROVIDER_IDS[8],
+            NANCY_ADHERENT_CODE, as_of - timedelta(days=360), tuple(range(0, 331, 30)),
+        )
+        rows += _runbook_rx_rows(
+            "RXNCY10", NANCY_PATIENT_ID, NANCY_ENCOUNTER_ID, NANCY_PROVIDER_IDS[3],
+            NANCY_NSAID_CODE, as_of - timedelta(days=120), (0, 30),
+        )
+
+    if NUM_PATIENTS >= 6030 and NUM_ENCOUNTERS >= 6042:
+        prescriptions_df = prescriptions_df[prescriptions_df["patient_id"] != SARAH_PATIENT_ID].copy()
+        benzo_first = as_of - timedelta(days=119)
+        steady = tuple(range(0, 601, 30))
+
+        # Lisinopril from two prescribers at two facilities, filling 2-3 days apart eight
+        # times: 21 fills / 630 days dispensed into a 406-day window -> capped at 1.00.
+        rows += _runbook_rx_rows(
+            "RXSAR01A", SARAH_PATIENT_ID, SARAH_ENCOUNTER_IDS[5], SARAH_PROVIDER_IDS[5],
+            "314076", as_of - timedelta(days=420),
+            (0, 30, 60, 90, 120, 150, 180, 210, 240, 270, 300, 330, 376),
+        )
+        rows += _runbook_rx_rows(
+            "RXSAR01B", SARAH_PATIENT_ID, SARAH_ENCOUNTER_IDS[0], SARAH_PROVIDER_IDS[0],
+            "314076", as_of - timedelta(days=420), (33, 62, 93, 122, 153, 182, 213, 242),
+        )
+        # Statin: 22 fills, 660 / 675 = 0.978.
+        rows += _runbook_rx_rows(
+            "RXSAR02", SARAH_PATIENT_ID, SARAH_ENCOUNTER_IDS[4], SARAH_PROVIDER_IDS[4],
+            "200031", as_of - timedelta(days=645), steady + (645,),
+        )
+        # Anticoagulant: 22 fills, 660 / 690 = 0.957. Coverage ends 9 days before the NSAID starts.
+        rows += _runbook_rx_rows(
+            "RXSAR03", SARAH_PATIENT_ID, SARAH_ENCOUNTER_IDS[6], SARAH_PROVIDER_IDS[6],
+            "836585", as_of - timedelta(days=766), steady + (660,),
+        )
+        # The COPD inhaler a second anesthesiologist started five days ago -> 30 / 30 = 1.00.
+        rows += _runbook_rx_rows(
+            "RXSAR04", SARAH_PATIENT_ID, SARAH_ENCOUNTER_IDS[2], SARAH_PROVIDER_IDS[2],
+            "896188", as_of - timedelta(days=5), (0,),
+        )
+        # The close: a benzodiazepine started 396 days after the COPD diagnosis by a
+        # prescriber who saw her once, then refilled it eight more times. 9 x 14 = 126 days.
+        rows += _runbook_rx_rows(
+            "RXSAR05", SARAH_PATIENT_ID, SARAH_ENCOUNTER_IDS[1], SARAH_PROVIDER_IDS[1],
+            "835564", benzo_first, tuple(range(0, 113, 14)),
+        )
+        rows += _runbook_rx_rows(
+            "RXSAR06", SARAH_PATIENT_ID, SARAH_ENCOUNTER_IDS[3], SARAH_PROVIDER_IDS[3],
+            "856987", benzo_first - timedelta(days=362), (0,),
+        )
+        rows += _runbook_rx_rows(
+            "RXSAR07", SARAH_PATIENT_ID, SARAH_ENCOUNTER_IDS[7], SARAH_PROVIDER_IDS[7],
+            "310965", as_of - timedelta(days=67), (0,),
+        )
+        rows += _runbook_rx_rows(
+            "RXSAR08", SARAH_PATIENT_ID, SARAH_ENCOUNTER_IDS[2], SARAH_PROVIDER_IDS[2],
+            "895994", as_of - timedelta(days=5), (0,),
+        )
+        rows += _runbook_rx_rows(
+            "RXSAR09", SARAH_PATIENT_ID, SARAH_ENCOUNTER_IDS[9], SARAH_PROVIDER_IDS[9],
+            "313782", as_of - timedelta(days=200), (0,),
+        )
+
+    return pd.concat([prescriptions_df, pd.DataFrame(rows)], ignore_index=True)
+
 print("Generating prescriptions...")
 prescriptions_df = generate_prescriptions(encounters_df, NUM_PRESCRIPTIONS)
+prescriptions_df = pin_runbook_prescriptions(prescriptions_df)
 print(f"  Generated {len(prescriptions_df)} prescriptions")
 
 # METADATA **{"language":"python"}**
@@ -735,8 +1034,24 @@ def generate_diagnoses(encounters_df):
 
     return pd.DataFrame(diagnoses)
 
+def pin_runbook_diagnoses(diagnoses_df):
+    """Keep Sarah's COPD onset where the runbook says it is.
+
+    The comorbidity sampler can attach a secondary J44.9 to one of her earlier visits,
+    which would make "the benzodiazepine started 396 days after the COPD diagnosis"
+    false. Only rows at or after the documented onset survive.
+    """
+    copd_date = (DATA_END_DATE.date() - timedelta(days=SARAH_ENCOUNTER_SPECS[0][3])).strftime("%Y-%m-%d")
+    premature = (
+        (diagnoses_df["patient_id"] == SARAH_PATIENT_ID)
+        & (diagnoses_df["icd_code"] == "J44.9")
+        & (diagnoses_df["diagnosis_date"] < copd_date)
+    )
+    return diagnoses_df[~premature].copy()
+
 print("Generating diagnoses...")
 diagnoses_df = generate_diagnoses(encounters_df)
+diagnoses_df = pin_runbook_diagnoses(diagnoses_df)
 print(f"  Generated {len(diagnoses_df)} diagnoses")
 
 # METADATA **{"language":"python"}**

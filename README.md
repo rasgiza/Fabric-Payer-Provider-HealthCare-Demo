@@ -20,11 +20,11 @@ One-click deployment of a complete **Healthcare Payer/Provider Analytics** solut
 Ask these two questions back-to-back in the two agents:
 
 1. **In the Fabric Data Agent (`HealthcareHLSAgent`):**
-   *"Show me medication adherence for Betty Brown age 83 by drug class."*
-   → Returns per-class PDC, gap days, and adherence category from the gold lakehouse.
+   *"Show me medication adherence for Nancy White age 63 by drug class."*
+   → Returns 9 drug classes with per-class PDC, gap days, and adherence category from the gold lakehouse. 8 of the 9 come back **Non-Adherent** at a PDC of 0.43.
 
 2. **In the Foundry IQ Knowledge Agent (`HLSAgent`):**
-   *"Betty Brown was just discharged after a CHF admission with high readmission risk and is non-adherent on multiple chronic medications. What TCM and MTM interventions should her care team take in the next 7 days? Cite the guidelines."*
+   *"Nancy White was just discharged after a CHF admission with high readmission risk and is non-adherent on multiple chronic medications. What TCM and MTM interventions should her care team take in the next 7 days? Cite the guidelines."*
    → Returns a cited care plan grounded in the clinical knowledge docs at `lh_gold_curated/Files/healthcare_knowledge/`.
 
 **Why this works:** Q1 shows Fabric's structured-data power; Q2 shows Foundry's reasoning + grounded citations. Together they tell the platform story — *data → decision* — in under 60 seconds.
@@ -180,18 +180,18 @@ The launcher creates a deploy lakehouse, downloads the repo, deploys all artifac
 | Layer | Items | Description |
 |-------|-------|-------------|
 | **Lakehouses (4)** | `lh_bronze_raw`, `lh_silver_stage`, `lh_silver_ods`, `lh_gold_curated` | Medallion architecture storage |
-| **Notebooks (7)** | 5 ETL + `NB_Generate_Sample_Data` + `NB_Generate_Incremental_Data` | Spark-based data processing |
-| **Pipelines (2)** | `PL_Healthcare_Full_Load`, `PL_Healthcare_Master` | Orchestration with full/incremental modes |
+| **Notebooks (9)** | 5 ETL + `NB_Generate_Sample_Data` + `NB_Generate_Incremental_Data` + `NB_Deploy_Graph_Model` + `NB_Refresh_Graph_Model` | Spark-based data processing |
+| **Pipelines (3)** | `PL_Healthcare_Full_Load`, `PL_Healthcare_Master`, `PL_Healthcare_RTI` | Orchestration with full/incremental modes |
 | **Semantic Model** | `HealthcareDemoHLS` | Star schema for Power BI (facts + dimensions) |
 | **Data Agent** | `HealthcareHLSAgent` | Copilot AI agent — lakehouse + semantic model (SQL aggregations) |
-| **Graph Agent** | `Healthcare Ontology Agent` | Copilot AI agent — ontology graph traversal (entity lookups, care pathways) |
+| **Graph Agent** | `Healthcare Ontology Agent` | Copilot AI agent — ontology graph traversal (entity lookups, care pathways). **Manual UI setup** — see [Ontology Agent setup](#ontology-agent-graph--manual-setup) |
 | **Ontology** | `Healthcare_Demo_Ontology_HLS` | GraphQL entity model — **auto-deployed** by Cell 10a (API) |
-| **Power BI Report** | `Healthcare Analytics Dashboard` | 6 pages, 60+ visuals — auto-deployed by fabric-cicd |
+| **Power BI Report** | `Healthcare Analytics Dashboard` | 9 pages, 124 visuals — auto-deployed by fabric-cicd |
 | **Eventhouse** ⚡ | `Healthcare_RTI_Eventhouse` | Git-tracked RTI compute engine (`DEPLOY_STREAMING` only) |
 | **KQL Database** ⚡ | `Healthcare_RTI_DB` | Git-tracked with schema (6 tables + streaming policies) (`DEPLOY_STREAMING` only) |
 | **OpsAgent** ⚡ | `HealthcareOpsAgent` | KQL-backed operations agent (`DEPLOY_STREAMING` only) |
 | **Eventstream** ⚡ | `Healthcare_RTI_Eventstream` | Optional dual-write endpoint + Activator routing (`DEPLOY_STREAMING` only) |
-| **RTI Notebooks (5)** ⚡ | Event Simulator, Setup, 3 Scoring | RTI for fraud, care gaps, high-cost trajectory (`DEPLOY_STREAMING` only) |
+| **RTI Notebooks (11)** ⚡ | Event Simulator, Setup, 3 Scoring, Operations Agent, Alert Closure, 4 Persona Alerts (COO/CTO/Payer/Provider) | RTI for fraud, care gaps, high-cost trajectory (`DEPLOY_STREAMING` only) |
 | **RTI Dashboard** ⚡ | `Healthcare RTI Dashboard` | 4-page KQL dashboard, 30s auto-refresh (`DEPLOY_STREAMING` only) |
 
 > ⚡ = Only deployed when `DEPLOY_STREAMING = True`
@@ -203,10 +203,10 @@ The launcher creates a deploy lakehouse, downloads the repo, deploys all artifac
 | Patients | 10,000 |
 | Providers | 500 |
 | Encounters | 100,000 |
-| Claims | 100,000 |
-| Prescriptions | ~250,000 |
-| Diagnoses | ~200,000 |
-| SDOH Zip Codes | ~560 |
+| Claims | ~98,900 |
+| Prescriptions | ~241,000 |
+| Diagnoses | ~169,000 |
+| SDOH Zip Codes | ~690 |
 
 ## Architecture
 
@@ -232,7 +232,7 @@ Dual-path design: **Batch ETL** (authoritative, historical) + **Real-Time Intell
 
 **[▶ Launch Nancy White Story](https://rasgiza.github.io/Fabric-Payer-Provider-HealthCare-Demo/demo_3d_story/nancy_white_story.html)** — Age 63, Medicare, CHF. 9 drug classes, 8/9 non-adherent, pharmacy desert. How streaming intelligence catches a $42,000 readmission risk in 48 hours instead of 28 days.
 
-**[▶ Launch Sarah Johnson Story](https://rasgiza.github.io/Fabric-Payer-Provider-HealthCare-Demo/demo_3d_story/sarah_johnson_story.html)** — Age 41, Commercial. 13 providers, opioid + benzo FDA black-box combination, 3 psychiatrists, no PCP. How the ontology surfaces an overdose risk that no dashboard can see.
+**[▶ Launch Sarah Johnson Story](https://rasgiza.github.io/Fabric-Payer-Provider-HealthCare-Demo/demo_3d_story/sarah_johnson_story.html)** — Patient `PAT006030`. Age 39, Tricare. 12 providers across 7 facilities, no PCP, a benzodiazepine started 396 days after a documented COPD diagnosis, and a duplicated ACE inhibitor from two prescribers. She is adherent to every medication — which is exactly why no dashboard ever flagged her.
 
 > Navigate with arrow keys, spacebar, click, or number keys. Press **A** for auto-play.
 
@@ -344,7 +344,7 @@ The launcher notebook (`Healthcare_Launcher.ipynb`) automates the entire deploym
 | **8** | Create & refresh `HealthcareDemoHLS` semantic model (Direct Lake, TMDL) |
 | **9** | Deploy ontology (`Healthcare_Demo_Ontology_HLS`) + run `NB_Deploy_Graph_Model` |
 | **10** | Patch `HealthcareHLSAgent` datasources with real lakehouse/SM IDs |
-| **11** | Create/patch `Healthcare Ontology Agent` with real ontology/graph model IDs |
+| **11** | Print manual setup steps for `Healthcare Ontology Agent` (the graph agent is **not** created by the API) |
 | **12** ⚡ | Run RTI notebooks (Setup, Simulator, Fraud, CareGap, HighCost) + deploy OpsAgent + create Eventstream (prints portal setup steps) |
 | **13** ⚡ | Deploy Real-Time Dashboard (4-page KQL dashboard) |
 | **14** | Organize workspace folders + print deployment summary |
@@ -376,9 +376,9 @@ The launcher notebook (`Healthcare_Launcher.ipynb`) automates the entire deploym
 The solution includes two complementary AI agents:
 
 - **HealthcareHLSAgent** — SQL-based agent for aggregations, rates, and trends ("What is the denial rate?", "Top 10 providers by cost")
-- **Healthcare Ontology Agent** — Graph traversal agent for entity lookups and relationships ("Tell me about patient PAT0000001", "Who treated this patient?", "Trace claim CLM0009999 from patient to payer")
+- **Healthcare Ontology Agent** — Graph traversal agent for entity lookups and relationships ("Tell me about patient PAT000001", "Who treated this patient?", "Trace claim CLM00009999 from patient to payer")
 
-See **[SAMPLE_QUESTIONS.md](SAMPLE_QUESTIONS.md)** for 90+ copy-paste questions organized by domain and agent — including a top **[Executive Pain-Point Questions](SAMPLE_QUESTIONS.md#executive-pain-point-questions-boardroom--c-suite)** section (CFO, CMO, CMIO, COO, VP Pop Health, CIO) framed in real-world boardroom language.
+See **[SAMPLE_QUESTIONS.md](SAMPLE_QUESTIONS.md)** for 75+ copy-paste questions organized by domain and agent — including a top **[Executive Pain-Point Questions](SAMPLE_QUESTIONS.md#executive-pain-point-questions-boardroom--c-suite)** section (CFO, CMO, CMIO, COO, VP Pop Health, CIO) framed in real-world boardroom language.
 
 > **Demoing the graph agent?** Run the **[Graph agent warm-up sequence](#graph-agent-warm-up-sequence--run-before-any-ontology-demo)** in the Demo Playbook first — it prevents cold-start errors.
 
@@ -392,22 +392,25 @@ For the complete agent configuration -- AI instructions, concept-to-table routin
 
 The **Healthcare Analytics Dashboard** Power BI report is auto-deployed by fabric-cicd from the `workspace/Healthcare Analytics Dashboard.Report/` definition. It includes:
 
-| Page | Focus | Key Visuals |
-|------|-------|-------------|
-| Executive Summary | KPIs, denial rates, encounter volume | Card KPIs, trend lines, donut charts |
-| Claim Denials | Root cause, payer breakdown, financial impact | Waterfall, stacked bar, matrix |
-| Readmission Risk | 30-day readmission by facility & diagnosis | Heatmap, scatter, decomposition tree |
-| Medication Adherence | PDC rates, non-adherent populations | Gauge, grouped bar, line chart |
-| Social Determinants | SDOH risk by zip code, demographics | Map, bar, correlation scatter |
-| Provider Performance | Provider metrics, outlier detection | Table, bullet chart, ranking |
+| Page | Focus | Visuals |
+|------|-------|---------|
+| Executive Summary | Cross-domain KPIs, volume and cost headlines | 13 |
+| Claims & Revenue Cycle | Claim status, denial rates, payer breakdown | 13 |
+| Revenue Cycle Deep Dive | Root cause, appeals, financial impact | 14 |
+| Cost Analytics | Spend drivers and cost trend | 14 |
+| DRG & Case Mix Analysis | DRG mix, case complexity, length of stay | 14 |
+| Quality & Outcomes | Readmissions, HEDIS measures, adherence | 14 |
+| Member Insights | Member demographics, risk and SDOH context | 13 |
+| Provider Network | Network composition and payer coverage | 12 |
+| Provider Productivity & Digital | Provider throughput and outlier detection | 17 |
 
 The report binds to the `HealthcareDemoHLS` semantic model via Direct Lake (live connection). It starts working as soon as the semantic model refresh completes (Cell 8).
 
-For customization guidance (26 DAX measures, formatting tips, Direct Lake best practices) -- see **[POWERBI_DASHBOARD_GUIDE.md](POWERBI_DASHBOARD_GUIDE.md)**.
+For customization guidance (44 DAX measures, formatting tips, Direct Lake best practices) -- see **[POWERBI_DASHBOARD_GUIDE.md](POWERBI_DASHBOARD_GUIDE.md)**.
 
 ### Azure AI Foundry (Optional)
 
-To set up the **Foundry Orchestrator Agent** that combines the Fabric Data Agent with a Knowledge Base (21 clinical documents indexed via Azure AI Search) and web search for hybrid clinical decision support -- see **[FOUNDRY_IQ_SETUP_GUIDE.md](FOUNDRY_IQ_SETUP_GUIDE.md)**.
+To set up the **Foundry Orchestrator Agent** that combines the Fabric Data Agent with a Knowledge Base (26 clinical documents indexed via Azure AI Search) and web search for hybrid clinical decision support -- see **[FOUNDRY_IQ_SETUP_GUIDE.md](FOUNDRY_IQ_SETUP_GUIDE.md)**.
 
 For troubleshooting hybrid query failures (compound questions, instruction truncation, fewshot phrasing issues) -- see **[FOUNDRY_ORCHESTRATOR_TROUBLESHOOTING.md](FOUNDRY_ORCHESTRATOR_TROUBLESHOOTING.md)**.
 
@@ -459,11 +462,11 @@ To test it, open the agent in your workspace and try a sample question:
 - *"Show me the top 10 providers by total billed amount"*
 - *"Which patients have the highest readmission risk?"*
 
-See **[SAMPLE_QUESTIONS.md](SAMPLE_QUESTIONS.md)** for 80+ tested questions across all domains.
+See **[SAMPLE_QUESTIONS.md](SAMPLE_QUESTIONS.md)** for 75+ tested questions across all domains.
 
 ### Ontology Agent (graph) — manual setup
 
-The **HealthcareHLSOntology Agent** (graph agent) must be created manually in the Fabric UI — it cannot be fully deployed via API.
+The **Healthcare Ontology Agent** (graph agent) must be created manually in the Fabric UI — it cannot be fully deployed via API.
 
 **Step 1: Create the Agent**
 
@@ -471,7 +474,7 @@ The **HealthcareHLSOntology Agent** (graph agent) must be created manually in th
 
    ![Data agent card](docs/images/agent-new-item.png)
 
-2. Name it `HealthcareHLSOntology Agent` → click **Create**
+2. Name it `Healthcare Ontology Agent` → click **Create**
 
    ![Create data agent dialog](docs/images/agent-create-dialog.png)
 
@@ -485,7 +488,7 @@ The **HealthcareHLSOntology Agent** (graph agent) must be created manually in th
 
    ![Select ontology graph](docs/images/agent-select-ontology.png)
 
-3. The agent will connect to the graph model (12 entities, 18 relationships)
+3. The agent will connect to the graph model (11 entities, 17 relationships)
 
 **Step 3: Configure AI Instructions**
 
@@ -857,8 +860,8 @@ Edit the top cell of `Healthcare_Launcher.ipynb`:
 ├── FOUNDRY_IQ_SETUP_GUIDE.md          # Azure AI Foundry orchestrator agent setup (11 steps)
 ├── FOUNDRY_ORCHESTRATOR_TROUBLESHOOTING.md  # Hybrid query debugging guide
 ├── foundry_agent/
-│   └── orchestrator_instructions.md   # Version-controlled orchestrator instructions (v23)
-├── SAMPLE_QUESTIONS.md                # 80+ copy-paste questions for all agents
+│   └── orchestrator_instructions.md   # Version-controlled orchestrator instructions (v28)
+├── SAMPLE_QUESTIONS.md                # 75+ copy-paste questions for all agents
 ├── deployment.yaml                    # Optional: CI/CD config
 ├── README.md
 ├── workspace/                         # Fabric Git Integration format
@@ -873,18 +876,30 @@ Edit the top cell of `Healthcare_Launcher.ipynb`:
 │   ├── 06b_Gold_Transform_Load_v2.Notebook/
 │   ├── NB_Generate_Sample_Data.Notebook/
 │   ├── NB_Generate_Incremental_Data.Notebook/
+│   ├── NB_Deploy_Graph_Model.Notebook/
+│   ├── NB_Refresh_Graph_Model.Notebook/
 │   ├── NB_RTI_Event_Simulator.Notebook/
 │   ├── NB_RTI_Setup_Eventhouse.Notebook/
 │   ├── NB_RTI_Fraud_Detection.Notebook/
 │   ├── NB_RTI_Care_Gap_Alerts.Notebook/
 │   ├── NB_RTI_HighCost_Trajectory.Notebook/
+│   ├── NB_RTI_Operations_Agent.Notebook/
+│   ├── NB_RTI_Alert_Closure.Notebook/
+│   ├── NB_RTI_COO_Alerts.Notebook/
+│   ├── NB_RTI_CTO_Alerts.Notebook/
+│   ├── NB_RTI_Payer_Alerts.Notebook/
+│   ├── NB_RTI_Provider_Alerts.Notebook/
 │   ├── PL_Healthcare_Full_Load.DataPipeline/
 │   ├── PL_Healthcare_Master.DataPipeline/
+│   ├── PL_Healthcare_RTI.DataPipeline/
 │   ├── HealthcareDemoHLS.SemanticModel/
 │   ├── HealthcareHLSAgent.DataAgent/
-│   └── Healthcare Ontology Agent.DataAgent/
-├── ontology/                          # Ontology manifest (12 entities, 18 relationships) — deployed by Cell 10a
-│   └── Healthcare_Demo_Ontology_HLS/
+│   ├── PayerAgent.DataAgent/
+│   └── ProviderAgent.DataAgent/
+├── ontology/                          # Ontology manifests — `Healthcare_Demo_Ontology_HLS` (11 entities, 17 relationships) is deployed by Cell 10a
+│   ├── Healthcare_Demo_Ontology_HLS/
+│   ├── Payer_Analytics_Ontology/      # Reference ontology — not deployed by the launcher
+│   └── Provider_Analytics_Ontology/   # Reference ontology — not deployed by the launcher
 ├── healthcare_knowledge/              # AI agent knowledge base
 │   ├── clinical_guidelines/
 │   ├── compliance/

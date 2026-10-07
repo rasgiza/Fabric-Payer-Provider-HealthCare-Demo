@@ -3,7 +3,7 @@
   "namespace": "usertypes",
   "id": "1214551591656896084",
   "name": "livesIn",
-  "namespaceType": "Imported",
+  "namespaceType": "Custom",
   "source": {
     "entityTypeId": "271291569235690"
   },

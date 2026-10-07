@@ -3,7 +3,7 @@
   "namespace": "usertypes",
   "id": "1214586370844284375",
   "name": "references",
-  "namespaceType": "Imported",
+  "namespaceType": "Custom",
   "source": {
     "entityTypeId": "4508331474430"
   },

@@ -58,7 +58,13 @@ def _lro(resp, headers, label):
 
 
 def resolve_gold_lakehouse(workspace_id: str, headers: dict) -> tuple[str, str]:
-    """Return (lakehouse_id, sql_endpoint) for the gold lakehouse."""
+    """Return (sql_endpoint_id, connection_string) for the gold lakehouse.
+
+    DirectLake's ``Sql.Database(server, database)`` addresses the lakehouse's SQL
+    analytics endpoint, whose item ID differs from the lakehouse item ID. Using
+    the lakehouse ID produces an ontology that deploys cleanly but whose entities
+    resolve no data, which in turn makes it unusable as a Data Agent source.
+    """
     items = requests.get(f"{API}/workspaces/{workspace_id}/lakehouses", headers=headers).json()
     lakehouse = next((i for i in items.get("value", []) if i["displayName"] == GOLD_LAKEHOUSE), None)
     if not lakehouse:
@@ -69,8 +75,8 @@ def resolve_gold_lakehouse(workspace_id: str, headers: dict) -> tuple[str, str]:
             f"{API}/workspaces/{workspace_id}/lakehouses/{lakehouse['id']}", headers=headers
         ).json()
         endpoint = (detail.get("properties", {}).get("sqlEndpointProperties") or {})
-        if endpoint.get("connectionString"):
-            return lakehouse["id"], endpoint["connectionString"]
+        if endpoint.get("connectionString") and endpoint.get("id"):
+            return endpoint["id"], endpoint["connectionString"]
         time.sleep(10)
     raise RuntimeError("SQL endpoint for the gold lakehouse is not provisioned yet")
 
@@ -93,15 +99,15 @@ def deploy(notebookutils, owner: str, repo: str, branch: str = "main",
     workspace_id = notebookutils.runtime.context["currentWorkspaceId"]
     headers = _headers(notebookutils.credentials.getToken("pbi"))
 
-    lakehouse_id, sql_endpoint = resolve_gold_lakehouse(workspace_id, headers)
-    print(f"  gold lakehouse: {lakehouse_id}")
+    sql_endpoint_id, sql_endpoint = resolve_gold_lakehouse(workspace_id, headers)
+    print(f"  gold lakehouse SQL endpoint: {sql_endpoint_id}")
 
     ontology = fetch_legacy(owner, repo, branch)
     parts = build_parts(
         ontology,
         display_name=ONTOLOGY_NAME,
         sql_endpoint=sql_endpoint,
-        lakehouse_id=lakehouse_id,
+        database_id=sql_endpoint_id,
         include_relationships=include_relationships,
     )
     print(f"  generated {len(parts)} TMDL parts "

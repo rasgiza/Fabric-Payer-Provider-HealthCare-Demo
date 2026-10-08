@@ -8,7 +8,8 @@ ontology empty. This module rebuilds that same model as TMDL parts.
 Reference: https://learn.microsoft.com/en-us/rest/api/fabric/articles/item-management/definitions/ontology-definition
 
 The DirectLake connection is workspace-specific, so ``sql_endpoint`` and
-``lakehouse_id`` must be resolved at deployment time and passed in.
+``database_id`` (the lakehouse's SQL analytics endpoint ID) must be resolved at
+deployment time and passed in.
 """
 
 from __future__ import annotations
@@ -91,10 +92,14 @@ def build_parts(
     *,
     display_name: str,
     sql_endpoint: str,
-    lakehouse_id: str,
+    database_id: str,
     include_relationships: bool = True,
 ) -> list[dict]:
-    """Return InlineBase64 definition parts for the new-experience ontology."""
+    """Return InlineBase64 definition parts for the new-experience ontology.
+
+    ``database_id`` is the lakehouse's SQL analytics endpoint ID, not the
+    lakehouse item ID; DirectLake addresses the endpoint.
+    """
     tables: dict[str, dict] = {}          # table -> {schema, columns{name: dataType}}
     entity_files: dict[str, str] = {}     # entity name -> TMDL text
     entity_table: dict[str, str] = {}     # entity name -> backing table
@@ -215,7 +220,7 @@ def build_parts(
     add("expressions.tmdl",
         "expression DatabaseQuery =\n"
         "\t\tlet\n"
-        f'\t\t    database = Sql.Database("{sql_endpoint}", "{lakehouse_id}")\n'
+        f'\t\t    database = Sql.Database("{sql_endpoint}", "{database_id}")\n'
         "\t\tin\n"
         "\t\t    database\n"
         f"\tlineageTag: {_lineage('expression', 'DatabaseQuery')}\n")

@@ -48,29 +48,50 @@ SCHEMA_DATASOURCE = ("https://developer.microsoft.com/json-schemas/fabric/item/"
 SCHEMA_PLATFORM = ("https://developer.microsoft.com/json-schemas/fabric/"
                    "gitIntegration/platformProperties/2.0.0/schema.json")
 
-AGENT_INSTRUCTIONS = """\
-You are a healthcare analytics assistant for a payer/provider organization. You \
-answer questions about patients, providers, payers, claims, encounters, \
-diagnoses, prescriptions and medication adherence.
+CURATED_AGENT_DIR = "data_agents/Healthcare Ontology Agent.DataAgent/Files/Config"
 
-Data source
-- Use the healthcare ontology for every question. It models each business entity \
-and the relationships between them, so prefer traversing relationships over \
-assuming a join.
-
-Terminology
-- "member", "patient" and "beneficiary" all mean the same person.
-- "payer" is the insurer; "provider" is the treating clinician or facility.
-- A "claim" is a billed encounter; an "encounter" is a clinical visit.
-- "adherence" refers to medication adherence, not appointment attendance.
-
-Answering
-- State the figures you used and the entities you traversed.
-- When counting people, count distinct patients rather than rows.
-- Return the top N when a question implies a ranking, and say what you ranked by.
-- If a question cannot be answered from the connected data, say so plainly \
-instead of estimating.
+# Used only if the curated configuration cannot be fetched from the repo.
+FALLBACK_INSTRUCTIONS = """\
+You are a healthcare analytics assistant for a payer/provider organization. \
+Use the healthcare ontology for questions about patients, providers, payers, \
+claims, encounters, diagnoses, prescriptions and medication adherence. \
+"member" and "patient" mean the same person; "payer" is the insurer and \
+"provider" is the treating clinician or facility. Count distinct patients \
+rather than rows, state the figures you used, and say plainly when a question \
+cannot be answered from the connected data.
 """
+
+
+def fetch_curated_config(owner: str, repo: str, branch: str) -> dict:
+    """Load the repo's curated agent instructions, descriptions and few-shots.
+
+    The curated datasource.json carries placeholder IDs and targets the graph
+    model; only its prose and per-element descriptions are reused here.
+    """
+    base = (f"https://raw.githubusercontent.com/{owner}/{repo}/{branch}/"
+            f"{CURATED_AGENT_DIR}")
+    config: dict = {"instructions": FALLBACK_INSTRUCTIONS, "descriptions": {},
+                    "datasource_instructions": "", "user_description": "", "fewshots": None}
+    try:
+        stage = requests.get(f"{base}/draft/stage_config.json", timeout=120)
+        if stage.ok:
+            config["instructions"] = json.loads(
+                stage.content.decode("utf-8-sig")).get("aiInstructions") or FALLBACK_INSTRUCTIONS
+
+        ds = requests.get(f"{base}/draft/graph-Healthcare_Demo_Graph/datasource.json", timeout=120)
+        if ds.ok:
+            doc = json.loads(ds.content.decode("utf-8-sig"))
+            config["datasource_instructions"] = doc.get("dataSourceInstructions", "")
+            config["user_description"] = doc.get("userDescription", "")
+            config["descriptions"] = {e["display_name"]: e.get("description")
+                                      for e in doc.get("elements", [])}
+
+        few = requests.get(f"{base}/draft/graph-Healthcare_Demo_Graph/fewshots.json", timeout=120)
+        if few.ok:
+            config["fewshots"] = few.content.decode("utf-8-sig")
+    except Exception as exc:  # the demo must still deploy without the curated prose
+        print(f"  [WARN] curated agent config unavailable ({exc}); using fallback instructions")
+    return config
 
 
 def _b64(text: str) -> str:
@@ -243,21 +264,26 @@ def deploy_ontology(client: FabricClient, parts: list[dict], display_name: str) 
     return ontology_id
 
 
-def entity_types(client: FabricClient, ontology_id: str) -> list[tuple[str, str]]:
-    """Return (id, name) for each entity type stored in the ontology."""
+def ontology_types(client: FabricClient, ontology_id: str) -> tuple[list, list]:
+    """Return (entity_types, relationship_types) as (id, name) pairs."""
     stored = client.lro(client.request(
         "POST", f"{API}/workspaces/{client.workspace_id}"
                 f"/ontologies/{ontology_id}/getDefinition", json={}), "getDefinition")
     if stored is None:
         raise RuntimeError("could not read back the ontology definition")
 
-    found = []
+    entities, relationships = [], []
     for part in stored.json()["definition"]["parts"]:
         path = part["path"]
-        if path.startswith("EntityTypes/") and path.endswith("definition.json"):
+        if not path.endswith("definition.json"):
+            continue
+        if path.startswith("EntityTypes/"):
             doc = json.loads(base64.b64decode(part["payload"]).decode("utf-8-sig"))
-            found.append((str(doc["id"]), doc["name"]))
-    return found
+            entities.append((str(doc["id"]), doc["name"]))
+        elif path.startswith("RelationshipTypes/"):
+            doc = json.loads(base64.b64decode(part["payload"]).decode("utf-8-sig"))
+            relationships.append((str(doc["id"]), doc["name"]))
+    return entities, relationships
 
 
 def refresh_graph(client: FabricClient, ontology_id: str) -> str:
@@ -311,32 +337,41 @@ def verify_graph(client: FabricClient, graph_id: str) -> int:
 
 
 def deploy_data_agent(client: FabricClient, ontology_id: str, ontology_name: str,
-                      types: list[tuple[str, str]], agent_name: str) -> str:
+                      entities: list, relationships: list, agent_name: str,
+                      curated: dict) -> str:
     """Create or update the data agent with the ontology attached and published."""
+    descriptions = curated.get("descriptions") or {}
+
+    def element(type_id: str, name: str, kind: str) -> dict:
+        return {"id": type_id, "is_selected": True, "display_name": name,
+                "type": kind, "description": descriptions.get(name), "children": []}
+
+    # Entity types become graph node types and relationships become edge types;
+    # the data source schema has no ontology-specific element types.
+    elements = [element(i, n, "graph.nodeType") for i, n in sorted(entities, key=lambda t: t[1])]
+    elements += [element(i, n, "graph.edgeType")
+                 for i, n in sorted(relationships, key=lambda t: t[1])]
+
     datasource = json.dumps({
         "$schema": SCHEMA_DATASOURCE,
         "artifactId": ontology_id,
         "workspaceId": client.workspace_id,
         "displayName": ontology_name,
         "type": "ontology",
-        "userDescription": "Healthcare payer/provider ontology covering patients, providers, "
-                           "payers, claims, encounters, diagnoses and prescriptions.",
-        "dataSourceInstructions": "Use for any question about patients, providers, payers, "
-                                  "claims, encounters, diagnoses, prescriptions or medication "
-                                  "adherence, including relationships between them.",
+        "userDescription": curated.get("user_description") or
+            "Healthcare payer/provider ontology covering patients, providers, payers, "
+            "claims, encounters, diagnoses and prescriptions.",
+        "dataSourceInstructions": curated.get("datasource_instructions") or
+            "Use for any question about patients, providers, payers, claims, encounters, "
+            "diagnoses, prescriptions or medication adherence, including relationships "
+            "between them.",
         "metadata": {},
-        # Ontology entity types are registered as graph node types; there is no
-        # ontology-specific element type in the data source schema.
-        "elements": [
-            {"id": type_id, "is_selected": True, "display_name": name,
-             "type": "graph.nodeType", "description": None, "children": []}
-            for type_id, name in sorted(types, key=lambda t: t[1])
-        ],
+        "elements": elements,
     }, indent=2)
 
     stage_config = json.dumps({
         "$schema": SCHEMA_STAGE,
-        "aiInstructions": AGENT_INSTRUCTIONS,
+        "aiInstructions": curated.get("instructions") or FALLBACK_INSTRUCTIONS,
         "experimental": {"enableExperimentalFeatures": True},
     }, indent=2)
 
@@ -365,6 +400,12 @@ def deploy_data_agent(client: FabricClient, ontology_id: str, ontology_name: str
         {"path": f"Files/Config/published/{folder}/datasource.json", "payload": _b64(datasource)},
         {"path": "Files/Config/publish_info.json", "payload": _b64(publish_info)},
     ]
+    fewshots = curated.get("fewshots")
+    if fewshots:
+        parts.append({"path": f"Files/Config/draft/{folder}/fewshots.json",
+                      "payload": _b64(fewshots)})
+        parts.append({"path": f"Files/Config/published/{folder}/fewshots.json",
+                      "payload": _b64(fewshots)})
     for part in parts:
         part["payloadType"] = "InlineBase64"
 
@@ -407,9 +448,9 @@ def deploy(notebookutils, owner: str, repo: str, branch: str = "main",
         print(f"  definition parts: {len(parts)}")
         ontology_id = deploy_ontology(client, parts, ontology_name)
 
-        types = entity_types(client, ontology_id)
-        print(f"  entity types: {len(types)}")
-        if not types:
+        entities, relationships = ontology_types(client, ontology_id)
+        print(f"  entity types: {len(entities)}  relationship types: {len(relationships)}")
+        if not entities:
             raise RuntimeError("no entity types were stored")
 
         print("\nStep 2: Build Ontology Graph")
@@ -418,9 +459,14 @@ def deploy(notebookutils, owner: str, repo: str, branch: str = "main",
 
         if create_agent:
             print("\nStep 3: Deploy Data Agent")
-            deploy_data_agent(client, ontology_id, ontology_name, types, agent_name)
+            curated = fetch_curated_config(owner, repo, branch)
+            print(f"  instructions: {len(curated['instructions'])} chars"
+                  f"{'  (fallback)' if curated['instructions'] is FALLBACK_INSTRUCTIONS else ''}")
+            print(f"  few-shot examples: {'yes' if curated.get('fewshots') else 'no'}")
+            deploy_data_agent(client, ontology_id, ontology_name,
+                              entities, relationships, agent_name, curated)
 
-        print(f"\n[OK] ontology '{ontology_name}' deployed with {len(types)} entity types")
+        print(f"\n[OK] ontology '{ontology_name}' deployed with {len(entities)} entity types")
         return True
     except Exception as exc:  # surfaced to the notebook so a failure is never silent
         print(f"\n[FAIL] {exc}")

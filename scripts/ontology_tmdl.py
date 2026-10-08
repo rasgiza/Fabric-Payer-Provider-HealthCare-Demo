@@ -116,7 +116,10 @@ def build_parts(
         if not table:
             continue
 
-        slot = tables.setdefault(table, {"schema": source.get("sourceSchema", "dbo"), "columns": {}})
+        slot = tables.setdefault(
+            table,
+            {"schema": source.get("sourceSchema") or "dbo", "columns": {}},
+        )
         column_for = {str(b["targetPropertyId"]): b["sourceColumnName"] for b in cfg.get("propertyBindings", [])}
 
         properties = list(definition.get("properties") or [])

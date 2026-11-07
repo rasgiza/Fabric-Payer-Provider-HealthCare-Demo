@@ -192,7 +192,7 @@ The cross-cutting reason the above is possible: one governed data foundation wit
 
 **The industry pain.** Traditional healthcare analytics projects take **weeks to provision** — installing Python, configuring credentials, deploying infrastructure, debugging auth — before a single question is answered.
 
-**How this demo solves it.** **One notebook, one click, ~15 minutes.** SQL-only analysts, clinical informaticists, and business users get a fully functional Fabric environment — medallion lakehouses, semantic model, ontology, agents, dashboards — with no command line. This is itself a provider use case: *time-to-insight* as a competitive lever.
+**How this demo solves it.** **One guided notebook deployment, typically 45-75 minutes without the optional streaming scenario.** SQL-only analysts, clinical informaticists, and business users get a fully functional Fabric environment — medallion lakehouses, semantic model, ontology, agents, dashboards — with no command line. Timing varies with capacity availability, Spark session startup, and Fabric or Foundry provisioning. This is itself a provider use case: *time-to-insight* as a competitive lever.
 
 ---
 

@@ -68,7 +68,10 @@ required for the default Fabric deployment.
 2. Import [`Healthcare_Launcher.ipynb`](Healthcare_Launcher.ipynb) into the
    workspace.
 3. Open the notebook and select **Run all**.
-4. Allow approximately 15-20 minutes for the initial deployment.
+4. Plan approximately 45-75 minutes for the complete initial deployment
+   without the optional streaming scenario. A clean deployment has been
+   observed at about 60 minutes; capacity availability, Spark session startup,
+   and Fabric or Foundry provisioning can change the total time.
 
 The launcher downloads the repository, deploys the workspace artifacts,
 generates the synthetic data, runs the data pipeline, refreshes the semantic

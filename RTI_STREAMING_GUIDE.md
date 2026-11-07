@@ -174,7 +174,9 @@ connection configuration needed.
 ### Prerequisites
 - Healthcare_Launcher Cell 1–11 completed (lakehouses, notebooks, data deployed)
 - `DEPLOY_STREAMING = True` in the Configuration cell
-- Fabric capacity **active** (F64 or higher recommended)
+- An **active Fabric F capacity**. F8 can run the demo at modest scale; use a
+  larger capacity when you need more headroom for concurrent Spark, KQL,
+  Eventstream, Power BI, and agent workloads. RTI does not require F64.
 
 ### Step 1: Run Cell 12 (RTI Deployment) — Automated
 Cell 12 deploys all RTI artifacts:

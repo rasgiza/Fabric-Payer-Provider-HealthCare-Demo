@@ -44,14 +44,23 @@ The default deployment creates a reusable healthcare analytics foundation:
 
 ### Prerequisites
 
-- A Microsoft Fabric workspace on supported Fabric capacity (F64 or higher is
-  recommended for the complete experience).
+- A Microsoft Fabric workspace on an active Fabric F capacity. **F8 can run
+  this demo at modest scale**; larger capacities provide more headroom for
+  faster deployment, concurrent users, and simultaneous Spark, Power BI, and
+  RTI workloads.
 - Workspace **Admin** or **Member** access.
 - A new empty workspace.
 - Access from Fabric to this public GitHub repository.
 
 No local Python installation, repository clone, `.env` file, or GitHub token is
 required for the default Fabric deployment.
+
+> [!NOTE]
+> F64 is not required for the RTI scenario. The important F64 licensing
+> distinction is Power BI consumption: F64 or higher allows users with a
+> Microsoft Fabric Free license to view Power BI content. On smaller F
+> capacities, report consumers need the appropriate Power BI Pro or PPU
+> license. See [Fabric features by SKU and capacity](https://learn.microsoft.com/fabric/enterprise/fabric-features).
 
 ### Deploy Fabric Core
 

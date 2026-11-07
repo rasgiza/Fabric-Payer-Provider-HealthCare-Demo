@@ -300,7 +300,9 @@ The semantic model uses **Direct Lake** mode, which reads directly from Delta ta
 - No data duplication
 
 **Limitations:**
-- Requires F64+ Fabric capacity
+- Available on Fabric F capacities; model size and performance limits vary by SKU
+- On F2-F32, Power BI consumers need an appropriate Pro or PPU license; F64+
+  allows users with a Microsoft Fabric Free license to view Power BI content
 - Complex DAX may fall back to DirectQuery (slower)
 - Column cardinality limits apply
 

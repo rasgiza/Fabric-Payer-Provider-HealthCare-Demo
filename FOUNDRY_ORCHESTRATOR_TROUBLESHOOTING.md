@@ -1,7 +1,7 @@
 # Foundry Orchestrator + Fabric Data Agent: Troubleshooting Guide
 
-> **Agent**: HealthcareOrchestratorAgent (gpt-4o)
-> **Tools**: fabric_dataagent_preview, Knowledge Base (Azure AI Search), web_search_preview
+> **Agent**: HealthcareOrchestratorAgent2 (`gpt-4.1`)
+> **Tools**: Fabric IQ (`fabric_iq_preview`) connected to the published `HealthcareHLSAgent`, Knowledge Base (Azure AI Search), web search
 
 ---
 
@@ -23,13 +23,13 @@ The Foundry orchestrator agent failed to return data for **hybrid questions** --
 **What happened**: The orchestrator forwarded the user's entire compound question verbatim to the Fabric Data Agent:
 
 ```
-Input to fabric_dataagent_preview:
+Input to Fabric IQ — HealthcareHLSAgent:
 "What is our denial rate by payer and what does our appeal process guide recommend for the top denial reasons?"
 ```
 
 The Fabric Data Agent received a question containing KB concepts ("appeal process guide", "recommend") that it has no data for, causing it to fail silently.
 
-**How we found it**: Checked Foundry Playground logs --> Conversation --> clicked on `Tool: fabric_dataagent_preview` --> **Input + Output** tab --> saw the full compound question being sent as-is.
+**How we found it**: Checked Foundry Playground logs --> Conversation --> clicked the Fabric IQ tool call for `HealthcareHLSAgent` --> **Input + Output** tab --> saw the full compound question being sent as-is.
 
 ### Issue 2: Missing/Stripped Orchestrator Instructions
 
@@ -66,7 +66,7 @@ Follow these steps when hybrid queries fail in Foundry:
 1. Open **Azure AI Foundry** --> your project --> **Agents** --> select agent
 2. Go to **Playground** --> run the failing question
 3. Click **Tracing** (or check **Conversation** panel in logs)
-4. Look at each `Tool: fabric_dataagent_preview` entry
+4. Look at each Fabric IQ tool-call entry for `HealthcareHLSAgent`
 5. Click on it --> **Input + Output** tab --> read the input text
 6. Click --> **Metadata** tab --> check `duration` and `status`
 
@@ -125,7 +125,7 @@ Step 1 - Classify:
   - "appeal process guide recommend" --> KNOWLEDGE
 
 Step 2 - Separate calls:
-  - fabric_dataagent_preview --> "Show me denial rates by payer"
+  - Fabric IQ — HealthcareHLSAgent --> "Show me denial rates by payer"
   - Knowledge Base --> automatic for appeal recommendations
 
 Step 3 - Combine in response
@@ -154,7 +154,7 @@ Provide exact fewshot phrasings the orchestrator should use. These match the Fab
 ### 3. Critical Rules
 
 ```
-1. NEVER send compound questions to fabric_dataagent_preview
+1. NEVER send compound questions to Fabric IQ — HealthcareHLSAgent
 2. NEVER include words like "guide", "recommend", "protocol", "policy" in data agent queries
 3. ALWAYS use a phrasing from the Query Catalog
 4. If the data agent returns an error or empty result, retry with a simpler phrasing

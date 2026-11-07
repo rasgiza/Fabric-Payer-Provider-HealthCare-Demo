@@ -29,5 +29,8 @@ desktop.ini
 # Fabric local
 .lakehouse/
 
+# Foundry local deployment and evaluation state
+foundry_agent/.foundry/
+
 # Temp fix/debug scripts
 _scratch/

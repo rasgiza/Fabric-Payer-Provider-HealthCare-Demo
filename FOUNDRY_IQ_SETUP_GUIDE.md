@@ -36,7 +36,7 @@ User Question
      │
      ▼
 ┌──────────────────────────────────────────────────────────────┐
-│           HealthcareOrchestratorAgent2 (gpt-4o)              │
+│           HealthcareOrchestratorAgent2 (gpt-4.1)             │
 │  ┌───────────────────────────────────────────────────────┐   │
 │  │  Orchestrator Instructions (v24)                      │   │
 │  │  • Mandatory Decomposition Protocol (5 steps)         │   │
@@ -69,7 +69,7 @@ User Question
 | Question Type | Tool Used | Example |
 |---|---|---|
 | Policy/guideline/protocol | `azure_ai_search` (Knowledge Base grounding) | "What does our appeal process recommend?" |
-| Data/metrics/counts/trends | `fabric_dataagent_preview` (Fabric Data Agent) | "Show me denial rates by payer" |
+| Data/metrics/counts/trends | Fabric IQ (`fabric_iq_preview`) → published `HealthcareHLSAgent` | "Show me denial rates by payer" |
 | Combined questions | Both tools, then synthesized | "Show recommendations for Nancy White based on her adherence data and clinical guidelines" |
 | External/current regulations | `web_search_preview` | "What are the latest CMS HRRP thresholds?" |
 
@@ -129,7 +129,7 @@ After creation, record these values -- you'll need them throughout:
 |---|---|---|
 | **AI Services account name** | Azure Portal --> Resource Group --> AI Services | `HLS-HealthcareDemo` |
 | **Project name** | Foundry Portal --> Project Settings | `HealthcareDemo-HLS` |
-| **Foundry endpoint** | Portal --> Project --> Overview | `https://<hub-name>.services.ai.azure.com` |
+| **Foundry endpoint** | Portal --> Project --> Overview | `https://<account>.services.ai.azure.com/api/projects/<project>` |
 | **Foundry project MSI** | Azure Portal --> AI Services --> Identity --> Object ID | `<your-foundry-project-msi>` |
 | **Resource Group** | Azure Portal | `healthcaredemofoundry-rg` |
 | **Subscription ID** | Azure Portal | `<your-subscription-id>` |
@@ -140,9 +140,9 @@ After creation, record these values -- you'll need them throughout:
 
 In the Foundry portal, go to **Models + Endpoints** --> **+ Deploy model**:
 
-### 2.1 Deploy gpt-4o (for agent chat)
-- Model: **gpt-4o**
-- Deployment name: `gpt-4o`
+### 2.1 Deploy gpt-4.1 (for agent chat)
+- Model: **gpt-4.1**
+- Deployment name: `gpt-4.1`
 - Version: Latest
 - Tokens per minute: 80K+ recommended
 
@@ -332,7 +332,7 @@ Wait for the status to change from **Creating** --> **Active** (may take 5-15 mi
 2. Click **+ Create knowledge base**
 3. Configure:
    - **Name**: `healthcareknowledgebase`
-   - **Model**: `gpt-4o`
+   - **Model**: `gpt-4.1`
    - **Knowledge sources**: Select `healthcare-onelake-ks`
    - **Retrieval reasoning effort**: `Medium`
 4. Set **Answer Instructions**:
@@ -482,60 +482,60 @@ Record both values:
 
 ---
 
-## Step 10 — Connect the Fabric Data Agent to Foundry (MANUAL)
+## Step 10 — Connect the Published Data Agent through Fabric IQ (MANUAL)
 
-> **⚠️ This is a MANUAL step** — must be done in the Azure AI Foundry portal UI.
->
-> **Common Failure**: If this connection is created incorrectly (empty target, no workspace routing), the orchestrator's `fabric_dataagent_preview` tool will return **"No tool output found for remote function call"** even though the Data Agent works fine in Fabric UI.
+> **Product migration (October 2026):** Microsoft replaced the earlier
+> `fabric_dataagent_preview` integration with the Fabric IQ tool. Keep the
+> existing published `HealthcareHLSAgent`; do not rebuild it or change its data
+> sources just for this migration.
 
-### 10.1 Create the Connection
+### 10.1 Add Fabric IQ from the OneLake Catalog
 
-1. Go to [Azure AI Foundry](https://ai.azure.com) → your project (e.g., `HealthcareDemo-HLS`)
-2. Click **Management center** (bottom left) → **Connected resources**
-3. Click **+ New connection**
-4. Select **Microsoft Fabric** → **Data Agent**
-5. You will be prompted to provide:
-   - **Workspace ID**: The value from Step 9.6 (e.g., `d6ed5901-0f1d-4a5c-a263-e5f857169a79`)
-   - **Artifact ID (Data Agent ID)**: The value from Step 9.6 (e.g., `4801f1cc-e42f-466e-a506-95b65bd87f9b`)
-6. **Connection name**: e.g., `HealthcareHLSAgent`
-7. Click **Connect**
+1. Go to [Microsoft Foundry](https://ai.azure.com) and open the project.
+2. Open the orchestrator agent. For a first deployment, create a temporary
+   prompt agent or toolbox so the project connection can be established before
+   running the repository deployment script.
+3. Under **Tools**, select **Add** → **Browse all tools**.
+4. Select **Fabric IQ (OneLake Catalog)**, then select **Add tool**.
+5. In the OneLake Catalog, filter the item type to **Data agent**.
+6. Select the published `HealthcareHLSAgent`, then select **Add**.
+7. Remove the old **Microsoft Fabric data agent** tool from the Foundry agent.
+8. Save a new Foundry agent version.
 
-### 10.2 Verify the Connection
+The selected item resolves to this Fabric IQ MCP endpoint:
 
-After creating the connection, verify it was saved correctly:
-
-```powershell
-# Verify via API
-$token = az account get-access-token --resource "https://ai.azure.com" --query accessToken -o tsv
-$headers = @{"Authorization"="Bearer $token"; "Content-Type"="application/json"}
-$base = "https://<AI_SERVICES_NAME>.services.ai.azure.com/api/projects/<PROJECT_NAME>"
-
-$conn = Invoke-RestMethod -Uri "$base/connections/HealthcareHLSAgent?api-version=2025-05-01" `
-    -Headers $headers -Method GET
-$conn | ConvertTo-Json -Depth 5
+```text
+https://api.fabric.microsoft.com/v1/mcp/workspaces/<WORKSPACE_ID>/dataagents/<DATA_AGENT_ID>/agent
 ```
 
-**Expected output** (healthy connection):
-```json
-{
-    "name": "HealthcareHLSAgent",
-    "type": "CustomKeys",
-    "target": "-",
-    "metadata": { "type": "fabric_dataagent_preview" }
-}
-```
+Using the Data Agent endpoint preserves its instructions, examples, data
+sources, and support for long-running queries. A direct ontology endpoint is a
+different Fabric IQ target and should not replace `HealthcareHLSAgent` in this
+orchestrator unless that routing change is intentional.
 
-> **Note**: The `target: "-"` is normal for `fabric_dataagent_preview` connections. The workspace and artifact routing are stored internally by Foundry when you select the Data Agent during connection creation. If you see this structure but the tool still returns "No tool output found", the connection was created without selecting a workspace/artifact — **delete and recreate it** following Step 10.1 exactly.
+### 10.2 Recommended Toolbox Option
 
-### 10.3 If the Connection Already Exists but Doesn't Work
+Microsoft recommends adding Fabric IQ through a **toolbox** when the same tool
+will be reused across agents or runtimes. A toolbox centralizes credentials,
+versioning, and policy enforcement. Direct tool configuration remains valid for
+this single-agent demo.
 
-Foundry connections cannot be updated via API (PUT returns 405). You must:
+### 10.3 Verify the Fabric IQ Tool
 
-1. Go to **Management center** → **Connected resources**
-2. Find the broken connection (e.g., `HealthcareHLSAgent`)
-3. **Delete** it
-4. **Recreate** it following Step 10.1
-5. After recreating, you must also **re-add** the Fabric Data Agent tool to your orchestrator agent (Step 12.3) since deleting the connection breaks the tool reference
+Confirm all of the following before testing:
+
+1. `HealthcareHLSAgent` is published in Fabric.
+2. The connection identity can read the Data Agent and each of its data sources.
+3. The Fabric IQ target is the Data Agent endpoint above, not the ontology or
+   Power BI endpoint.
+4. The Foundry agent has `fabric_iq_preview` and no longer has
+   `fabric_dataagent_preview`.
+5. The agent instructions identify the route as
+   **Fabric IQ — HealthcareHLSAgent**.
+
+For delegated access, the Data Agent connection requires
+`DataAgent.Execute.All`. Direct clients of the published Data Agent MCP endpoint
+can also use a user or service-principal token.
 
 ---
 
@@ -646,7 +646,7 @@ az role assignment create --assignee $searchMsiObjectId --role "Cognitive Servic
 3. Click **+ New agent**
 4. Set:
    - **Name**: `HealthcareOrchestratorAgent2`
-   - **Model**: `gpt-4o`
+   - **Model**: `gpt-4.1`
 
 ### 12.2 Set Agent Instructions
 
@@ -659,7 +659,7 @@ Paste the full instructions from [`foundry_agent/orchestrator_instructions.md`](
 Add these three tools:
 
 1. **Web Search**: Click the ⋮ menu → **Add tool** → **Web Search** → Enable
-2. **Fabric Data Agent**: Click **Add tool** → **Fabric Data Agent (Preview)** → Select the `HealthcareHLSAgent` connection created in Step 10
+2. **Fabric IQ**: Click **Add tool** → **Fabric IQ (OneLake Catalog)** → filter by **Data agent** → select the published `HealthcareHLSAgent` from Step 10
 3. **Azure AI Search** (Knowledge Base grounding): This is added as **Knowledge**, not a tool:
    - Scroll to the **Knowledge** section
    - Click **Add**
@@ -673,69 +673,59 @@ Add these three tools:
 > **⚠️ MANUAL STEP**: If you need to change the GPT model:
 
 1. In the agent editor, click the **Model** dropdown at the top
-2. Select the desired model (e.g., `gpt-4o`, `gpt-4o-mini`, `gpt-4.1`)
+2. Select the desired model (recommended: `gpt-4.1`)
 3. The model must be **already deployed** in your Foundry project (see Step 2)
 
 **Model considerations:**
 
 | Model | Pros | Cons |
 |---|---|---|
-| `gpt-4o` | Best reasoning, follows complex instructions | Higher cost, slower |
-| `gpt-4o-mini` | Fast, cheap | May not follow all 17 rules reliably |
-| `gpt-4.1` | Latest capabilities | Check availability in your region |
+| `gpt-4.1` | Tested with this repository and follows the multi-tool instructions | Check availability in your region |
+| `gpt-4o` | Compatible fallback | Older deployment |
+| `gpt-4o-mini` | Fast, lower cost | May skip multi-call and citation requirements |
 
-> **Recommendation**: Use `gpt-4o` for production. The orchestrator instructions are complex (17 rules, citation protocol, multi-call requirements) and lighter models may skip rules.
+> **Recommendation**: Use `gpt-4.1`, which is the model validated by the
+> repository deployment and live smoke test.
 
-### 12.5 Create via API (Alternative)
+### 12.5 Deploy from the Repository (Recommended)
+
+Use `azure-ai-projects>=2.2.0` and replace the old
+`fabric_dataagent_preview` payload with `FabricIQPreviewTool`:
+
+This repository includes a ready-to-run deployment script:
 
 ```powershell
-$token = az account get-access-token --resource "https://ai.azure.com" --query accessToken -o tsv
-$headers = @{"Authorization"="Bearer $token"; "Content-Type"="application/json"}
-$base = "https://<AI_SERVICES_NAME>.services.ai.azure.com/api/projects/<PROJECT_NAME>"
+python -m pip install -r foundry_agent\requirements.txt
 
-$instructions = Get-Content "foundry_agent/orchestrator_instructions.md" -Raw
-# Strip the YAML header (first 4 lines)
-$lines = $instructions -split "`n"
-$instructions = ($lines[4..($lines.Length-1)] -join "`n").Trim()
+$env:FOUNDRY_PROJECT_ENDPOINT = "https://<account>.services.ai.azure.com/api/projects/<project>"
+$env:FOUNDRY_MODEL_NAME = "gpt-4.1"
+$env:FABRIC_IQ_CONNECTION_NAME = "HealthcareHLSAgent"
+$env:AZURE_AI_SEARCH_CONNECTION_NAME = "<search-connection-name>"
+$env:AZURE_AI_SEARCH_INDEX_NAME = "healthcare-onelake-ks-index"
 
-$body = @{
-    name = "HealthcareOrchestratorAgent2"
-    display_name = "Healthcare Orchestrator (Grounded KB)"
-    description = "Healthcare orchestrator with Knowledge Base grounding, Fabric Data Agent, and web search."
-    definition = @{
-        kind = "prompt"
-        model = "gpt-4o"
-        instructions = $instructions
-        tools = @(
-            @{ type = "web_search_preview" }
-            @{
-                type = "fabric_dataagent_preview"
-                fabric_dataagent_preview = @{
-                    project_connections = @(
-                        @{
-                            project_connection_id = "/subscriptions/<SUB_ID>/resourceGroups/<RG>/providers/Microsoft.CognitiveServices/accounts/<AI_SERVICES_NAME>/projects/<PROJECT_NAME>/connections/HealthcareHLSAgent"
-                        }
-                    )
-                }
-            }
-            @{
-                type = "azure_ai_search"
-                azure_ai_search = @{
-                    indexes = @(
-                        @{
-                            project_connection_id = "/subscriptions/<SUB_ID>/resourceGroups/<RG>/providers/Microsoft.CognitiveServices/accounts/<AI_SERVICES_NAME>/projects/<PROJECT_NAME>/connections/<SEARCH_CONNECTION_NAME>"
-                            index_name = "healthcare-onelake-ks-index"
-                        }
-                    )
-                }
-            }
-        )
-    }
-} | ConvertTo-Json -Depth 8
-
-$result = Invoke-RestMethod -Uri "$base/agents?api-version=v1" -Headers $headers -Method POST -Body $body
-Write-Host "Agent created: $($result.name)"
+python foundry_agent\deploy_foundry_agent.py --list-connections
+python foundry_agent\deploy_foundry_agent.py --validate-only
+python foundry_agent\deploy_foundry_agent.py
 ```
+
+The Fabric IQ project connection must first be created by selecting the
+published Data Agent in OneLake Catalog. The preflight resolves connections by
+name in the user's project, verifies the model, rejects deprecated
+`fabric_dataagent_preview` connections, verifies the Fabric IQ target is a
+published Data Agent endpoint, and requires the Azure AI Search grounding
+connection. A successful deployment always contains:
+
+```text
+web_search_preview, azure_ai_search, fabric_iq_preview
+```
+
+See [`foundry_agent/README.md`](foundry_agent/README.md) for the portable
+deployment workflow and `deployment.env.example` for the required values.
+
+For reusable deployments, create a toolbox containing a
+`fabric_iq_preview` tool with the Data Agent `server_url`, then attach the
+published toolbox endpoint to the agent as an MCP tool. See
+[Connect agents to Microsoft Fabric with Fabric IQ](https://learn.microsoft.com/azure/foundry/agents/how-to/tools/fabric-iq).
 
 ### 12.6 Save the Agent
 
@@ -745,7 +735,7 @@ Click **Save** in the Foundry portal to save the agent configuration.
 
 ## Step 13 — Test & Validate
 
-### 13.1 Test Data Agent Tool (Fabric Data)
+### 13.1 Test Fabric IQ with the Data Agent
 
 In the Foundry agent **Playground**, ask:
 
@@ -755,7 +745,9 @@ Show me medication adherence for Nancy White age 63 by drug class
 
 **Expected**: A table with one row per drug class, each with a single PDC score. Should match results from the Fabric UI test exactly.
 
-**If you get "No tool output found"**: The Fabric Data Agent connection is broken — go back to Step 10.3.
+**If Fabric IQ returns no result**: Verify the checks in Step 10.3, then test
+the same question directly in the published Data Agent to isolate whether the
+failure is in Fabric or the Foundry integration.
 
 ### 13.2 Test Knowledge Base (Guidelines)
 
@@ -774,8 +766,8 @@ What are the recommendations for Nancy White age 63 based on her medication adhe
 ```
 
 **Expected**: The agent should:
-1. Call `fabric_dataagent_preview` for PDC scores by drug class
-2. Call `fabric_dataagent_preview` for assigned providers
+1. Call Fabric IQ — `HealthcareHLSAgent` for PDC scores by drug class
+2. Call Fabric IQ — `HealthcareHLSAgent` for assigned providers
 3. Use `azure_ai_search` (KB grounding) for clinical guidelines
 4. Synthesize a response with tables, citations, and provider routing
 
@@ -795,29 +787,37 @@ These steps **cannot be automated** and must be done manually in the portal UIs:
 
 | # | Step | Where | What |
 |---|---|---|---|
-| 1 | Deploy gpt-4o and embedding models | Foundry portal → Models + Endpoints | Deploy models needed by the agent and indexer |
+| 1 | Deploy gpt-4.1 and embedding models | Foundry portal → Models + Endpoints | Deploy models needed by the agent and indexer |
 | 2 | Enable Search managed identity | Azure Portal → AI Search → Identity | Turn on System Assigned identity |
 | 3 | Configure Data Agent data sources | Fabric portal → Data Agent → Add Data | Attach lh_gold_curated lakehouse |
 | 4 | Set Data Agent AI instructions | Fabric portal → Data Agent → Agent Instructions | Paste from DATA_AGENT_INSTRUCTIONS.md |
 | 5 | Add Data Agent aggregation rules | Fabric portal → Data Agent → Agent Instructions | Append aggregation rules (Step 9.3) |
 | 6 | Publish Data Agent | Fabric portal → Data Agent → Publish | Make available for external connections |
-| 7 | Create Fabric Data Agent connection | Foundry portal → Connected Resources → + New | Select workspace + Data Agent artifact |
+| 7 | Add Fabric IQ Data Agent tool | Foundry portal → Agent → Add tool → Fabric IQ | Select the published Data Agent from OneLake Catalog |
 | 8 | Grant Foundry Hub MSI to Fabric workspace | Fabric portal → Workspace → Manage Access | Add AI Services account as Contributor |
 | 9 | Add Knowledge Base as grounding (NOT MCP) | Foundry portal → Agent → Knowledge section | Add azure_ai_search index |
-| 10 | Set/change GPT model | Foundry portal → Agent → Model dropdown | Select gpt-4o (must be deployed first) |
+| 10 | Set/change GPT model | Foundry portal → Agent → Model dropdown | Select gpt-4.1 (must be deployed first) |
 
 ---
 
 ## Troubleshooting
 
-### Error: "No tool output found for remote function call"
+### Error: Fabric IQ returns no Data Agent result
 
-**Cause**: The Fabric Data Agent connection in Foundry is empty (no workspace/artifact routing) OR the Data Agent has no data sources configured.
+**Cause**: The Data Agent might be unpublished, its source might be
+unavailable, the connection identity might lack access, or Fabric IQ might be
+targeting the wrong Fabric item type.
 
 **Fix**:
-1. Check if the Data Agent has data sources: Open in Fabric UI → verify lh_gold_curated is listed under Data
-2. If data sources exist, the connection is the problem — delete and recreate it in Foundry (Step 10.3)
-3. After recreating the connection, re-add the Fabric Data Agent tool to the agent (Step 12.3)
+1. Open the Data Agent in Fabric and verify `lh_gold_curated` is available.
+2. Test the same question directly in the Data Agent.
+3. Publish the Data Agent after any configuration changes.
+4. Verify the Fabric IQ selection is the **Data agent** named
+   `HealthcareHLSAgent`, not an ontology or semantic model.
+5. Verify the connection identity has access to the Data Agent and its sources
+   and has the required `DataAgent.Execute.All` delegated permission.
+6. Remove any remaining old `fabric_dataagent_preview` tool from the Foundry
+   agent and save a new version.
 
 ### Error: 403 on Knowledge Base
 
@@ -858,7 +858,7 @@ These steps **cannot be automated** and must be done manually in the portal UIs:
 ```powershell
 $agent = Invoke-RestMethod -Uri "$base/agents/HealthcareOrchestratorAgent2?api-version=v1" -Headers $headers
 Write-Host "Instruction length: $($agent.definition.instructions.Length) chars"
-# Should be ~19,000+ chars for the full v24 instructions
+# Should be ~19,000+ chars for the full v29 instructions
 ```
 
 ---
@@ -870,9 +870,9 @@ Write-Host "Instruction length: $($agent.definition.instructions.Length) chars"
 | AI Services Account (Hub) | Hosts the Foundry project, provides MSI for Fabric auth | System-assigned MSI |
 | AI Search Service | Indexes healthcare knowledge docs for KB grounding | Entra ID (RBAC) |
 | Fabric Workspace | Contains Gold Lakehouse + Data Agent | MSI needs Contributor role |
-| Fabric Data Agent | NL-to-SQL over lh_gold_curated | fabric_dataagent_preview connection |
+| Fabric IQ → published Data Agent | Conversational Q&A over `lh_gold_curated`, including long-running queries | `fabric_iq_preview` using the Data Agent MCP endpoint |
 | AI Search Index | Vectorized healthcare knowledge docs | azure_ai_search connection |
-| gpt-4o | Agent reasoning model | Deployed in Foundry |
+| gpt-4.1 | Agent reasoning model | Deployed in Foundry |
 | text-embedding-ada-002 | Document vectorization for search | Deployed in Foundry |
 
 ### Key Files in This Repo
@@ -880,6 +880,8 @@ Write-Host "Instruction length: $($agent.definition.instructions.Length) chars"
 | File | Purpose |
 |---|---|
 | [`foundry_agent/orchestrator_instructions.md`](foundry_agent/orchestrator_instructions.md) | Full orchestrator system prompt (paste into Foundry agent) |
+| [`foundry_agent/deploy_foundry_agent.py`](foundry_agent/deploy_foundry_agent.py) | Validates project resources and deploys an immutable prompt-agent version |
+| [`foundry_agent/README.md`](foundry_agent/README.md) | Portable Foundry deployment quickstart |
 | [`DATA_AGENT_INSTRUCTIONS.md`](DATA_AGENT_INSTRUCTIONS.md) | Data Agent AI + data source instructions (paste into Fabric) |
 | [`DATA_AGENT_GUIDE.md`](DATA_AGENT_GUIDE.md) | Comprehensive Data Agent reference |
 | [`SAMPLE_QUESTIONS.md`](SAMPLE_QUESTIONS.md) | 60+ ready-to-use test prompts |

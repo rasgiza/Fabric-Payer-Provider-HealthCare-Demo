@@ -172,6 +172,10 @@ This demo aligns directly with the [Microsoft Healthcare Provider Use Cases](htt
 > **That's it — no configuration needed.** The notebook pulls from the public repo `rasgiza/Fabric-Payer-Provider-HealthCare-Demo` by default. If you want to change settings, edit the CONFIG cell before running — for example, set `DEPLOY_STREAMING = True` to enable Real-Time Intelligence (Eventhouse + KQL + scoring), or point `GITHUB_OWNER` to your own fork.
 >
 > **First deployment** deploys ETL + Agents (Cells 1-11). Set `DEPLOY_STREAMING = True` for the full RTI stack (Cells 12-13).
+>
+> This quick start deploys the **Fabric** solution. To add the optional
+> Microsoft Foundry orchestrator after `HealthcareHLSAgent` is published,
+> follow the [Foundry deployment quickstart](foundry_agent/README.md).
 
 The launcher creates a deploy lakehouse, downloads the repo, deploys all artifacts in the correct stage order, generates sample data, runs the ETL pipeline, creates the semantic model, deploys the ontology + graph, and patches Data/Graph Agents — fully automated. RTI is opt-in via `DEPLOY_STREAMING = True`.
 
@@ -411,6 +415,24 @@ For customization guidance (44 DAX measures, formatting tips, Direct Lake best p
 ### Azure AI Foundry (Optional)
 
 To set up the **Foundry Orchestrator Agent** that combines the Fabric Data Agent with a Knowledge Base (26 clinical documents indexed via Azure AI Search) and web search for hybrid clinical decision support -- see **[FOUNDRY_IQ_SETUP_GUIDE.md](FOUNDRY_IQ_SETUP_GUIDE.md)**.
+
+After deploying Fabric with `Healthcare_Launcher.ipynb`, any user with access to
+a Foundry project can deploy the orchestrator from this repository:
+
+1. In Foundry, add **Fabric IQ (OneLake Catalog)** and select the published
+   `HealthcareHLSAgent` Data Agent from the target Fabric workspace.
+2. Create the Azure AI Search project connection and healthcare knowledge
+   index.
+3. Configure the project endpoint and connection names from
+   [foundry_agent/deployment.env.example](foundry_agent/deployment.env.example).
+4. Run `python foundry_agent/deploy_foundry_agent.py --validate-only`.
+5. Run `python foundry_agent/deploy_foundry_agent.py`.
+
+The script validates the model and both project connections, rejects the
+deprecated Fabric Data Agent tool, and creates a new immutable agent version
+with Fabric IQ, Azure AI Search, and web search. See the complete
+[Foundry deployment quickstart](foundry_agent/README.md) and
+[Foundry IQ setup guide](FOUNDRY_IQ_SETUP_GUIDE.md).
 
 For troubleshooting hybrid query failures (compound questions, instruction truncation, fewshot phrasing issues) -- see **[FOUNDRY_ORCHESTRATOR_TROUBLESHOOTING.md](FOUNDRY_ORCHESTRATOR_TROUBLESHOOTING.md)**.
 

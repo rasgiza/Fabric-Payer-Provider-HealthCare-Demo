@@ -89,7 +89,7 @@ baseline.
 
 ### Type
 
-> **"Show me every medication prescribed to Nancy White age 63, with its drug class"**
+> **"Show me each unique medication prescribed to Nancy White age 63, with its drug class"**
 
 > 🚨 **Ask for medications here, not adherence.** Adherence is only computed for *chronic*
 > maintenance drugs, and her ibuprofen is an acute script — so an adherence question silently

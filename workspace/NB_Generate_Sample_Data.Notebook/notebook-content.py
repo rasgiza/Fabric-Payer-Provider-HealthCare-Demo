@@ -7,7 +7,7 @@
 # ============================================================================
 # NB_Generate_Sample_Data
 # ============================================================================
-# Generates fresh synthetic healthcare data with dates anchored to today,
+# Generates reproducible synthetic healthcare data anchored to a fixed reference date,
 # then writes CSV files to lh_bronze_raw/Files/ for the Bronze ingest layer.
 #
 # This notebook is called by the Healthcare_Launcher after artifact deployment.
@@ -44,9 +44,6 @@ import csv
 import io
 
 fake = Faker()
-Faker.seed(42)
-np.random.seed(42)
-random.seed(42)
 
 # Parameters (can be overridden by pipeline/launcher)
 try:
@@ -54,17 +51,37 @@ try:
 except:
     NUM_PATIENTS = 10000
 
+try:
+    DEMO_DATA_SEED = int(spark.conf.get("spark.demo_data_seed", "42"))
+except:
+    DEMO_DATA_SEED = 42
+
+DEMO_REFERENCE_DATE_TEXT = spark.conf.get("spark.demo_reference_date", "2026-11-07")
+try:
+    DATA_END_DATE = datetime.strptime(DEMO_REFERENCE_DATE_TEXT, "%Y-%m-%d")
+except ValueError as exc:
+    raise ValueError(
+        "spark.demo_reference_date must use YYYY-MM-DD format; "
+        f"received {DEMO_REFERENCE_DATE_TEXT!r}"
+    ) from exc
+
+Faker.seed(DEMO_DATA_SEED)
+fake.seed_instance(DEMO_DATA_SEED)
+np.random.seed(DEMO_DATA_SEED)
+random.seed(DEMO_DATA_SEED)
+
 NUM_PROVIDERS = 500
 NUM_ENCOUNTERS = NUM_PATIENTS * 10  # ~10 encounters per patient
 NUM_CLAIMS = NUM_ENCOUNTERS
 NUM_PRESCRIPTIONS = int(NUM_ENCOUNTERS * 2.5)
 
-# Dynamic date range: 2 years back from today. The end date is clamped to
-# today so trend visuals never show future-dated encounters.
-DATA_END_DATE = datetime.now()
+# A fixed reference date keeps every clean deployment on the same timeline.
+# Override spark.demo_reference_date only when intentionally creating a new
+# version of the demo data contract.
 DATA_START_DATE = DATA_END_DATE - timedelta(days=730)
 
 print(f"Generating data for {NUM_PATIENTS} patients, {NUM_ENCOUNTERS} encounters")
+print(f"Demo data seed: {DEMO_DATA_SEED}")
 print(f"Date range: {DATA_START_DATE.strftime('%Y-%m-%d')} to {DATA_END_DATE.strftime('%Y-%m-%d')}")
 
 # METADATA **{"language":"python"}**
@@ -259,11 +276,11 @@ INSURANCE_PROVIDERS = ["Blue Cross Blue Shield", "Aetna", "United Healthcare", "
 # ---------------------------------------------------------------------------
 # Runbook fixtures: Nancy White and Sarah Johnson
 #
-# EXECUTIVE_DEMO_RUNBOOK.md narrates ~40 exact facts about these two patients --
-# provider counts, specialty mix, drug classes, fill cadences, PDC to three
-# decimals. None of that survives an unseeded regeneration, so it is pinned here.
-# Every date is expressed relative to DATA_END_DATE so the story stays true
-# whenever the accelerator is deployed.
+# EXECUTIVE_DEMO_RUNBOOK.md narrates exact facts about these two patients:
+# provider counts, specialty mix, drug classes, fill cadences, and PDC values.
+# These fixtures are pinned as part of the versioned demo data contract. Every
+# date is expressed relative to DATA_END_DATE so all clean deployments tell the
+# same story.
 #
 # PDC is computed in 06b as:
 #     span = (last_fill - first_fill) + avg_days_supply
@@ -364,7 +381,7 @@ def generate_patients(n):
             "insurance_provider": random.choice(INSURANCE_PROVIDERS),
             "pcp_provider_id": f"PRV{random.randint(1, NUM_PROVIDERS):05d}",
             "created_date": DATA_START_DATE.strftime("%Y-%m-%d"),
-            "modified_date": datetime.now().strftime("%Y-%m-%d"),
+            "modified_date": DATA_END_DATE.strftime("%Y-%m-%d"),
         })
     return pd.DataFrame(patients)
 
@@ -1196,7 +1213,7 @@ def generate_care_gaps(patients_df, diagnoses_df):
     for _, patient in patients_df.iterrows():
         pid = patient["patient_id"]
         dob = datetime.strptime(patient["date_of_birth"], "%Y-%m-%d")
-        age = (datetime.now() - dob).days // 365
+        age = (DATA_END_DATE - dob).days // 365
         gender = patient["gender"]
         dx_set = pt_dx.get(pid, set())
 
@@ -1219,7 +1236,7 @@ def generate_care_gaps(patients_df, diagnoses_df):
             last_service = None
             if not is_gap_open:
                 months_ago = random.randint(1, measure["frequency_months"])
-                last_service = (datetime.now() - timedelta(days=months_ago * 30)).strftime("%Y-%m-%d")
+                last_service = (DATA_END_DATE - timedelta(days=months_ago * 30)).strftime("%Y-%m-%d")
 
             care_gaps.append({
                 "patient_id": pid,
@@ -1227,7 +1244,7 @@ def generate_care_gaps(patients_df, diagnoses_df):
                 "measure_name": measure["measure_name"],
                 "is_gap_open": is_gap_open,
                 "last_service_date": last_service,
-                "due_date": (datetime.now() - timedelta(days=random.randint(-60, 180))).strftime("%Y-%m-%d") if is_gap_open else None,
+                "due_date": (DATA_END_DATE - timedelta(days=random.randint(-60, 180))).strftime("%Y-%m-%d") if is_gap_open else None,
                 "gap_days_overdue": random.randint(0, 365) if is_gap_open else 0,
             })
 

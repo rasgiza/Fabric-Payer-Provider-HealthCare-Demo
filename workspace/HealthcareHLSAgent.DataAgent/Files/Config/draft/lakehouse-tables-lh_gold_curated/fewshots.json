@@ -27,6 +27,11 @@
       "query": "SELECT dp.first_name, dp.last_name, dp.age, dp.age_group, fe.encounter_id, fe.encounter_type, fe.discharge_disposition, fe.readmission_risk_score, fe.readmission_risk_category, fe.length_of_stay FROM fact_encounter fe JOIN dim_patient dp ON fe.patient_key = dp.patient_key AND dp.is_current = 1 WHERE fe.readmission_risk_category = 'High' ORDER BY fe.readmission_risk_score DESC"
     },
     {
+      "id": "demo-high-risk-nonadherent-count",
+      "question": "How many patients are at high readmission risk and non-adherent to their medications?",
+      "query": "SELECT COUNT(DISTINCT fe.patient_key) AS total_patient_count FROM fact_encounter fe WHERE fe.readmission_risk_category = 'High' AND EXISTS (SELECT 1 FROM agg_medication_adherence ama WHERE ama.patient_key = fe.patient_key AND ama.adherence_category = 'Non-Adherent')"
+    },
+    {
       "id": "24a677d4-2a3a-4b0f-b64f-5eda69169a9c",
       "question": "What is the average readmission risk score by encounter type?",
       "query": "SELECT encounter_type, COUNT(*) as total_encounters, AVG(readmission_risk_score) as avg_risk_score, SUM(CASE WHEN readmission_risk_category = 'High' THEN 1 ELSE 0 END) as high_risk_count, SUM(readmission_flag) as actual_readmissions FROM fact_encounter GROUP BY encounter_type ORDER BY avg_risk_score DESC"

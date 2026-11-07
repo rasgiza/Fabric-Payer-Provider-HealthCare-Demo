@@ -7,8 +7,8 @@
 # ============================================================================
 # NB_Generate_Incremental_Data
 # ============================================================================
-# Generates NEW encounters, claims, prescriptions, diagnoses, patient updates,
-# and new patient registrations for "today", simulating daily operational data.
+# Generates a deterministic numbered batch of new encounters, claims,
+# prescriptions, diagnoses, patient updates, and patient registrations.
 #
 # Use this notebook AFTER the initial full load to demo incremental pipeline.
 #   1. Run this notebook (creates incremental CSVs in lh_bronze_raw)
@@ -28,10 +28,8 @@ import pandas as pd
 import numpy as np
 from datetime import datetime, timedelta
 import random
+import re
 from notebookutils import mssparkutils
-
-random.seed()
-np.random.seed()
 
 # Parameters — override via spark.conf or use defaults
 try:
@@ -47,13 +45,71 @@ except:
 NUM_PATIENT_UPDATES = 3
 NUM_NEW_PATIENTS = 2
 
-# Date range: today only
-START_DATE = datetime.now().replace(hour=0, minute=0, second=0, microsecond=0)
+try:
+    DEMO_DATA_SEED = int(spark.conf.get("spark.demo_data_seed", "42"))
+except:
+    DEMO_DATA_SEED = 42
+
+DEMO_REFERENCE_DATE_TEXT = spark.conf.get("spark.demo_reference_date", "2026-11-07")
+try:
+    DEMO_REFERENCE_DATE = datetime.strptime(DEMO_REFERENCE_DATE_TEXT, "%Y-%m-%d")
+except ValueError as exc:
+    raise ValueError(
+        "spark.demo_reference_date must use YYYY-MM-DD format; "
+        f"received {DEMO_REFERENCE_DATE_TEXT!r}"
+    ) from exc
+
+BATCH_PATTERN = re.compile(r"batch-(\d+)")
+
+def _list_csv_items(root):
+    items = []
+    try:
+        for item in mssparkutils.fs.ls(root):
+            if item.isDir:
+                try:
+                    csv_files = [f for f in mssparkutils.fs.ls(item.path) if f.name.endswith(".csv")]
+                    if csv_files:
+                        items.append(item)
+                except Exception:
+                    pass
+            elif item.name.endswith(".csv"):
+                items.append(item)
+    except Exception:
+        pass
+    return items
+
+pending_items = _list_csv_items("Files/incremental")
+if pending_items:
+    pending_names = sorted(item.name.rstrip("/") for item in pending_items)
+    print("Pending incremental data already exists; reusing it instead of creating another batch.")
+    print(f"  Pending: {pending_names}")
+    mssparkutils.notebook.exit("Pending incremental batch reused")
+
+completed_batch_numbers = []
+try:
+    for item in mssparkutils.fs.ls("Files/processed"):
+        match = BATCH_PATTERN.search(item.name)
+        if match:
+            completed_batch_numbers.append(int(match.group(1)))
+except Exception:
+    pass
+
+BATCH_NUMBER = max(completed_batch_numbers, default=0) + 1
+BATCH_SEED = DEMO_DATA_SEED + BATCH_NUMBER
+random.seed(BATCH_SEED)
+np.random.seed(BATCH_SEED)
+
+# Batch 1 is the day after the baseline reference date. Every subsequent
+# successful batch advances the simulated operational clock by one day.
+START_DATE = DEMO_REFERENCE_DATE + timedelta(days=BATCH_NUMBER)
 END_DATE = START_DATE
 DATE_TAG = START_DATE.strftime("%Y-%m-%d")
-TIMESTAMP_TAG = datetime.now().strftime("%Y%m%d_%H%M%S")
+BATCH_TAG = f"batch-{BATCH_NUMBER:04d}"
+BATCH_TIMESTAMP = START_DATE.replace(hour=12)
+BATCH_END_TIMESTAMP = START_DATE + timedelta(days=1) - timedelta(microseconds=1)
 
-print(f"Generating incremental data for: {DATE_TAG}")
+print(f"Generating deterministic incremental batch {BATCH_NUMBER}: {DATE_TAG}")
+print(f"  Batch seed: {BATCH_SEED}")
 print(f"  Encounters: {NUM_ENCOUNTERS}, Claims: {NUM_CLAIMS}")
 print(f"  Patient updates: {NUM_PATIENT_UPDATES}, New patients: {NUM_NEW_PATIENTS}")
 
@@ -176,13 +232,13 @@ print("Reference data loaded")
 patients_sdf = spark.read.option("header", True).csv("Files/patients.csv")
 providers_sdf = spark.read.option("header", True).csv("Files/providers.csv")
 
-patient_ids = [row["patient_id"] for row in patients_sdf.select("patient_id").collect()]
-provider_ids = [row["provider_id"] for row in providers_sdf.select("provider_id").collect()]
-patients_pdf = patients_sdf.toPandas()
+patient_ids = sorted(row["patient_id"] for row in patients_sdf.select("patient_id").collect())
+provider_ids = sorted(row["provider_id"] for row in providers_sdf.select("provider_id").collect())
+patients_pdf = patients_sdf.orderBy("patient_id").toPandas()
 
-# Pinned demo fixtures backing the README / runbook agent questions. Incremental runs are
-# unseeded, so without this they could re-medicate, re-insure, or duplicate these patients
-# and silently break the documented demo. Keep in sync with NB_Generate_Sample_Data.
+# Pinned demo fixtures backing the README / runbook agent questions. Incremental
+# batches are deterministic but still exclude these patients from operational
+# churn so the documented patient stories remain unchanged.
 DEMO_PATIENT_IDS = {"PAT000063", "PAT006030"}
 DEMO_PATIENT_NAMES = {("Nancy", "White"), ("Sarah", "Johnson")}
 
@@ -208,18 +264,32 @@ next_rx = scan_max_id_from_csv("Files/prescriptions.csv", "prescription_id") + 1
 next_dx = scan_max_id_from_csv("Files/diagnoses.csv", "diagnosis_id") + 1
 next_pat = int(patients_pdf["patient_id"].str.extract(r"(\d+)").astype(int).max().iloc[0]) + 1
 
-# Also scan incremental/ for even higher IDs
-try:
-    incr_files = mssparkutils.fs.ls("Files/incremental")
-    for folder_info in incr_files:
-        folder_path = folder_info.path
-        for entity in ["encounters", "claims", "prescriptions", "diagnoses"]:
-            try:
-                id_col_map = {"encounters": "encounter_id", "claims": "claim_id",
-                              "prescriptions": "prescription_id", "diagnoses": "diagnosis_id"}
-                entity_files = [f for f in mssparkutils.fs.ls(folder_path) if entity in f.name]
-                for ef in entity_files:
-                    val = scan_max_id_from_csv(ef.path, id_col_map[entity])
+# Scan both pending and archived incremental history so IDs never reset after
+# Bronze moves a completed batch from Files/incremental to Files/processed.
+id_col_map = {
+    "encounters": "encounter_id",
+    "claims": "claim_id",
+    "prescriptions": "prescription_id",
+    "diagnoses": "diagnosis_id",
+    "patients": "patient_id",
+}
+
+for history_root in ["Files/processed", "Files/incremental"]:
+    try:
+        history_items = mssparkutils.fs.ls(history_root)
+    except Exception:
+        history_items = []
+
+    for item in history_items:
+        try:
+            files = mssparkutils.fs.ls(item.path) if item.isDir else [item]
+        except Exception:
+            files = []
+
+        for entity, id_col in id_col_map.items():
+            for history_file in files:
+                if history_file.name.startswith(f"{entity}_") and history_file.name.endswith(".csv"):
+                    val = scan_max_id_from_csv(history_file.path, id_col)
                     if entity == "encounters":
                         next_enc = max(next_enc, val + 1)
                     elif entity == "claims":
@@ -228,10 +298,23 @@ try:
                         next_rx = max(next_rx, val + 1)
                     elif entity == "diagnoses":
                         next_dx = max(next_dx, val + 1)
-            except:
-                pass
-except:
-    pass  # No incremental folder yet — that's fine
+                    elif entity == "patients":
+                        next_pat = max(next_pat, val + 1)
+                        historical_patient_ids = [
+                            row["patient_id"]
+                            for row in spark.read.option("header", True)
+                                .csv(history_file.path)
+                                .select("patient_id")
+                                .dropna()
+                                .collect()
+                        ]
+                        patient_ids.extend(
+                            patient_id
+                            for patient_id in historical_patient_ids
+                            if patient_id not in DEMO_PATIENT_IDS
+                        )
+
+patient_ids = sorted(set(patient_ids))
 
 print(f"Next IDs: ENC{next_enc:08d} | CLM{next_clm:09d} | RX{next_rx:09d} | DX{next_dx:08d} | PAT{next_pat:06d}")
 
@@ -339,8 +422,7 @@ def generate_claims_incr(num, encounters_df, next_id):
         # latest month" and answer from a handful of rows. A claim the payer
         # hasn't decided yet is Pending: no decision date, no payment, and no
         # patient responsibility determined.
-        _now = datetime.now()
-        if process_date > _now:
+        if process_date > BATCH_END_TIMESTAMP:
             status = "Pending"
             denial = None
             paid = 0.0
@@ -506,7 +588,7 @@ for idx in updated_patients.index:
     if change in ("insurance", "both"):
         updated_patients.at[idx, "insurance_type"] = random.choice(INSURANCE_TYPES)
         updated_patients.at[idx, "insurance_provider"] = random.choice(INSURANCE_PROVIDERS)
-    updated_patients.at[idx, "modified_date"] = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+    updated_patients.at[idx, "modified_date"] = BATCH_TIMESTAMP.strftime("%Y-%m-%d %H:%M:%S")
 
 print(f"Updated {len(updated_patients)} existing patients")
 
@@ -535,8 +617,8 @@ for i in range(NUM_NEW_PATIENTS):
         "insurance_type": random.choice(INSURANCE_TYPES),
         "insurance_provider": random.choice(INSURANCE_PROVIDERS),
         "pcp_provider_id": random.choice(provider_ids),
-        "created_date": datetime.now().strftime("%Y-%m-%d"),
-        "modified_date": datetime.now().strftime("%Y-%m-%d"),
+        "created_date": BATCH_TIMESTAMP.strftime("%Y-%m-%d"),
+        "modified_date": BATCH_TIMESTAMP.strftime("%Y-%m-%d"),
     })
 new_patients_df = pd.DataFrame(new_patients)
 print(f"Created {len(new_patients_df)} new patients")
@@ -551,22 +633,22 @@ pat_combined = pd.concat([updated_patients, new_patients_df], ignore_index=True)
 # ============================================================================
 # WRITE INCREMENTAL CSVs TO LAKEHOUSE
 # ============================================================================
-# Output: Files/incremental/YYYY-MM-DD/<entity>_<timestamp>.csv
+# Output: Files/incremental/YYYY-MM-DD_batch-NNNN/<entity>_batch-NNNN.csv
 
 def write_csv(df, path):
     csv_content = df.to_csv(index=False)
     mssparkutils.fs.put(path, csv_content, overwrite=True)
     print(f"  Written: {path} ({len(df):,} rows)")
 
-incr_path = f"Files/incremental/{DATE_TAG}"
+incr_path = f"Files/incremental/{DATE_TAG}_{BATCH_TAG}"
 
 print(f"\nWriting to {incr_path}/...")
-write_csv(enc_df, f"{incr_path}/encounters_{TIMESTAMP_TAG}.csv")
-write_csv(clm_df, f"{incr_path}/claims_{TIMESTAMP_TAG}.csv")
-write_csv(rx_df, f"{incr_path}/prescriptions_{TIMESTAMP_TAG}.csv")
-write_csv(dx_df, f"{incr_path}/diagnoses_{TIMESTAMP_TAG}.csv")
+write_csv(enc_df, f"{incr_path}/encounters_{BATCH_TAG}.csv")
+write_csv(clm_df, f"{incr_path}/claims_{BATCH_TAG}.csv")
+write_csv(rx_df, f"{incr_path}/prescriptions_{BATCH_TAG}.csv")
+write_csv(dx_df, f"{incr_path}/diagnoses_{BATCH_TAG}.csv")
 if len(pat_combined) > 0:
-    write_csv(pat_combined, f"{incr_path}/patients_{TIMESTAMP_TAG}.csv")
+    write_csv(pat_combined, f"{incr_path}/patients_{BATCH_TAG}.csv")
 
 # METADATA **{"language":"python"}**
 
@@ -579,6 +661,7 @@ if len(pat_combined) > 0:
 print("=" * 60)
 print("  INCREMENTAL DATA GENERATION COMPLETE")
 print("=" * 60)
+print(f"  Batch:          {BATCH_NUMBER:>8}")
 print(f"  Date:           {DATE_TAG}")
 print(f"  Encounters:     {len(enc_df):>8,}")
 print(f"  Claims:         {len(clm_df):>8,}")
@@ -586,7 +669,7 @@ print(f"  Prescriptions:  {len(rx_df):>8,}")
 print(f"  Diagnoses:      {len(dx_df):>8,}")
 print(f"  Patient updates:{len(updated_patients):>8,}")
 print(f"  New patients:   {len(new_patients_df):>8,}")
-print(f"  Output folder:  Files/incremental/{DATE_TAG}/")
+print(f"  Output folder:  {incr_path}/")
 print("=" * 60)
 print()
 print("NEXT STEPS:")

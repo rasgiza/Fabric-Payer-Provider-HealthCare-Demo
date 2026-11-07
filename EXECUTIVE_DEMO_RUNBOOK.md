@@ -54,11 +54,12 @@ Move on.
 
 > **"How many patients are at high readmission risk and non-adherent to their medications?"**
 
-**Reference deployment result:** **30 patients**
+**Expected clean-baseline result:** **30 patients**
 
-Use the count returned in your workspace. The sample generator uses fixed
-random seeds, but date-relative generation, repository changes, configuration,
-incremental loads, and agent query interpretation can change the result.
+This runbook assumes the default seed and reference date and should be presented
+before running incremental batches. If the dataset contract was customized or
+incremental batches already ran, use the returned count or reset to a clean
+baseline.
 
 > **Evidence boundary:** This response is an aggregate count only. It does not
 > identify the 30 patients, show their medications, or establish that Nancy
@@ -70,8 +71,7 @@ incremental loads, and agent query interpretation can change the result.
 
 ### After it lands (30 sec)
 
-> "The agent found **[use the returned count]** patients who meet both criteria
-> in this synthetic dataset.
+> "Thirty patients meet both criteria in this synthetic dataset.
 >
 > This result tells us the size of the cohort, but it does not tell us who those
 > patients are or why they are at risk. To understand an individual story, we
@@ -362,7 +362,7 @@ one-visit prescriber at a different facility, still active — plus a duplicated
 
 | Claim | Source | Confidence |
 |---|---|---|
-| High-risk + non-adherent cohort count | Agent screen | Use the live result |
+| 30 high-risk + non-adherent patients on clean baseline | Agent screen | ✅ Reproducible baseline |
 | Nancy: 9 prescribers, 8 specialties | Agent screen | ✅ Bulletproof |
 | Two psychiatrists on Nancy's chart | Agent screen | ✅ Bulletproof |
 | No cardiologist on Nancy's chart | Agent screen | ✅ Bulletproof |

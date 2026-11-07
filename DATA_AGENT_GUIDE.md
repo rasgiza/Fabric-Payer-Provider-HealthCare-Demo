@@ -24,7 +24,7 @@ The agent is deployed automatically by the launcher notebook (Stage 5). It inclu
 1. **Agent definition** -- `workspace/HealthcareHLSAgent.DataAgent/`
 2. **AI instructions** -- system prompt controlling agent behavior
 3. **Data source configs** -- lakehouse schema + semantic model with 26 DAX measures
-4. **36 few-shot examples** -- pre-built SQL queries the agent uses as reference
+4. **Curated few-shot examples** -- pre-built SQL queries the agent uses as reference
 5. **Knowledge documents** -- 21 markdown files uploaded to `lh_gold_curated/Files/healthcare_knowledge/`
 
 After deployment, open the agent in your Fabric workspace and start asking questions. See [SAMPLE_QUESTIONS.md](SAMPLE_QUESTIONS.md) for 60+ ready-to-use prompts.

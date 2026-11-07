@@ -54,7 +54,18 @@ from functools import reduce
 from datetime import datetime
 
 spark = SparkSession.builder.getOrCreate()
+DEMO_REFERENCE_DATE_TEXT = spark.conf.get("spark.demo_reference_date", "2026-11-07")
+try:
+    datetime.strptime(DEMO_REFERENCE_DATE_TEXT, "%Y-%m-%d")
+except ValueError as exc:
+    raise ValueError(
+        "spark.demo_reference_date must use YYYY-MM-DD format; "
+        f"received {DEMO_REFERENCE_DATE_TEXT!r}"
+    ) from exc
+DEMO_AS_OF_DATE = to_date(lit(DEMO_REFERENCE_DATE_TEXT))
+
 print(f"🏆 Gold Transform Load (Production) - {datetime.now()}")
+print(f"   Demo as-of date: {DEMO_REFERENCE_DATE_TEXT}")
 
 # --- Variable Library (CI/CD across Dev/Test/Prod) ---
 try:
@@ -264,12 +275,12 @@ df_patient_source = df_patients.select(
     lit(None).cast("string").alias("insurance_policy_number"),
     coalesce(
         col("age").cast("int"),
-        floor(datediff(current_date(), col("date_of_birth")) / 365.25).cast("int")
+        floor(datediff(DEMO_AS_OF_DATE, col("date_of_birth")) / 365.25).cast("int")
     ).alias("age"),
     coalesce(
         col("age_group"),
-        when(floor(datediff(current_date(), col("date_of_birth")) / 365.25) < 18, "Pediatric")
-        .when(floor(datediff(current_date(), col("date_of_birth")) / 365.25) < 65, "Adult")
+        when(floor(datediff(DEMO_AS_OF_DATE, col("date_of_birth")) / 365.25) < 18, "Pediatric")
+        .when(floor(datediff(DEMO_AS_OF_DATE, col("date_of_birth")) / 365.25) < 65, "Adult")
         .otherwise("Senior")
     ).alias("age_group")
 ).dropDuplicates(["patient_id"])

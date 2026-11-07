@@ -35,8 +35,19 @@ from pyspark.sql.types import *
 from datetime import datetime
 
 spark = SparkSession.builder.getOrCreate()
+DEMO_REFERENCE_DATE_TEXT = spark.conf.get("spark.demo_reference_date", "2026-11-07")
+try:
+    datetime.strptime(DEMO_REFERENCE_DATE_TEXT, "%Y-%m-%d")
+except ValueError as exc:
+    raise ValueError(
+        "spark.demo_reference_date must use YYYY-MM-DD format; "
+        f"received {DEMO_REFERENCE_DATE_TEXT!r}"
+    ) from exc
+DEMO_AS_OF_DATE = to_date(lit(DEMO_REFERENCE_DATE_TEXT))
+
 print(f"Spark version: {spark.version}")
 print(f"Processing started at: {datetime.now()}")
+print(f"Demo as-of date: {DEMO_REFERENCE_DATE_TEXT}")
 print(f"\nSource (Bronze): {BRONZE}")
 print(f"Source (Silver Stage): {SILVER_STAGE}")
 print(f"Target (Silver ODS): {SILVER_ODS}")
@@ -127,7 +138,7 @@ print("claims_clean columns:", claims_clean.columns)
 # Add age calculation and risk stratification
 patients_enriched = patients_clean \
     .withColumn("age", 
-        floor(datediff(current_date(), col("date_of_birth")) / 365.25)
+        floor(datediff(DEMO_AS_OF_DATE, col("date_of_birth")) / 365.25)
     ) \
     .withColumn("age_group",
         when(col("age") < 18, "Pediatric")
@@ -178,7 +189,7 @@ if "facility_id" in providers_clean.columns:
         ) \
         .drop("fac_id") \
         .withColumn("years_of_service",
-            floor(datediff(current_date(), col("hire_date")) / 365.25)
+            floor(datediff(DEMO_AS_OF_DATE, col("hire_date")) / 365.25)
         ) \
         .withColumn("_ods_load_timestamp", current_timestamp())
 else:
@@ -191,7 +202,7 @@ else:
         providers_enriched = providers_enriched.withColumn("facility_type", lit(None).cast("string"))
     providers_enriched = providers_enriched \
         .withColumn("years_of_service",
-            floor(datediff(current_date(), col("hire_date")) / 365.25)
+            floor(datediff(DEMO_AS_OF_DATE, col("hire_date")) / 365.25)
         ) \
         .withColumn("_ods_load_timestamp", current_timestamp())
 
@@ -309,7 +320,7 @@ claims_enriched = claims_enriched \
         .otherwise(0)
     ) \
     .withColumn("claim_age_days",
-        datediff(current_date(), col("claim_date"))
+        datediff(DEMO_AS_OF_DATE, col("claim_date"))
     ) \
     .withColumn("_ods_load_timestamp", current_timestamp())
 

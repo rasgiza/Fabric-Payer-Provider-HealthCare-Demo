@@ -160,53 +160,47 @@ def load_full_csv(table_config):
     base_count = df.count()
     print(f"    → {base_count:,} rows from base CSV")
     
-    # Also pick up any incremental files (date subfolders + legacy flat files)
-    incremental_path = f"{SOURCE_FILES_PATH}incremental/"
-    try:
-        incr_paths = [
-            f"{incremental_path}{table_name}_*.csv",       # legacy flat
-            f"{incremental_path}*/{table_name}_*.csv",     # date subfolders
-        ]
-        
-        # Count matching files across both patterns
-        matching_count = 0
-        date_folders = set()
+    # Replay all incremental history during a full rebuild. Completed batches
+    # live under processed/; a generated but not-yet-consumed batch lives under
+    # incremental/. Reading both makes full rebuilds lossless.
+    history_files = []
+    history_folders = set()
+    for history_name in ["processed", "incremental"]:
+        history_path = f"{SOURCE_FILES_PATH}{history_name}/"
         try:
-            for item in mssparkutils.fs.ls(incremental_path):
+            for item in mssparkutils.fs.ls(history_path):
                 if item.isDir:
                     try:
-                        sub_files = mssparkutils.fs.ls(item.path)
-                        sub_matching = [f.name for f in sub_files if f.name.startswith(f"{table_name}_") and f.name.endswith(".csv")]
-                        matching_count += len(sub_matching)
-                        if sub_matching:
-                            date_folders.add(item.name)
+                        for history_file in mssparkutils.fs.ls(item.path):
+                            if history_file.name.startswith(f"{table_name}_") and history_file.name.endswith(".csv"):
+                                history_files.append(history_file.path)
+                                history_folders.add(f"{history_name}/{item.name.rstrip('/')}")
                     except Exception:
                         pass
                 elif item.name.startswith(f"{table_name}_") and item.name.endswith(".csv"):
-                    matching_count += 1  # legacy flat file
+                    history_files.append(item.path)
+                    history_folders.add(history_name)
         except Exception:
             pass
-        
-        if matching_count > 0:
-            folder_info = f" from {len(date_folders)} date folder(s)" if date_folders else ""
-            print(f"  Reading {matching_count} incremental file(s){folder_info}")
-            
-            df_incr = spark.read.format("csv") \
-                .option("header", "true") \
-                .option("inferSchema", "true") \
-                .load(incr_paths)
-            
-            df_incr = df_incr.withColumn("_bronze_load_timestamp", current_timestamp()) \
-                             .withColumn("_bronze_source", lit("full_load_incr")) \
-                             .withColumn("_bronze_file", input_file_name())
-            
-            incr_count = df_incr.count()
-            print(f"    → {incr_count:,} rows from incremental files")
-            
-            df = df.unionByName(df_incr, allowMissingColumns=True)
-            print(f"    → {base_count + incr_count:,} total rows (base + incremental)")
-    except Exception:
-        pass  # No incremental folder — that's fine for full load
+
+    if history_files:
+        print(f"  Replaying {len(history_files)} incremental history file(s)")
+        print(f"    Sources: {sorted(history_folders)}")
+
+        df_incr = spark.read.format("csv") \
+            .option("header", "true") \
+            .option("inferSchema", "true") \
+            .load(history_files)
+
+        df_incr = df_incr.withColumn("_bronze_load_timestamp", current_timestamp()) \
+                         .withColumn("_bronze_source", lit("full_load_history")) \
+                         .withColumn("_bronze_file", input_file_name())
+
+        incr_count = df_incr.count()
+        print(f"    → {incr_count:,} rows from incremental history")
+
+        df = df.unionByName(df_incr, allowMissingColumns=True)
+        print(f"    → {base_count + incr_count:,} total rows (base + history)")
     
     return df
 

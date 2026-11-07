@@ -105,6 +105,18 @@ configuration cell only when you need to change behavior.
 If GitHub is blocked by your network, fork or mirror the repository to an
 approved location and update the repository settings in the launcher.
 
+### Repeatable Demo Data
+
+The default data contract uses seed `42` and reference date `2026-11-07`.
+Every clean deployment from the same repository version therefore starts with
+the same patients, dates, measures, and documented demo stories.
+
+Incremental pipeline runs create deterministic numbered daily batches. Two
+deployments that run the same number of batches receive the same sequence of
+changes. Pending files are reused after a retry, completed batches are retained
+under `Files/processed/`, IDs continue across batches, and a later full rebuild
+replays the retained incremental history.
+
 ## Healthcare Use Cases
 
 The accelerator is intentionally broad enough to support payer, provider, and

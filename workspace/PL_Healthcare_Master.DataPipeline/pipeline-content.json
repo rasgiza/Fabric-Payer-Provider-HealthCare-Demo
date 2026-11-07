@@ -1,6 +1,6 @@
 {
     "properties": {
-        "description": "Master orchestrator pipeline. Set load_mode to 'full' (initial deployment) or 'incremental' (day-2+ CSV batches). Both modes run the same notebook chain. No human intervention required — schedule with a trigger for automated daily incremental loads.",
+        "description": "Master orchestrator pipeline. Set load_mode to 'full' for the reproducible baseline or 'incremental' for the next deterministic numbered daily batch. Both modes run the same notebook chain.",
         "activities": [
             {
                 "name": "Check_Load_Mode",
@@ -15,7 +15,7 @@
                     "ifTrueActivities": [
                         {
                             "name": "Generate_Incremental_Data",
-                            "description": "Auto-generate today's incremental CSV batch (encounters, claims, prescriptions, diagnoses, patient updates) before running the ETL pipeline",
+                            "description": "Generate or reuse the next deterministic incremental CSV batch before running the ETL pipeline",
                             "type": "TridentNotebook",
                             "dependsOn": [],
                             "policy": {

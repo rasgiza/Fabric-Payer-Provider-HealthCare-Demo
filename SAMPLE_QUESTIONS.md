@@ -108,6 +108,23 @@ Open **Healthcare Ontology Agent** in your Fabric workspace. This agent navigate
 
 > **Performance tip:** For "full profile" questions (e.g., Q1 below), the agent runs **separate queries** per relationship type (encounters, claims, prescriptions) rather than one giant query. This avoids Cartesian products that would create millions of intermediate rows and hang. Always specify a provider_id, name, or specialty to help the agent filter early.
 
+### Start Here — Customer Value Path
+
+These four questions show why the ontology exists. They follow connected
+healthcare entities rather than repeating KPI calculations already handled by
+the semantic model.
+
+| Step | Question | Value demonstrated |
+|---|---|---|
+| 1 | For a specific patient, trace each prescription to its medication, prescribing provider, and payer. Include provider specialty and patient copay. | Reveals medication ownership and fragmented prescribing across clinical and payer data. |
+| 2 | For that patient, show encounters, treating providers, diagnoses, and claims with their payers and outcomes. | Reconstructs a connected patient journey without manually rebuilding joins. |
+| 3 | Trace a denied claim end-to-end from patient and encounter to submitting provider, payer, and denial reason. | Accelerates revenue-cycle root-cause investigation and identifies the accountable parties. |
+| 4 | Show patients with poor medication adherence, then trace each to the medication, prescribing provider, and covering payer. | Turns a risk signal into an intervention path by identifying who can act. |
+
+Use a patient name or business ID when possible, and keep each traversal
+bounded. Use `HealthcareHLSAgent` instead when the question asks for a count,
+rate, trend, or ranking.
+
 ### Provider Operations & Network
 | # | Question |
 |---|----------|

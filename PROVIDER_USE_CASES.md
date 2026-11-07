@@ -55,8 +55,8 @@ Figures are drawn from public industry sources (CMS, NCQA, HFMA, NHCAA, KFF, AHA
 | 13 | Program Integrity | Real-time claims fraud (FWA / SIU) | ✅ 4-signal real-time fraud scoring |
 | 14 | Provider Network | Provider performance & outlier detection | ✅ Provider metrics + dashboard page |
 | 15 | Data & AI | Natural-language self-service analytics | ✅ SQL agent + graph agent + Foundry |
-| 16 | Data & AI | Knowledge-graph / relationship traversal | ✅ 12-entity / 18-relationship ontology |
-| 17 | Data & AI | One-click analytics environment stand-up | ✅ Single-notebook, ~15-min deploy |
+| 16 | Data & AI | Knowledge-graph / relationship traversal | ✅ 11-entity / 17-relationship ontology |
+| 17 | Data & AI | Guided analytics environment stand-up | ✅ Single-notebook, typically 45-75 minutes |
 
 ✅ = directly delivered by the demo   🟡 = data modeled; a small extension completes it
 
@@ -186,7 +186,7 @@ The cross-cutting reason the above is possible: one governed data foundation wit
 
 **The industry pain.** Many provider questions are inherently about **relationships** — "trace this claim from patient to payer," "show this patient's care pathway" — which flatten badly into SQL joins.
 
-**How this demo solves it.** An auto-deployed ontology (**12 entities, 18 relationships**) connects patients → encounters → claims → providers → payers → diagnoses → prescriptions, letting the graph agent answer traversal questions directly.
+**How this demo solves it.** An auto-deployed ontology (**11 entities, 17 relationships**) connects patients → encounters → claims → providers → payers → diagnoses → prescriptions, letting the graph agent answer traversal questions directly. The primary customer-value scenario is cross-system patient journey and care-coordination investigation: reveal fragmented prescribing, reconstruct the clinical and financial path, and identify the provider or payer positioned to act.
 
 ### 6.3 One-click analytics environment stand-up
 

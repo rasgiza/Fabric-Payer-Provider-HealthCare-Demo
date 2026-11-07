@@ -20,6 +20,7 @@ analytics, operational alerts, and AI-assisted investigation.
 |---|---|---|
 | Deploy the Fabric solution | [Quick Start](#quick-start) | Lakehouses, pipelines, semantic model, dashboard, ontology, and data agents |
 | Present the healthcare scenarios | [Run a Demo](#run-a-demo) | A guided payer/provider story with tested questions |
+| Ask tested data and ontology questions | [`SAMPLE_QUESTIONS.md`](SAMPLE_QUESTIONS.md) | KPI prompts, record lookups, and relationship traversals |
 | Explore the use cases | [Healthcare Use Cases](#healthcare-use-cases) | Clinical, operational, financial, quality, and population-health scenarios |
 | Add real-time operations | [Real-Time Intelligence](#optional-add-real-time-intelligence) | Eventhouse, KQL, alerts, operations agent, and RTI dashboard |
 | Add Microsoft Foundry | [Foundry and Fabric IQ](#optional-add-microsoft-foundry-and-fabric-iq) | A grounded orchestrator using Fabric IQ, Azure AI Search, and web search |
@@ -141,6 +142,46 @@ See [`PROVIDER_USE_CASES.md`](PROVIDER_USE_CASES.md) for the detailed coverage
 matrix, available assets, example questions, and explicitly identified
 extensions.
 
+### Where the Healthcare Ontology Adds Value
+
+The primary ontology use case is **cross-system patient journey and
+care-coordination investigation**. Healthcare data is usually split across
+clinical encounters, diagnoses, pharmacy activity, providers, claims, payers,
+and community-risk data. The ontology gives those records a shared business
+vocabulary and makes their relationships traversable without asking each user
+or agent to reconstruct the joins.
+
+Use the ontology to answer relationship questions such as:
+
+- Which providers prescribed this patient's medications, what are their
+  specialties, and which payers cover the prescriptions?
+- Trace a denied claim from patient and encounter to submitting provider,
+  payer, and denial reason.
+- Show a patient's encounters, treating providers, diagnoses, prescriptions,
+  adherence, and community-risk context as one connected journey.
+- Identify who can act on a risk: the treating provider, prescribing provider,
+  payer, or care-management team.
+
+This complements rather than replaces the semantic model:
+
+| Need | Best experience |
+|---|---|
+| Counts, rates, trends, rankings, and KPIs | Semantic model through `HealthcareHLSAgent` |
+| Named records and auditable row-level detail | Gold lakehouse through `HealthcareHLSAgent` |
+| Multi-hop entity relationships and investigation paths | `Healthcare Ontology Agent` |
+| Clinical or operational recommendations grounded in policy | Foundry orchestrator with ontology context and cited knowledge |
+
+The current graph binds **11 entity types and 17 relationship types**. Start
+with the curated [Graph Agent questions](SAMPLE_QUESTIONS.md#graph-agent-healthcare-ontology-agent).
+
+> [!IMPORTANT]
+> Microsoft Fabric Ontology is in preview. This repository currently deploys
+> the old graph-backed ontology experience for compatibility with the included
+> Graph Agent. Microsoft states that the old experience retires on
+> **January 31, 2027**. Treat it as a demonstration surface and plan migration
+> to the current ontology experience before using it as a long-lived customer
+> implementation. See [What is ontology in Microsoft Fabric?](https://learn.microsoft.com/fabric/iq/ontology/overview).
+
 ## Run a Demo
 
 For a guided presentation, use the
@@ -152,10 +193,11 @@ For a short technical demonstration:
 
 1. Open **HealthcareHLSAgent**.
 2. Ask a KPI question from [`SAMPLE_QUESTIONS.md`](SAMPLE_QUESTIONS.md).
-3. Drill from the organization-level result into a patient, claim, payer, or
-   provider.
-4. Show the related dashboard view.
-5. If Foundry is deployed, ask for a grounded recommendation with citations.
+3. Open **Healthcare Ontology Agent** and trace a named patient, claim, or
+   provider across related entities.
+4. Explain that the semantic model calculates while the ontology connects.
+5. Show the related dashboard view.
+6. If Foundry is deployed, ask for a grounded recommendation with citations.
 
 Use the included tested questions first. Questions outside the included data,
 instructions, or knowledge sources should be treated as exploratory and

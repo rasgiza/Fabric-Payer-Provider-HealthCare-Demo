@@ -434,67 +434,12 @@ for table_config in TABLES_CONFIG:
 
 # MARKDOWN **{"language":"markdown"}**
 
-# ## Archive Processed Incremental Files
-# 
-# After incremental processing, move files from `Files/incremental/` to `Files/processed/`
-# so they are **not re-read** on subsequent incremental runs.  
-# Full-load mode skips this step (it overwrites tables anyway).
-
-# METADATA **{"language":"python"}**
-
-# CELL **{"language":"python"}**
-
-# ============================================================================
-# Archive incremental files after processing
-# Prevents duplicate rows when running incremental multiple times
-# ============================================================================
-if load_mode == "incremental":
-    incremental_path = f"{SOURCE_FILES_PATH}incremental/"
-    processed_path = f"{SOURCE_FILES_PATH}processed/"
-    
-    try:
-        items = mssparkutils.fs.ls(incremental_path)
-        archived_count = 0
-        
-        # Ensure processed directory exists
-        try:
-            mssparkutils.fs.mkdirs(processed_path)
-        except Exception:
-            pass  # already exists
-        
-        for item in items:
-            try:
-                if item.isDir:
-                    # Archive entire date subfolder (e.g., 2026-03-12/)
-                    dest_folder = f"{processed_path}{item.name}/"
-                    mssparkutils.fs.mkdirs(dest_folder)
-                    sub_files = mssparkutils.fs.ls(item.path)
-                    for sf in sub_files:
-                        mssparkutils.fs.mv(sf.path, f"{dest_folder}{sf.name}", True)
-                    # Remove the now-empty source folder
-                    try:
-                        mssparkutils.fs.rm(item.path, True)
-                    except Exception:
-                        pass
-                    archived_count += 1
-                    print(f"  ✓ Archived: incremental/{item.name}/ → processed/{item.name}/")
-                elif item.name.endswith(".csv"):
-                    # Archive legacy flat CSV file
-                    mssparkutils.fs.mv(item.path, f"{processed_path}{item.name}", True)
-                    archived_count += 1
-                    print(f"  ✓ Archived: {item.name} → processed/{item.name}")
-            except Exception as e:
-                print(f"  ⚠️ Could not archive {item.name}: {str(e)[:100]}")
-        
-        if archived_count > 0:
-            print(f"\n✓ Archived {archived_count} item(s) → Files/processed/")
-            print("  Next incremental run will only process NEW files")
-        else:
-            print("  No items to archive in incremental/")
-    except Exception:
-        print("  No incremental folder found — nothing to archive")
-else:
-    print("Full load mode — archiving skipped (tables were overwritten)")
+# ## Incremental Batch Finalization
+#
+# Bronze deliberately leaves incremental files in `Files/incremental/`.
+# `NB_Finalize_Incremental_Batch` archives them only after the complete
+# Bronze-to-Gold pipeline succeeds. If Silver or Gold fails, the pending batch
+# remains available for a safe retry.
 
 # METADATA **{"language":"markdown"}**
 

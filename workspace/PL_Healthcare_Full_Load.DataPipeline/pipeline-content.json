@@ -1,10 +1,10 @@
 {
     "properties": {
-        "description": "Parameterised ETL pipeline. Accepts load_mode (full|incremental). No ML notebooks - risk scores come from source data. Chain: Bronze > Silver Clean > Silver Enrich > Gold Star Schema. Direct Lake semantic model picks up changes automatically.",
+        "description": "Parameterised ETL pipeline. Accepts load_mode (full|incremental). Chain: Bronze > Silver Clean > Silver Enrich > Gold Star Schema > successful incremental batch finalization.",
         "activities": [
             {
                 "name": "Bronze_Ingest",
-                "description": "Ingest CSV data into Bronze Delta tables (full=overwrite, incremental=append+archive)",
+                "description": "Ingest CSV data into Bronze Delta tables (full=overwrite, incremental=append while retaining pending files)",
                 "type": "TridentNotebook",
                 "dependsOn": [],
                 "policy": {
@@ -121,6 +121,39 @@
                 },
                 "typeProperties": {
                     "notebookId": "b2000002-0002-0002-0002-000000000005",
+                    "workspaceId": "00000000-0000-0000-0000-000000000000",
+                    "parameters": {
+                        "load_mode": {
+                            "value": {
+                                "value": "@pipeline().parameters.load_mode",
+                                "type": "Expression"
+                            },
+                            "type": "string"
+                        }
+                    }
+                }
+            },
+            {
+                "name": "Finalize_Incremental_Batch",
+                "description": "Archive pending incremental files only after the complete Bronze-to-Gold chain succeeds",
+                "type": "TridentNotebook",
+                "dependsOn": [
+                    {
+                        "activity": "Gold_Star_Schema",
+                        "dependencyConditions": [
+                            "Succeeded"
+                        ]
+                    }
+                ],
+                "policy": {
+                    "timeout": "0.01:00:00",
+                    "retry": 1,
+                    "retryIntervalInSeconds": 30,
+                    "secureOutput": false,
+                    "secureInput": false
+                },
+                "typeProperties": {
+                    "notebookId": "b2000002-0002-0002-0002-000000000022",
                     "workspaceId": "00000000-0000-0000-0000-000000000000",
                     "parameters": {
                         "load_mode": {

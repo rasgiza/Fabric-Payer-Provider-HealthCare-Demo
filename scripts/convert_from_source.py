@@ -45,6 +45,7 @@ LOGICAL_IDS = {
     "06b_Gold_Transform_Load_v2":       "b2000002-0002-0002-0002-000000000005",
     "NB_Generate_Sample_Data":          "b2000002-0002-0002-0002-000000000006",
     "NB_Generate_Incremental_Data":     "b2000002-0002-0002-0002-000000000007",
+    "NB_Finalize_Incremental_Batch":    "b2000002-0002-0002-0002-000000000022",
     # Pipelines
     "PL_Healthcare_Full_Load":          "c3000003-0003-0003-0003-000000000001",
     "PL_Healthcare_Master":             "c3000003-0003-0003-0003-000000000002",
@@ -63,6 +64,7 @@ NOTEBOOK_LAKEHOUSES = {
     "06b_Gold_Transform_Load_v2":       "lh_gold_curated",
     "NB_Generate_Sample_Data":          "lh_bronze_raw",
     "NB_Generate_Incremental_Data":     "lh_bronze_raw",
+    "NB_Finalize_Incremental_Batch":    "lh_bronze_raw",
 }
 
 # Notebook → additional known lakehouses (cross-references)
@@ -74,6 +76,7 @@ NOTEBOOK_KNOWN_LAKEHOUSES = {
     "06b_Gold_Transform_Load_v2":       ["lh_silver_ods", "lh_bronze_raw"],
     "NB_Generate_Sample_Data":          [],
     "NB_Generate_Incremental_Data":     [],
+    "NB_Finalize_Incremental_Batch":    [],
 }
 
 # Pipeline notebook references (activity name → notebook name)
@@ -83,6 +86,7 @@ PIPELINE_NOTEBOOK_MAP = {
         "Silver_Stage_Clean": "02_Silver_Stage_Clean",
         "Silver_ODS_Enrich":  "03_Silver_ODS_Enrich",
         "Gold_Star_Schema":   "06b_Gold_Transform_Load_v2",
+        "Finalize_Incremental_Batch": "NB_Finalize_Incremental_Batch",
     },
     "PL_Healthcare_Master": {},
 }

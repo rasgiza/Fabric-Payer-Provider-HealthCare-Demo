@@ -113,9 +113,10 @@ the same patients, dates, measures, and documented demo stories.
 
 Incremental pipeline runs create deterministic numbered daily batches. Two
 deployments that run the same number of batches receive the same sequence of
-changes. Pending files are reused after a retry, completed batches are retained
-under `Files/processed/`, IDs continue across batches, and a later full rebuild
-replays the retained incremental history.
+changes. Pending files remain under `Files/incremental/` and are reused after a
+retry if Silver or Gold fails. Only after the full Bronze-to-Gold chain succeeds
+are completed batches moved to `Files/processed/`. IDs continue across batches,
+and a later full rebuild replays the retained incremental history.
 
 ## Healthcare Use Cases
 

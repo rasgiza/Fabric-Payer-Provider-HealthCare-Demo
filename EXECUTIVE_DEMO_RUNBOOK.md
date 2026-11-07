@@ -97,7 +97,7 @@ baseline.
 
 ### While it runs
 
-> "Patient → prescriptions → medications → drug class. A four-table join in SQL. One sentence in English."
+> "Patient → prescriptions → medication details, including drug class. A three-table join in SQL. One sentence in English."
 
 ### After it lands (30 sec)
 

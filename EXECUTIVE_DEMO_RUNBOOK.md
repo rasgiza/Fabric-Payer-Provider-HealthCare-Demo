@@ -91,6 +91,13 @@ baseline.
 
 > **"Show me each unique medication prescribed to Nancy White age 63, with its drug class"**
 
+> **Why “unique”?** The prescription fact table stores one row for every fill
+> and refill, so the same medication can appear many times. This question is
+> asking for Nancy's medication regimen, not her dispensing history. The agent
+> therefore collapses repeated fills into one row per medication. To inspect
+> refill behavior instead, ask: *"Show me every prescription fill for Nancy
+> White age 63, including fill date and days supply."*
+>
 > 🚨 **Ask for medications here, not adherence.** Adherence is only computed for *chronic*
 > maintenance drugs, and her ibuprofen is an acute script — so an adherence question silently
 > drops the NSAID and you lose the triple whammy. Expect **10 drug classes**.

@@ -11,7 +11,7 @@
 ## The arc at a glance
 
 1. **Warm-up** — prime the agent silently
-2. **Q1** — size the problem (aggregate count of 30 patients)
+2. **Q1** — size the problem (aggregate cohort count)
 3. **Q2** — Nancy's adherence by drug class (the triple whammy)
 4. **Q3** — Nancy's prescribers (no cardiologist managing)
 5. **Q4** — find more patients like Nancy (the pattern scales)
@@ -54,7 +54,11 @@ Move on.
 
 > **"How many patients are at high readmission risk and non-adherent to their medications?"**
 
-**Expected result with the default seeded dataset:** **30 patients**
+**Reference deployment result:** **30 patients**
+
+Use the count returned in your workspace. The sample generator uses fixed
+random seeds, but date-relative generation, repository changes, configuration,
+incremental loads, and agent query interpretation can change the result.
 
 > **Evidence boundary:** This response is an aggregate count only. It does not
 > identify the 30 patients, show their medications, or establish that Nancy
@@ -66,7 +70,8 @@ Move on.
 
 ### After it lands (30 sec)
 
-> "Thirty patients meet both criteria in this synthetic dataset.
+> "The agent found **[use the returned count]** patients who meet both criteria
+> in this synthetic dataset.
 >
 > This result tells us the size of the cohort, but it does not tell us who those
 > patients are or why they are at risk. To understand an individual story, we
@@ -78,7 +83,7 @@ Move on.
 
 ### Pivot (15 sec)
 
-> "Thirty is a cohort count. Now let's move to a separate patient-level example:
+> "That result is a cohort count. Now let's move to a separate patient-level example:
 > Nancy White, sixty-three years old. We will build her story one verified
 > question at a time."
 
@@ -357,7 +362,7 @@ one-visit prescriber at a different facility, still active — plus a duplicated
 
 | Claim | Source | Confidence |
 |---|---|---|
-| 30 patients high-risk + non-adherent | Agent screen | ✅ Bulletproof |
+| High-risk + non-adherent cohort count | Agent screen | Use the live result |
 | Nancy: 9 prescribers, 8 specialties | Agent screen | ✅ Bulletproof |
 | Two psychiatrists on Nancy's chart | Agent screen | ✅ Bulletproof |
 | No cardiologist on Nancy's chart | Agent screen | ✅ Bulletproof |

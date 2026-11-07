@@ -11,7 +11,7 @@
 ## The arc at a glance
 
 1. **Warm-up** — prime the agent silently
-2. **Q1** — size the problem (cohort of 300+ at-risk patients)
+2. **Q1** — size the problem (cohort of 30 at-risk patients)
 3. **Q2** — Nancy's adherence by drug class (the triple whammy)
 4. **Q3** — Nancy's prescribers (no cardiologist managing)
 5. **Q4** — find more patients like Nancy (the pattern scales)
@@ -54,15 +54,17 @@ Move on.
 
 > **"How many patients are at high readmission risk and non-adherent to their medications?"**
 
+**Expected result with the default seeded dataset:** **30 patients**
+
 ### While it runs (~10 sec)
 
 > "The agent is joining readmission risk from the encounter data with adherence from the pharmacy data. Two systems your team would normally query separately."
 
 ### After it lands (30 sec)
 
-> "Over three hundred patients. Each at high risk. Each not taking the medications keeping them out of your ED.
+> "Thirty patients. Each has a high-risk encounter and at least one measured chronic medication classified as non-adherent.
 >
-> At roughly fifteen thousand dollars per avoidable readmission, **if even one in five comes back, that's nine hundred thousand dollars in avoidable cost — every quarter.** Before the HRRP penalty layered on top.
+> At roughly fifteen thousand dollars per avoidable readmission, **if even one in five comes back, that's about ninety thousand dollars in potential avoidable cost for this cohort.** Before the HRRP penalty layered on top.
 >
 > But the count doesn't tell you what to do. **The story does.** Let me show you one of these patients."
 
@@ -72,7 +74,7 @@ Move on.
 
 ### Pivot (15 sec)
 
-> "Three hundred is a number. Numbers don't change behavior — stories do. Nancy White, sixty-three years old. She's on this list. The question is **why**."
+> "Thirty is a number. Numbers don't change behavior — stories do. Nancy White, sixty-three years old. She's on this list. The question is **why**."
 
 ### Type
 
@@ -349,7 +351,7 @@ one-visit prescriber at a different facility, still active — plus a duplicated
 
 | Claim | Source | Confidence |
 |---|---|---|
-| 300+ patients high-risk + non-adherent | Agent screen | ✅ Bulletproof |
+| 30 patients high-risk + non-adherent | Agent screen | ✅ Bulletproof |
 | Nancy: 9 prescribers, 8 specialties | Agent screen | ✅ Bulletproof |
 | Two psychiatrists on Nancy's chart | Agent screen | ✅ Bulletproof |
 | No cardiologist on Nancy's chart | Agent screen | ✅ Bulletproof |

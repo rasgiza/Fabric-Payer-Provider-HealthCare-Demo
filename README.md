@@ -147,7 +147,9 @@ validated before being used in a presentation.
 
 ## Architecture
 
-![Healthcare accelerator architecture](diagrams/healthcare-architecture.svg)
+[![Healthcare accelerator architecture](diagrams/healthcare-architecture.png)](diagrams/healthcare-architecture.png)
+
+Select the architecture image to open the full-size version.
 
 The solution follows a simple flow:
 

@@ -11,7 +11,7 @@
 ## The arc at a glance
 
 1. **Warm-up** — prime the agent silently
-2. **Q1** — size the problem (cohort of 30 at-risk patients)
+2. **Q1** — size the problem (aggregate count of 30 patients)
 3. **Q2** — Nancy's adherence by drug class (the triple whammy)
 4. **Q3** — Nancy's prescribers (no cardiologist managing)
 5. **Q4** — find more patients like Nancy (the pattern scales)
@@ -56,17 +56,21 @@ Move on.
 
 **Expected result with the default seeded dataset:** **30 patients**
 
+> **Evidence boundary:** This response is an aggregate count only. It does not
+> identify the 30 patients, show their medications, or establish that Nancy
+> White belongs to this cohort.
+
 ### While it runs (~10 sec)
 
 > "The agent is joining readmission risk from the encounter data with adherence from the pharmacy data. Two systems your team would normally query separately."
 
 ### After it lands (30 sec)
 
-> "Thirty patients. Each has a high-risk encounter and at least one measured chronic medication classified as non-adherent.
+> "Thirty patients meet both criteria in this synthetic dataset.
 >
-> At roughly fifteen thousand dollars per avoidable readmission, **if even one in five comes back, that's about ninety thousand dollars in potential avoidable cost for this cohort.** Before the HRRP penalty layered on top.
->
-> But the count doesn't tell you what to do. **The story does.** Let me show you one of these patients."
+> This result tells us the size of the cohort, but it does not tell us who those
+> patients are or why they are at risk. To understand an individual story, we
+> need to ask patient-level questions."
 
 ---
 
@@ -74,7 +78,9 @@ Move on.
 
 ### Pivot (15 sec)
 
-> "Thirty is a number. Numbers don't change behavior — stories do. Nancy White, sixty-three years old. She's on this list. The question is **why**."
+> "Thirty is a cohort count. Now let's move to a separate patient-level example:
+> Nancy White, sixty-three years old. We will build her story one verified
+> question at a time."
 
 ### Type
 

@@ -177,10 +177,16 @@ with the curated [Graph Agent questions](SAMPLE_QUESTIONS.md#graph-agent-healthc
 > [!IMPORTANT]
 > Microsoft Fabric Ontology is in preview. This repository currently deploys
 > the old graph-backed ontology experience for compatibility with the included
-> Graph Agent. Microsoft states that the old experience retires on
-> **January 31, 2027**. Treat it as a demonstration surface and plan migration
-> to the current ontology experience before using it as a long-lived customer
-> implementation. See [What is ontology in Microsoft Fabric?](https://learn.microsoft.com/fabric/iq/ontology/overview).
+> Graph Agent. This is intentional while Microsoft Fabric
+> [known issue 1987](https://support.fabric.microsoft.com/known-issues/?product=IQ)
+> can prevent the new ontology experience from working as Data Agent context.
+> The launcher will remain on the old experience until that issue is resolved
+> and the new path passes clean-workspace deployment, relationship-query, and
+> rollback validation. Microsoft states that the old experience retires on
+> **January 31, 2027**, so migration must be completed after the fix and before
+> that date. Treat the current ontology as a demonstration surface rather than
+> a long-lived customer implementation. See
+> [What is ontology in Microsoft Fabric?](https://learn.microsoft.com/fabric/iq/ontology/overview).
 
 ## Run a Demo
 

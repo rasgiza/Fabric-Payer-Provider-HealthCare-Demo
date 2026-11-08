@@ -161,11 +161,24 @@ her thyroid hormone. The NSAID does not appear here — see the note above.
 
 ### After it lands (45 sec)
 
-> "Five more Nancys. **Read the top row off the screen — name, age, provider count, specialty count.** Several of them are worse than Nancy: ten providers, nine different specialties, almost one specialty per prescription.
+> "The clean baseline returns five patients with even broader recorded
+> prescribing networks than Nancy:
 >
-> Each name is a Nancy. Each is a readmission waiting to happen. The agent found them in three seconds — without me telling it what to look for. I asked for the **pattern**. It returned the **people**.
+> - John Gonzalez, age 83 — 16 providers across 12 specialties
+> - Barbara Johnson, age 81 — 16 providers across 11 specialties
+> - Ashley Jackson, age 64 — 16 providers across 9 specialties
+> - Thomas Thompson, age 47 — 15 providers across 13 specialties
+> - Jessica Johnson, age 65 — 15 providers across 11 specialties
+>
+> This provider and specialty dispersion is a useful signal for
+> care-coordination review. It does not, by itself, establish that a patient
+> will be readmitted or that their care is inappropriate. I asked for the
+> **pattern**. The agent returned the **people** to investigate.
 >
 > But I want to show you one more patient. Not from this list. **Younger.** And the story is worse."
+
+These expected names and counts assume the deterministic clean baseline. If
+incremental batches have been processed, present the returned ranking instead.
 
 ---
 

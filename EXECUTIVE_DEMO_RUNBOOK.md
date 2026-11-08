@@ -2,9 +2,11 @@
 
 **Audience:** Healthcare executives (CMO, COO, CFO, CIO, VP Quality) — provider-side or mixed payer/provider
 **Length:** ~12 minutes
-**Tools:** Fabric data agent `HealthcareHLSAgent` (Steps 0–5, returns rows) → Foundry agent `Healthcare Ontology Agent` (Step 6, returns policy + actions)
+**Tools:** Fabric data agent `HealthcareHLSAgent` (Steps 0–5, returns rows) → Foundry agent `HealthcareOrchestratorAgent2` (Step 6, combines Fabric data with cited policy)
 **Two patients:** Nancy White (the setup) → Sarah Johnson (the close)
-**Goal:** Prove that Microsoft Fabric + an ontology + a plain-English agent can surface readmission risk and care fragmentation no current tool in their hospital can see.
+**Goal:** Prove that Microsoft Fabric data, a plain-English agent, and a cited
+policy knowledge base can surface care-coordination patterns and support
+evidence-grounded follow-up.
 
 ---
 
@@ -250,9 +252,15 @@ Pause. Three full seconds.
 
 Switch agents. **Say this while you switch:**
 
-> "Everything so far came from the data agent. It knows *what happened*. Now I'll ask a different agent what it *means* — same ontology underneath, but this one can also read your policy library."
+> "Everything so far came from the Fabric data agent. It knows *what happened*
+> in the Gold lakehouse. Now I'll ask the Foundry orchestrator to combine that
+> patient evidence with your policy library and recommend grounded next
+> actions."
 
-**Agent:** `Healthcare Ontology Agent` in Foundry — it holds the Fabric data agent *and* an MCP tool over the 26-document knowledge base.
+**Agent:** `HealthcareOrchestratorAgent2` in Foundry — it uses Fabric IQ to call
+the published `HealthcareHLSAgent` and Azure AI Search to retrieve cited
+evidence from the 26-document knowledge base. It is not currently connected to
+the ontology.
 
 **Type this:**
 

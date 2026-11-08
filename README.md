@@ -169,7 +169,7 @@ This complements rather than replaces the semantic model:
 | Counts, rates, trends, rankings, and KPIs | Semantic model through `HealthcareHLSAgent` |
 | Named records and auditable row-level detail | Gold lakehouse through `HealthcareHLSAgent` |
 | Multi-hop entity relationships and investigation paths | `Healthcare Ontology Agent` |
-| Clinical or operational recommendations grounded in policy | Foundry orchestrator with ontology context and cited knowledge |
+| Clinical or operational recommendations grounded in policy | Foundry orchestrator with `HealthcareHLSAgent` data and cited knowledge |
 
 The current graph binds **11 entity types and 17 relationship types**. Start
 with the curated [Graph Agent questions](SAMPLE_QUESTIONS.md#graph-agent-healthcare-ontology-agent).

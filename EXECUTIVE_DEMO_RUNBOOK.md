@@ -131,13 +131,19 @@ her thyroid hormone. The NSAID does not appear here — see the note above.
 
 ### While it runs
 
-> "Patient → prescriptions → prescribing provider → specialty. Three hops in the ontology."
+> "The lakehouse agent joins Nancy's prescription records to the current
+> patient and provider dimensions, then returns each distinct provider and
+> recorded specialty."
 
 ### After it lands (25 sec)
 
-> "Nine providers. Eight specialties. **Two psychiatrists who don't know about each other. And no cardiologist managing her heart medications.**
+> "Nine providers across eight recorded specialties, including two psychiatry
+> prescribers. **No Cardiology specialist appears among the recorded
+> prescribers, even though several medications are cardiovascular.**
 >
-> Each prescription is safe on its own. Nobody saw the combination — because nobody could.
+> That pattern warrants a care-coordination review. The data does not establish
+> whether these providers communicated or whether any prescription was
+> clinically inappropriate.
 >
 > So — who else in our population looks like Nancy?"
 

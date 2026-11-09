@@ -8,6 +8,12 @@
 policy knowledge base can surface care-coordination patterns and support
 evidence-grounded follow-up.
 
+For the broader business workflow, capability status, evidence boundaries, and
+future closed-loop design, see
+[POST_DISCHARGE_READMISSION_PREVENTION.md](POST_DISCHARGE_READMISSION_PREVENTION.md).
+This runbook remains the tested presentation script for the currently generated
+Nancy White and Sarah Johnson stories.
+
 ---
 
 ## The arc at a glance

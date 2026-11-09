@@ -20,6 +20,7 @@ analytics, operational alerts, and AI-assisted investigation.
 |---|---|---|
 | Deploy the Fabric solution | [Quick Start](#quick-start) | Lakehouses, pipelines, semantic model, dashboard, ontology, and data agents |
 | Present the healthcare scenarios | [Run a Demo](#run-a-demo) | A guided payer/provider story with tested questions |
+| Understand the flagship readmission scenario | [`POST_DISCHARGE_READMISSION_PREVENTION.md`](POST_DISCHARGE_READMISSION_PREVENTION.md) | An evidence-grounded post-discharge workflow and capability roadmap |
 | Ask tested data and ontology questions | [`SAMPLE_QUESTIONS.md`](SAMPLE_QUESTIONS.md) | KPI prompts, record lookups, and relationship traversals |
 | Explore the use cases | [Healthcare Use Cases](#healthcare-use-cases) | Clinical, operational, financial, quality, and population-health scenarios |
 | Add real-time operations | [Real-Time Intelligence](#optional-add-real-time-intelligence) | Eventhouse, KQL, alerts, operations agent, and RTI dashboard |
@@ -137,6 +138,23 @@ combined healthcare demonstrations.
 | Payer and contracting | Payer mix, contract performance, claims patterns, and reimbursement leakage |
 | Program integrity | Fraud, waste, abuse, anomalous claims, and investigation prioritization |
 | Data and AI | Natural-language analytics, relationship traversal, grounded answers, and citations |
+
+### Flagship Scenario: Post-Discharge Readmission Prevention
+
+The flagship provider scenario connects discharge, clinical-risk, medication,
+follow-up, utilization, and social-risk evidence so a care manager can identify
+actionable patients earlier. `HealthcareHLSAgent` retrieves verified patient
+evidence, while the optional `HealthcareOrchestratorAgent2` combines that
+evidence with cited policy guidance for human review.
+
+The current deployment supports risk identification, patient investigation,
+longitudinal medication-adherence analysis, and policy-grounded
+recommendations. Discharge-prescription non-fill detection, care-manager task
+workflow, and intervention-to-outcome tracking are explicitly planned
+extensions. See
+[`POST_DISCHARGE_READMISSION_PREVENTION.md`](POST_DISCHARGE_READMISSION_PREVENTION.md)
+for the workflow, architecture, status, evidence boundaries, and success
+measures.
 
 See [`PROVIDER_USE_CASES.md`](PROVIDER_USE_CASES.md) for the detailed coverage
 matrix, available assets, example questions, and explicitly identified

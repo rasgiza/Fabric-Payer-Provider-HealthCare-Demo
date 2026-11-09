@@ -2,7 +2,12 @@
 
 This document catalogs the **industry-wide use cases in the healthcare provider space** and maps each one to the specific capability this demo delivers. It is the "why this matters" companion to the [README](README.md): the README explains *what gets deployed*; this document explains *which real provider problems it answers* and *how*.
 
-Every use case below is grounded in a recognized industry pain point (with sources) and traced to a concrete artifact in this repo — a Gold table, a semantic-model measure, a data agent, an RTI scoring notebook, or a Teams/Activator action. Nothing here is aspirational; it reflects what the launcher actually deploys.
+Every use case below is grounded in a recognized industry pain point (with
+sources) and traced to a concrete artifact in this repo — a Gold table, a
+semantic-model measure, a data agent, an RTI scoring notebook, or a
+Teams/Activator action. Available, optional, and extendable capabilities are
+labeled explicitly so the document does not present roadmap functionality as
+already deployed.
 
 > **Scope note.** This demo covers the **operations, analytics, revenue cycle, quality, population health, and program-integrity** surface of a provider organization. It is intentionally complementary to — not a replacement for — clinical documentation (Dragon / DAX Copilot), patient front-door/contact-center (Microsoft Cloud for Healthcare), and EHR-native workflows (Epic / Oracle Health). Those are called out as **complementary** where relevant.
 
@@ -110,6 +115,16 @@ Under value-based reimbursement, quality measures are directly tied to payment. 
 
 **How this demo solves it.** `fact_encounter` carries a **readmission risk score and category** computed from encounter history, diagnosis complexity, and SDOH factors; `agg_readmission` aggregates rates by facility and diagnosis. Care managers get a targetable worklist *before discharge*. Ask *"Which patients have the highest readmission risk?"* or drill into the Power BI **Readmission Risk** page (heatmap + decomposition tree). When streaming is enabled, ADT events trigger real-time alerts (see [4.1](#41-real-time-adt-driven-point-of-care-alerts)).
 
+#### Featured end-to-end scenario
+
+[Post-Discharge Readmission Prevention](POST_DISCHARGE_READMISSION_PREVENTION.md)
+extends this risk signal into an evidence-grounded care-coordination workflow.
+The current accelerator supports cohort prioritization, patient investigation,
+PDC adherence analysis, optional streaming signals, and optional cited policy
+guidance. Discharge-prescription non-fill detection, care-manager task
+integration, and intervention-to-outcome tracking remain clearly labeled
+extensions rather than deployed capabilities.
+
 ### 2.2 HEDIS care-gap closure
 
 **The industry pain.** Payers spend real money per member per month chasing HEDIS gaps, but the highest-leverage moment to close a gap is **when the patient is already in front of a provider** — and the care team usually doesn't know a gap is open. (Sources: NCQA HEDIS; industry outreach-cost benchmarks.)
@@ -204,6 +219,7 @@ The cross-cutting reason the above is possible: one governed data foundation wit
 | Prior-auth visibility | Claims PA fields · `HealthcareHLSAgent` | "Which claims were denied for prior-authorization gaps?" |
 | Contract / underpayment | 12-payer model · Ontology Agent | "Trace denied claims from provider to payer for Aetna." |
 | Readmission risk (HRRP) | `fact_encounter` risk score · `agg_readmission` · PBI *Readmission Risk* | "Which patients have the highest readmission risk?" |
+| Post-discharge intervention prioritization | `HealthcareHLSAgent` · optional RTI · optional `HealthcareOrchestratorAgent2` · [flagship workflow](POST_DISCHARGE_READMISSION_PREVENTION.md) | "Which recently discharged patients need care-manager review?" |
 | HEDIS care-gap closure ⚡ | `NB_RTI_Care_Gap_Alerts` · `rti_care_gap_alerts` · Teams | "Which facilities have the most open care gaps?" |
 | Medication adherence | Gold PDC measures · PBI *Medication Adherence* | "Show medication adherence by drug class for high-risk patients." |
 | SDOH stratification | Zip-level SDOH join · PBI *Social Determinants* | "Which zip codes have the highest SVI and readmission risk?" |

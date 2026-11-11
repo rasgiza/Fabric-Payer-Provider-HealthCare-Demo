@@ -233,4 +233,3 @@ Patient
 Until then, the repository keeps the existing graph-backed ontology for
 compatibility and does not claim that `HealthcareOrchestratorAgent2` is
 ontology-grounded.
-

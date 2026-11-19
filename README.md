@@ -193,18 +193,62 @@ The current graph binds **11 entity types and 17 relationship types**. Start
 with the curated [Graph Agent questions](SAMPLE_QUESTIONS.md#graph-agent-healthcare-ontology-agent).
 
 > [!IMPORTANT]
-> Microsoft Fabric Ontology is in preview. This repository currently deploys
-> the old graph-backed ontology experience for compatibility with the included
-> Graph Agent. This is intentional while Microsoft Fabric
+> Microsoft Fabric Ontology is in preview. The launcher deploys two separate
+> items: the generation-1 `Healthcare_Demo_Ontology_HLS` for the included
+> `HealthcareOntologyAgent`, and the generation-2
+> `Healthcare_Demo_Ontology_HLS_NewUI` for exploring the new ontology UI.
+> The Data Agent deliberately remains on generation 1 while Microsoft Fabric
 > [known issue 1987](https://support.fabric.microsoft.com/known-issues/?product=IQ)
 > can prevent the new ontology experience from working as Data Agent context.
-> The launcher will remain on the old experience until that issue is resolved
-> and the new path passes clean-workspace deployment, relationship-query, and
-> rollback validation. Microsoft states that the old experience retires on
+> Deploying the new-UI item does not fix that issue or migrate the agent.
+> Agent migration requires the issue to be resolved and the new path to pass
+> clean-workspace deployment, relationship-query, and rollback validation.
+> Microsoft states that the old experience retires on
 > **January 31, 2027**, so migration must be completed after the fix and before
 > that date. Treat the current ontology as a demonstration surface rather than
 > a long-lived customer implementation. See
 > [What is ontology in Microsoft Fabric?](https://learn.microsoft.com/fabric/iq/ontology/overview).
+
+### Side-by-side ontology deployment
+
+| Item | Generation | Purpose |
+|---|---|---|
+| `Healthcare_Demo_Ontology_HLS` | 1 | Existing graph-backed source for `HealthcareOntologyAgent`, with its curated instructions and Examples |
+| `Healthcare_Demo_Ontology_HLS_NewUI` | 2 | New ontology UI exploration; no Data Agent is created or attached |
+
+Both use the same healthcare model: **11 entities and 17 relationships**.
+The new-UI model is generated as TMDL from the existing JSON export and binds
+to the target Gold lakehouse's SQL analytics endpoint. It does not create
+another copy of the patient data.
+
+The conversion preserves **column-bound properties**. The export also contains
+12 properties without source-column bindings (for example `Total_Claims`,
+`Total_Patients`, and `Total_Fills`). These are reported as a warning and omitted
+from the new-UI item rather than inventing columns or formulas. The legacy
+ontology and agent are unchanged.
+
+Cell **9** retains the legacy ontology/agent path. Cell **9b** deploys the
+separately named new-UI item by default; set `DEPLOY_NEW_ONTOLOGY = False` to
+skip it. Skipping does not delete an existing new-UI item. The new path checks
+generation 2 before updating and reads the stored definition back to verify
+all entity, backing-table, and relationship names. It refuses to delete or
+convert a conflicting item, and never attaches the Data Agent to it.
+Definition verification is not proof of live query correctness or performance.
+
+**Testing this feature branch:** import its
+[`Healthcare_Launcher.ipynb`](Healthcare_Launcher.ipynb) and set:
+
+```python
+GITHUB_BRANCH = "feat/side-by-side-ontology-deployment"
+DEPLOY_NEW_ONTOLOGY = True
+```
+
+In an existing workspace with populated Gold tables, run the configuration
+cell and **Cell 9b only** to add the new-UI item without redeploying the legacy
+ontology or its agent. On a clean workspace, run the full launcher. Keep using
+`HealthcareOntologyAgent` against generation 1; open the `_NewUI` item directly
+to evaluate the newer UI. Compare its entity relationships and bound data in
+Fabric before considering any future agent migration.
 
 ## Run a Demo
 
